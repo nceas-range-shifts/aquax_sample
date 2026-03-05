@@ -4,3 +4,5 @@
 .httr-oauth
 .DS_Store
 .quarto
+data/2026_OHARA_TST_MORPHO*
+data/2026_OHARA_TST_MORPHO/*
