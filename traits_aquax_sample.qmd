@@ -94,7 +94,7 @@ finalemmean_inv_ext <- finalemmean_test %>%
 
 ```{r}
 set.seed(123)
-test_spp_30 <- slice_sample(df, n = 30)
+test_spp_30 <- slice_sample(df, n = 50)
 files_30 <- test_spp_30$f
 aphiaid_30 <- test_spp_30$aphiaid
 #load(test_spp_30$f)
@@ -124,14 +124,13 @@ extract_change <- function(id, df) {
          future = case_when(RCP85_2050 < cutoff ~ 0,
                              TRUE ~ 1)) %>%
   # historical column plus 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
-  mutate(pxl_change = historical + 2 * future,
-         remain = case_when(pxl_change == 3 ~ 1,
-                            TRUE ~ 0))
+  mutate(pxl_change = historical + 2 * future)
   
-  r_spp_change <- rast(spp_change)
+  #r_spp_change <- rast(spp_change)
   
   # return just the pixel change field
-  return(r_spp_change[["pxl_change"]])
+  #return(r_spp_change[["pxl_change"]])
+  return(spp_change)
 }
 ```
 
@@ -243,10 +242,38 @@ plot(spp_same_count_pl)
 library(parallel)
 ```
 
-#doesn't work with SpatRasters
+#doesn't work with SpatRasters (so going to convert to rasters outside function)
+
+```{r}
+aphiaid_df <- df$aphiaid
+```
+
 ```{r}
 system.time({
-  out_list <- parallel::mclapply(aphiaid_30, FUN = extract_change, df = test_spp_30, mc.cores = 3)
+  out_list <- parallel::mclapply(aphiaid_df, FUN = extract_change, df = df, mc.cores = 10)
 })
+```
+
+```{r}
+system.time({
+  change_rast <- lapply(aphiaid_30, FUN = extract_change, df = test_spp_30)
+})
+```
+
+
+```{r}
+# Function to rasterize extract_change return and return only pxl_change
+spp_r <- function(spp, col){
+  r_spp_change <- rast(spp)
+  return(r_spp_change[[col]])
+}
+```
+
+```{r}
+out_list_r <- lapply(out_list, spp_r, col = "pxl_change")
+```
+
+```{r}
+plot(out_list_r[[1]])
 ```
 
