@@ -46,12 +46,161 @@ Associate SDM files with the metadata for the 564 sampled species
 spp_fs <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/2026_OHARA_TST_MORPHO/SDM',
                      full.names = TRUE)
 
-df <- data.frame(f = spp_fs) %>%
+df_spp <- data.frame(f = spp_fs) %>%
     mutate(fsize = file.size(f),
            aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
     # Join in the trait crosswalk
     left_join(aquax_sample_xwlk, by = c('aphiaid' = 'AphiaID'))
 ```
+
+## Work on applying to full sample
+
+```{r}
+xwlk_simple <- aquax_sample_xwlk %>% 
+  dplyr::select(aphiaid,fe_id)
+```
+
+```{r}
+#set.seed(123)
+#test_spp <- slice_sample(df, n = 30)
+```
+
+```{r}
+trait_change <- function(id, df) {
+  spp_filter <- df %>% 
+    filter(aphiaid == id) 
+  
+  load(spp_filter$f)
+  
+  spp_change <- FINALEMMEAN %>% 
+  mutate(aphiaid = id) %>% 
+  select(x, y, aphiaid, Current, RCP85_2050, cutoff) %>% 
+  mutate(historical = case_when(Current < cutoff ~ 0,
+                                TRUE ~ 1),
+         future = case_when(RCP85_2050 < cutoff ~ 0,
+                             TRUE ~ 1)) #%>%
+  # historical column plus 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
+  #mutate(pxl_change = historical + 2 * future)
+  
+  spp_change_fe_id <- inner_join(spp_change, xwlk_simple)
+  
+  r_spp_change <- rast(spp_change_fe_id)
+  
+  # return all fields
+  return(wrap(r_spp_change))
+}
+```
+
+## Loop through the functional entity codes, apply function, and mosaic into a single layer for each FE.
+Can still parallelize the function within the loop
+
+```{r}
+# Identify fe_id groups in sample
+fe_ids <- unique(df_spp$fe_id)
+
+# Create empty list for results 
+all_results <- list()
+```
+
+```{r}
+for (id in fe_ids) {
+  # Filter for functional entity 
+  df_sub <- df_spp %>% filter(fe_id == id)
+  
+  aphiaid_sub <- unique(df_sub$aphiaid)
+  
+  # Now iterate over the aphiaids (species) using trait_change function
+    wrapped_r <- parallel::mclapply(aphiaid_sub, FUN = trait_change, df = df_sub, 
+                                    mc.cores = 3)
+    
+    # Unwrap rasters (they're wrapped for parallelization)
+    spp_r <- lapply(wrapped_r, unwrap)
+    
+    # Create sprc and mosaic to create one raster layer of the trait
+    change_collection <- sprc(spp_r)
+    # Using "max" to assign the pixel 1 if any pixel in stack has 1
+    change_stack_max <- mosaic(change_collection, fun = "max")
+    # Get trait change at pixel level
+    # historical + 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
+    change_stack_trait_change <- change_stack_max[["historical"]] + 2 * change_stack_max[["future"]]
+    # Change name
+    names(change_stack_trait_change) <- as.character(id)
+    
+    # Return results
+    all_results[[as.character(id)]] <- change_stack_trait_change
+}
+```
+
+```{r}
+#all_results_137 <- all_results[[2]]
+```
+
+```{r}
+#plot(all_results_137)
+```
+
+## Map out trait change
+
+```{r}
+# Align extent of the rasters
+all_results_collection <- sprc(all_results)
+max_extent <- ext(all_results_collection )
+```
+
+```{r}
+align_list <- function(r) {
+  extend(r, max_extent)
+}
+```
+
+```{r}
+trait_rast_aligned <- lapply(all_results, align_list)
+```
+
+```{r}
+trait_stack <- rast(trait_rast_aligned)
+```
+
+## Now need to count up the numbers 
+The count of 0s, 1s, 2s, and 3s can be exploiting to figure out historic and future presence of the trait: 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
+
+```{r}
+count_change <- function(x, n){
+  sum(x == n, na.rm = TRUE)
+}
+```
+
+```{r}
+# Took 6 min
+system.time({
+  trait_same_count_pl <- app(trait_stack, count_change, n = 3, cores = 2)
+  })
+```
+
+```{r}
+# Took 6 min
+system.time({
+  trait_inv_count_pl <- app(trait_stack, count_change, n = 2, cores = 2)
+  })
+```
+
+```{r}
+# Took 6 min
+system.time({
+  trait_ext_count_pl <- app(trait_stack, count_change, n = 1, cores = 2)
+  })
+```
+
+```{r}
+trait_ssi_pl <- (2*trait_same_count_pl)/((2*trait_same_count_pl) + trait_ext_count_pl + trait_inv_count_pl)
+```
+
+```{r}
+plot(trait_ssi_pl)
+```
+
+
+###### Old code
 
 ## Inspect a test species
 
@@ -148,149 +297,4 @@ names(change_stack_max_change) <- "trait"
 plot(change_stack_max[["historical"]])
 plot(change_stack_max[["future"]])
 plot(change_stack_max[["historical"]] + 2 * change_stack_max[["future"]])
-```
-
-## Work on applying to full sample
-
-```{r}
-xwlk_simple <- aquax_sample_xwlk %>% 
-  dplyr::select(aphiaid,fe_id)
-```
-
-```{r}
-set.seed(123)
-test_spp <- slice_sample(df, n = 30)
-```
-
-```{r}
-trait_change <- function(id, df) {
-  spp_filter <- df %>% 
-    filter(aphiaid == id) 
-  
-  load(spp_filter$f)
-  
-  spp_change <- FINALEMMEAN %>% 
-  mutate(aphiaid = id) %>% 
-  select(x, y, aphiaid, Current, RCP85_2050, cutoff) %>% 
-  mutate(historical = case_when(Current < cutoff ~ 0,
-                                TRUE ~ 1),
-         future = case_when(RCP85_2050 < cutoff ~ 0,
-                             TRUE ~ 1)) #%>%
-  # historical column plus 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
-  #mutate(pxl_change = historical + 2 * future)
-  
-  spp_change_fe_id <- inner_join(spp_change, xwlk_simple)
-  
-  r_spp_change <- rast(spp_change_fe_id)
-  
-  # return all fields
-  return(wrap(r_spp_change))
-}
-```
-
-## Loop through the functional entity codes, apply function, and mosaic into a single layer for each FE.
-Can still parallelize the function within the loop
-
-```{r}
-# Identify fe_id groups in sample
-fe_ids <- unique(test_spp$fe_id)
-
-# Create empty list for results 
-all_results <- list()
-```
-
-```{r}
-for (id in fe_ids) {
-  # Filter for functional entity 
-  df_sub <- test_spp %>% filter(fe_id == id)
-  
-  aphiaid_sub <- unique(df_sub$aphiaid)
-  
-  # Now iterate over the aphiaids (species) using trait_change function
-    wrapped_r <- parallel::mclapply(aphiaid_sub, FUN = trait_change, df = df_sub, 
-                                    mc.cores = 3)
-    
-    # Unwrap rasters (they're wrapped for parallelization)
-    spp_r <- lapply(wrapped_r, unwrap)
-    
-    # Create sprc and mosaic to create one raster layer of the trait
-    change_collection <- sprc(spp_r)
-    # Using "max" to assign the pixel 1 if any pixel in stack has 1
-    change_stack_max <- mosaic(change_collection, fun = "max")
-    # Get trait change at pixel level
-    change_stack_trait_change <- change_stack_max[["historical"]] + 2 * change_stack_max[["future"]]
-    # Change name
-    names(change_stack_trait_change) <- as.character(id)
-    
-    # Return results
-    all_results[[as.character(id)]] <- change_stack_trait_change
-}
-```
-
-```{r}
-all_results_137 <- all_results[[2]]
-```
-
-```{r}
-plot(all_results_137)
-```
-
-## Map out trait change
-
-```{r}
-# Align extent of the rasters
-all_results_collection <- sprc(all_results)
-max_extent <- ext(all_results_collection )
-```
-
-```{r}
-align_list <- function(r) {
-  extend(r, max_extent)
-}
-```
-
-```{r}
-trait_rast_aligned <- lapply(all_results, align_list)
-```
-
-```{r}
-trait_stack <- rast(trait_rast_aligned)
-```
-
-## Now need to count up the numbers 
-The count of 0s, 1s, 2s, and 3s can be exploiting to figure out historic and future presence of the trait
-
-```{r}
-count_change <- function(x, n){
-  sum(x == n, na.rm = TRUE)
-}
-```
-
-```{r}
-# Took 6 min
-system.time({
-  trait_same_count_pl <- app(trait_stack, count_change, n = 3, cores = 2)
-  })
-```
-
-```{r}
-# Took 6 min
-system.time({
-  trait_inv_count_pl <- app(trait_stack, count_change, n = 2, cores = 2)
-  })
-```
-
-```{r}
-# Took 6 min
-system.time({
-  trait_ext_count_pl <- app(trait_stack, count_change, n = 1, cores = 2)
-  })
-```
-
-```{r}
-trait_ssi_pl <- (2*trait_same_count_pl)/((2*trait_same_count_pl) + trait_ext_count_pl + trait_inv_count_pl)
-```
-
-```{r}
-plot(trait_ssi_pl)
 ```
