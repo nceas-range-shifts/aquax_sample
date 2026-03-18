@@ -139,6 +139,11 @@ change_stack_max <- mosaic(change_collection, fun = "max")
 ```
 
 ```{r}
+change_stack_max_change <- change_stack_max[["historical"]] + 2 * change_stack_max[["future"]]
+names(change_stack_max_change) <- "trait"
+```
+
+```{r}
 # Plottign fe_id == 5 
 plot(change_stack_max[["historical"]])
 plot(change_stack_max[["future"]])
@@ -170,9 +175,9 @@ trait_change <- function(id, df) {
   mutate(historical = case_when(Current < cutoff ~ 0,
                                 TRUE ~ 1),
          future = case_when(RCP85_2050 < cutoff ~ 0,
-                             TRUE ~ 1)) %>%
+                             TRUE ~ 1)) #%>%
   # historical column plus 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
-  mutate(pxl_change = historical + 2 * future)
+  #mutate(pxl_change = historical + 2 * future)
   
   spp_change_fe_id <- inner_join(spp_change, xwlk_simple)
   
@@ -212,9 +217,13 @@ for (id in fe_ids) {
     change_collection <- sprc(spp_r)
     # Using "max" to assign the pixel 1 if any pixel in stack has 1
     change_stack_max <- mosaic(change_collection, fun = "max")
+    # Get trait change at pixel level
+    change_stack_trait_change <- change_stack_max[["historical"]] + 2 * change_stack_max[["future"]]
+    # Change name
+    names(change_stack_trait_change) <- as.character(id)
     
     # Return results
-    all_results[[as.character(id)]] <- change_stack_max
+    all_results[[as.character(id)]] <- change_stack_trait_change
 }
 ```
 
@@ -223,6 +232,65 @@ all_results_137 <- all_results[[2]]
 ```
 
 ```{r}
-plot(all_results_137$pxl_change)
+plot(all_results_137)
 ```
 
+## Map out trait change
+
+```{r}
+# Align extent of the rasters
+all_results_collection <- sprc(all_results)
+max_extent <- ext(all_results_collection )
+```
+
+```{r}
+align_list <- function(r) {
+  extend(r, max_extent)
+}
+```
+
+```{r}
+trait_rast_aligned <- lapply(all_results, align_list)
+```
+
+```{r}
+trait_stack <- rast(trait_rast_aligned)
+```
+
+## Now need to count up the numbers 
+The count of 0s, 1s, 2s, and 3s can be exploiting to figure out historic and future presence of the trait
+
+```{r}
+count_change <- function(x, n){
+  sum(x == n, na.rm = TRUE)
+}
+```
+
+```{r}
+# Took 6 min
+system.time({
+  trait_same_count_pl <- app(trait_stack, count_change, n = 3, cores = 2)
+  })
+```
+
+```{r}
+# Took 6 min
+system.time({
+  trait_inv_count_pl <- app(trait_stack, count_change, n = 2, cores = 2)
+  })
+```
+
+```{r}
+# Took 6 min
+system.time({
+  trait_ext_count_pl <- app(trait_stack, count_change, n = 1, cores = 2)
+  })
+```
+
+```{r}
+trait_ssi_pl <- (2*trait_same_count_pl)/((2*trait_same_count_pl) + trait_ext_count_pl + trait_inv_count_pl)
+```
+
+```{r}
+plot(trait_ssi_pl)
+```
