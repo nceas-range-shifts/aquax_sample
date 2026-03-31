@@ -86,6 +86,8 @@ plot(id_raster)
 ```{r}
 # Extend SSI to full globe extent (id_raster and mpa already match extent)
 ssi_raster_ext <- extend(spp_ssi, ext(id_raster))
+# Fix name
+names(ssi_raster_ext) <- "spp_ssi"
 ```
 
 ```{r}
@@ -98,6 +100,72 @@ plot(mpa_ssi)
 ```
 ```{r}
 # Find the mean species SSI in each IUCN category
-zonal(mpa_ssi$sum, mpa_ssi$IUCN_CAT, "mean")
+zonal(mpa_ssi$spp_ssi, mpa_ssi$IUCN_CAT, "mean")
+```
+## Read in trait data
+
+```{r}
+# Trait SSI (RCP 8.5, change to 2050)
+trait_ssi <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/trait_ssi_031826.tif")
+```
+
+```{r}
+# Extend SSI to full globe extent (id_raster and mpa already match extent)
+trait_raster_ext <- extend(trait_ssi, ext(id_raster))
+# Fix name 
+names(trait_raster_ext) <- "ssi_trait"
+```
+
+```{r}
+# Merge rasters
+mpa_ssi_trait <- c(mpa_ssi, trait_raster_ext)
+```
+
+```{r}
+# Find the mean trait SSI in each IUCN category
+zonal(mpa_ssi_trait$ssi_trait, mpa_ssi_trait$IUCN_CAT, "mean")
+```
+```{r}
+# Pixel frequency of the IUCN categories
+freq(mpa_ssi$IUCN_CAT)
+```
+
+## Test out creating a dataframe 
+
+```{r}
+mpa_ssi_trait_df <- as.data.frame(mpa_ssi_trait, xy = TRUE)
+```
+
+Before I get to this point, I'm going to have to mask out the land areas for the SSI calculations, otherwise I won't be able to see the difference between land and non-MPA ocean
+
+For, now let's run a t-test comparing the SSI of categories Ia, Ib, & II to everything else
+
+```{r}
+mpa_ssi_filter <- mpa_ssi_trait_df %>% 
+  dplyr::select(pixel_id, IUCN_CAT, spp_ssi, ssi_trait) %>% 
+  filter(IUCN_CAT %in% c("Ia", "Ib", "II", "III", "IV", "V", "VI"))
+```
+
+```{r}
+mpa_ssi_cat <- mpa_ssi_filter %>% 
+  mutate(IUCN_CAT_LVL = case_when(IUCN_CAT %in% c("Ia", "Ib", "II") ~ "high",
+         TRUE ~ "low"))
+```
+
+```{r}
+# t test - species SSI
+t.test(spp_ssi ~ IUCN_CAT_LVL, data = mpa_ssi_cat)
+```
+```{r}
+# t test - trait SSI
+t.test(ssi_trait ~ IUCN_CAT_LVL, data = mpa_ssi_cat)
+```
+
+```{r}
+ggplot() +
+  geom_density(data = mpa_ssi_cat, aes(x = spp_ssi), fill = "darkgreen", alpha = 0.3) +
+  geom_density(data = mpa_ssi_cat, aes(x = ssi_trait), fill = "gray30", alpha = 0.3) +
+  facet_wrap(~IUCN_CAT_LVL) +
+  labs(x = "SSI")
 ```
 
