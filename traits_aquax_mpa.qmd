@@ -305,11 +305,106 @@ ggplot() +
        fill = "SSI")
 ```
 
+## What if we include more categories in the MPA group?
 
+```{r}
+# Filter for Designated status and either no take area greater than or equal to 0.75, and for categories Ia, Ib, and II
+mpa_sf_des_iv <- mpa_gdb_crs_sf %>% 
+  filter(STATUS == "Designated") %>% 
+  mutate(IUCN_CAT_NUM = case_when(IUCN_CAT == "Ia" ~ 0.5,
+                                  IUCN_CAT == "Ib" ~ 1,
+                                  IUCN_CAT == "II" ~ 2,
+                                  IUCN_CAT == "III" ~ 3,
+                                  IUCN_CAT == "IV" ~ 4,
+                                  IUCN_CAT == "V" ~ 5,
+                                  IUCN_CAT == "VI" ~ 6,
+                                  IUCN_CAT == "Not Reported" ~ 7,
+                                  IUCN_CAT == "Not Applicable" ~ 8,
+                                  IUCN_CAT == "Not Assinged" ~ 9)) %>% 
+  filter(IUCN_CAT %in% c("Ia", "Ib", "II", "III", "IV") |NO_TK_AREA/REP_M_AREA >= 0.75)
+```
 
+```{r}
+mpa_iv_raster_output <- rasterize(mpa_sf_des_iv, 
+                                        mpa_raster_blank_005, 
+                                        field = "IUCN_CAT_NUM",
+                                        fun = "min")
+```
 
+```{r}
+plot(mpa_iv_raster_output)
+```
+```{r}
+# Assign 1 to the filtered MPAs and 0 to non-MPA areas
+binary_mpa_iv <- ifel(is.na(mpa_iv_raster_output), 0, 1)
 
+# Change name from IUCN_CAT to mpa_filter
+names(binary_mpa_iv) <- "mpa_filter"
+```
 
+```{r}
+# Mask land on mpa
+mpa_iv_binary_ocean <- mask(binary_mpa_iv, oceans_r)
+```
+
+## Aggregate MPA map up to 0.05 degrees
+Aggregate the 0.005 pixels up by a factor of 10, take the mean of MPA 0/1
+
+```{r}
+mpa_iv_ocean_05 <- terra::aggregate(mpa_iv_binary_ocean, fact = 10, fun = "mean", na.rm = TRUE)
+```
+
+```{r}
+plot(mpa_iv_ocean_05)
+```
+```{r}
+summary(mpa_iv_ocean_05)
+```
+
+```{r}
+# Assign pixels greater or equal to 0.5 MPA to 1
+mpa_iv_ocean_05_clean <- ifel(mpa_iv_ocean_05$mpa_filter >= 0.5, 1, 0)
+```
+
+```{r}
+plot(mpa_iv_ocean_05_clean)
+```
+```{r}
+# Merge rasters
+mpa_iv_ssi <- c(id_raster, mpa_iv_ocean_05_clean, ssi_raster_ext, trait_raster_ext)
+```
+
+## Test out creating a dataframe 
+
+```{r}
+mpa_iv_ssi_trait_df <- as.data.frame(mpa_iv_ssi, xy = TRUE)
+```
+
+```{r}
+# Drop the NA cells in mpa_filter (land areas)
+mpa_iv_ssi_trait_df_ocean <- mpa_iv_ssi_trait_df %>% 
+  filter(!is.na(mpa_filter))
+```
+
+```{r}
+# t test - species SSI - inside mpa (1) vs outside mpa (0)
+t.test(ssi_spp ~ mpa_filter, data = mpa_iv_ssi_trait_df_ocean)
+```
+```{r}
+# t test - trait SSI - inside mpa (1) vs outside mpa (0)
+t.test(ssi_trait ~ mpa_filter, data = mpa_iv_ssi_trait_df_ocean)
+```
+
+```{r}
+ggplot() +
+  geom_raster(data = mpa_iv_ssi_trait_df_ocean %>% filter(mpa_filter == 0),
+              aes(x = x, y = y), fill = "grey50") +
+  geom_raster(data = mpa_iv_ssi_trait_df_ocean %>% filter(mpa_filter == 1),
+              aes(x = x, y = y, fill = ssi_spp)) + 
+  scale_fill_viridis_c(limits = c(0,1), direction = -1) +
+  labs(title = "AquaX Subsample: species SSI in I-IV MPAs", 
+       fill = "SSI")
+```
 
 ################ OLD CODE
 
