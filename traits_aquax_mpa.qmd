@@ -406,6 +406,36 @@ ggplot() +
        fill = "SSI")
 ```
 
+```{r}
+ggplot() +
+  geom_density(data = mpa_ssi_trait_df_ocean, aes(x = ssi_spp), fill = "darkgreen", alpha = 0.3) +
+  facet_wrap(~mpa_filter) + 
+  labs(x = "SSI", 
+       title = "Species SSI - non-MPA (0), MPA (1)")
+```
+```{r}
+ggplot() +
+  geom_density(data = mpa_ssi_trait_df_ocean, aes(x = ssi_trait), fill = "gray30", alpha = 0.3) + 
+  facet_wrap(~mpa_filter) + 
+  labs(x = "SSI", 
+       title = "Trait SSI - non-MPA (0), MPA (1)")
+```
+```{r}
+ggplot() +
+  geom_density(data = mpa_ssi_trait_df_ocean, aes(x = ssi_spp), fill = "darkgreen", alpha = 0.3) + 
+  geom_density(data = mpa_ssi_trait_df_ocean, aes(x = ssi_trait), fill = "gray30", alpha = 0.3) + 
+  facet_wrap(~mpa_filter) + 
+  labs(x = "SSI", 
+       title = "SSI - species (green), traits (gray); non-MPA (0), MPA (1)")
+```
+
+```{r}
+mpa_ssi_trait_df_ocean_na <- mpa_ssi_trait_df_ocean %>% 
+  filter(if_any(everything(), is.na))
+```
+
+
+
 ################ OLD CODE
 
 ```{r}
