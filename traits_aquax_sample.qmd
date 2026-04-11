@@ -59,6 +59,7 @@ plot(r$Current_NR)
 plot(r$RCP85_2100)
 ```
 
+
 ```{r}
 # Assign historical, future, (x-y will be pixel id), and change between historical and future 
 finalemmean_test <- FINALEMMEAN %>% 
@@ -66,9 +67,9 @@ finalemmean_test <- FINALEMMEAN %>%
          xyid = paste(x, y, sep = "_")) %>% 
   select(x, y, xyid, aphiaid, Current, RCP85_2050, cutoff) %>% 
   mutate(historical = case_when(Current < cutoff ~ 0,
-                                TRUE ~ 1),
+                                Current >= cutoff ~ 1),
          future = case_when(RCP85_2050 < cutoff ~ 0,
-                             TRUE ~ 1)) %>%
+                             RCP85_2050 >= cutoff ~ 1)) %>%
   # historical column plus 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
   mutate(pxl_change = historical + 2 * future)
 
@@ -120,9 +121,9 @@ extract_change <- function(id, df) {
   mutate(aphiaid = id) %>% 
   select(x, y, aphiaid, Current, RCP85_2050, cutoff) %>% 
   mutate(historical = case_when(Current < cutoff ~ 0,
-                                TRUE ~ 1),
+                                Current >= cutoff ~ 1),
          future = case_when(RCP85_2050 < cutoff ~ 0,
-                             TRUE ~ 1)) %>%
+                             RCP85_2050 >= cutoff ~ 1)) %>%
   # historical column plus 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
   mutate(pxl_change = historical + 2 * future)
   
@@ -272,7 +273,9 @@ spp_r <- function(spp, col){
 
 ```{r}
 # Get rasters of pxl_change (took 20 min)
+system.time({
 out_list_r <- lapply(out_list, spp_r, col = "pxl_change")
+})
 ```
 
 ```{r}
@@ -308,6 +311,14 @@ spp_inv <- sum(change_stack == 2, na.rm = TRUE)
 ```
 
 ```{r}
+plot(spp_same_count)
+```
+```{r}
+plot(spp_inv)
+```
+
+
+```{r}
 spp_ssi <- (2*spp_same_count)/((2*spp_same_count) + spp_ext + spp_inv)
 ```
 
@@ -326,6 +337,48 @@ writeRaster(spp_ssi,
 ```{r}
 plot(spp_ssi)
 ```
+```{r}
+#change names
+names(spp_same_count) <- "same_count"
+names(spp_ext) <- "ext_count"
+names(spp_inv) <- "inv_count"
+
+# Merge rasters
+spp_s_h_f <- c(spp_same_count, spp_ext, spp_inv)
+```
+
+## Save updated rasters
+
+```{r}
+writeRaster(spp_ext, 
+            filename = "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_ext_041026.tif")
+writeRaster(spp_inv, 
+            filename = "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_inv_041026.tif")
+writeRaster(spp_same_count,
+            filename = "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_same_041026.tif")
+```
+
+```{r}
+# Save ssi raster, although may want to consider another method that would drop the 0 SSI if there is 0 historic and future species
+writeRaster(spp_ssi, 
+            filename = "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_ssi_041026.tif")
+
+```
+
+
+## Create dataframe and then calculate SSI
+This way, can drop pixels with 0 for all three (same, ext, inv)
+
+```{r}
+spp_s_h_f_df <- as.data.frame(spp_s_h_f, xy = TRUE)
+```
+
+```{r}
+ssi_no0 <- spp_s_h_f_df %>% 
+  mutate(s_h_f_sum = same_count + ext_count + inv_count) %>% 
+  filter(s_h_f_sum != 0) %>% 
+  mutate(ssi = 2*same_count/(2*same_count + ext_count + inv_count))
+```
 
 ```{r}
 spp_ssi_df <- as.data.frame(spp_ssi, xy = TRUE)
@@ -336,6 +389,8 @@ spp_f_df <- as.data.frame(spp_inv + spp_same_count, xy = TRUE)
 ```{r}
 ggplot() +
   geom_raster(data = spp_h_df, aes(x = x, y = y, fill = sum)) +
+  geom_raster(data = spp_h_df %>% 
+                filter(sum == 0), aes(x = x, y = y), fill = "gray30") + 
   scale_fill_viridis_c(limits = c(0,200), direction = -1) +
   labs(title = "AquaX Subsample: 564 species historic SR", 
        fill = "SR")
@@ -344,6 +399,8 @@ ggplot() +
 ```{r}
 ggplot() +
   geom_raster(data = spp_f_df, aes(x = x, y = y, fill = sum)) +
+  geom_raster(data = spp_f_df %>% 
+                filter(sum == 0), aes(x = x, y = y), fill = "gray30") +
   scale_fill_viridis_c(limits = c(0,200), direction = -1) +
   labs(title = "AquaX Subsample: 564 species future species count", 
        fill = "count")
@@ -355,6 +412,14 @@ ggplot() +
   geom_raster(data = spp_ssi_df, aes(x = x, y = y, fill = sum)) +
   scale_fill_viridis_c(limits = c(0,1), direction = -1) +
   labs(title = "AquaX Subsample: 564 species SSI", 
+       fill = "SSI")
+```
+
+```{r}
+ggplot() +
+  geom_raster(data = ssi_no0, aes(x = x, y = y, fill = ssi)) +
+  scale_fill_viridis_c(limits = c(0,1), direction = -1) +
+  labs(title = "AquaX Subsample: 564 species SSI (0 f & h species removed)", 
        fill = "SSI")
 ```
 
@@ -410,9 +475,9 @@ extract_change <- function(id, df, col) {
   mutate(aphiaid = id) %>% 
   select(x, y, aphiaid, Current, RCP85_2050, cutoff) %>% 
   mutate(historical = case_when(Current < cutoff ~ 0,
-                                TRUE ~ 1),
+                                Current >= cutoff ~ 1),
          future = case_when(RCP85_2050 < cutoff ~ 0,
-                             TRUE ~ 1)) %>%
+                             Current >= cutoff ~ 1)) %>%
   # historical column plus 2 * future gives 0 = absence, 1 = extinction, 2 = invasion, 3 = presence
   mutate(pxl_change = historical + 2 * future)
   
