@@ -54,7 +54,7 @@ plot(countries$geometry)
 # Read in SSI and MPA data
 ```{r}
 # Species SSI (RCP 8.5, change to 2050)
-spp_ssi <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_ssi_03.16.26.tif")
+spp_ssi <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_ssi_041026.tif")
 ```
 
 ```{r}
@@ -242,7 +242,7 @@ zonal(mpa_ssi$ssi_spp, mpa_ssi$mpa_filter, "mean", na.rm = TRUE)
 
 ```{r}
 # Trait SSI (RCP 8.5, change to 2050)
-trait_ssi <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/trait_ssi_031826.tif")
+trait_ssi <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/trait_ssi_041326.tif")
 ```
 
 ```{r}
@@ -304,6 +304,66 @@ ggplot() +
   labs(title = "AquaX Subsample: species SSI in non-MPAs", 
        fill = "SSI")
 ```
+## Additional visualization of data
+
+```{r}
+# Species (RCP 8.5, change to 2050)
+spp_inv <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_inv_041026.tif")
+spp_ext <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_ext_041026.tif")
+spp_same <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_same_041026.tif")
+
+# Traits (RCP 8.5, change to 2050)
+trait_ext <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/trait_ext_041326.tif")
+trait_inv <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/trait_inv_041326.tif")
+trait_same <- rast("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/trait_same_041326.tif")
+```
+
+```{r}
+names(spp_ssi) <- "spp_ssi"
+names(trait_ssi) <- "trait_ssi"
+```
+
+```{r}
+# Merge rasters
+spp_trait <- c(spp_same, spp_ext, spp_inv, spp_ssi,
+                 trait_same, trait_ext, trait_inv, trait_ssi)
+```
+
+```{r}
+spp_trait_df <- as.data.frame(spp_trait, xy = TRUE)
+```
+
+```{r}
+spp_trait_plot <- spp_trait_df %>% 
+  mutate(log_sf_sh = log((inv_count + same_count)/(ext_count + same_count)),
+         log_tf_th = log((t_inv_count + t_same_count)/(t_ext_count + t_same_count))) %>% 
+  select(x, y, log_sf_sh, log_tf_th, spp_ssi, trait_ssi)
+```
+
+```{r}
+ggplot() +
+  geom_point(data = spp_trait_plot,
+             aes(x = log_sf_sh,
+                 y = log_tf_th,
+                 fill = spp_ssi,
+                 color = spp_ssi),
+             alpha = 0.3) +
+  labs(x = "log(spp_futre/spp_historic)",
+       y = "log(trait_future/trait/historic)")
+```
+
+
+
+
+```{r}
+ggplot() +
+  geom_point(data = spp_t_s_h_f_df, 
+             aes(x = log((inv_count + same_count)/(ext_count + same_count)),
+                 y = log((t_inv_count + t_same_count)/(t_ext_count + t_same_count))))
+```
+
+
+
 
 ## What if we include more categories in the MPA group?
 
