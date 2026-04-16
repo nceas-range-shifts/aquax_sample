@@ -1,0 +1,163 @@
+---
+title: "AquaX species range"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(terra)
+library(sf)
+```
+
+## EEZ 
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05)
+```
+
+```{r}
+eez_raster_output <- rasterize(eez, eez_raster_blank, field = "GEONAME")
+```
+
+```{r}
+plot(eez_raster_output)
+```
+
+
+```{r}
+# Not on server
+load('data/META_02122025.Rdata')
+```
+
+## Build species information
+
+Associate SDM files with the metadata for the 564 sampled species
+```{r}
+spp_fs <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/2026_OHARA_TST_MORPHO/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+## Inspect a test species
+
+Identify the structure of the SDM .Rdata for a single species
+
+```{r}
+set.seed(123)
+test_spp_30 <- slice_sample(df, n = 30)
+files_30 <- test_spp_30$f
+aphiaid_30 <- test_spp_30$aphiaid
+```
+
+```{r}
+extract_eez <- function(id, df) {
+  spp_filter <- df %>% 
+    filter(aphiaid == id) 
+  
+  load(spp_filter$f)
+  
+  spp <- FINALEMMEAN %>% 
+    mutate(aphiaid = id) 
+  
+  r_spp <- rast(spp, crs = "EPSG:4326")
+  
+  # extend spp to the same extent as eez
+  r_spp_ex <- extend(r_spp, ext(eez_raster_output))
+  
+  r_spp_eez <- c(r_spp_ex, eez_raster_output)
+  
+  spp_df <- as.data.frame(r_spp_eez, xy = TRUE) %>% 
+    #setNames(c('historical', 'future', 'id')) %>%
+    filter(!is.na(GEONAME)) %>%
+    filter(!is.na(Current) | !is.na(RCP85_2100)) %>%
+    group_by(GEONAME, aphiaid) %>%
+    summarize(n_current = sum(Current >= cutoff),
+              n_RCP85_2100 = sum(RCP85_2100 >= cutoff))
+  
+  return(spp_df)
+}
+```
+
+```{r}
+eez_df <- lapply(aphiaid_30, FUN = extract_eez, df = test_spp_30)
+```
+
+```{r}
+# 11 is interesting
+# 18 is interesting - endangered ray (Mobula kuhlii) - projected to exit several EEZs
+sample <- change_rast[[11]]
+sample_2 <- change_rast[[18]]
+```
+
+```{r}
+# Try // - took 2 min
+system.time({
+  eez_list <- parallel::mclapply(aphiaid_30, FUN = extract_eez, df = test_spp_30, mc.cores = 10)
+})
+```
+
+```{r}
+pl_sample2 <- eez_list[[18]]
+```
+
+```{r}
+eez_list_all <- bind_rows(eez_list) %>% 
+  mutate(status = case_when(n_current == 0 &  n_RCP85_2100 > 0 ~ 'entry into new',
+                            n_current > 0  & n_RCP85_2100 == 0 ~ 'exit from historical',
+                            n_current == 0 & n_RCP85_2100 == 0 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+spp_exit <- eez_list_all %>% 
+  filter(status == "exit from historical")
+```
+
+```{r}
+# How many EEZs are each spp present in for current and future?
+eez_count <- eez_list_all %>% 
+  group_by(aphiaid) %>% 
+  summarize(current = sum(n_current > 0),
+            RCP85_2100 = sum(n_RCP85_2100 > 0)) %>% 
+  ungroup() %>% 
+  pivot_longer(cols = c(current, RCP85_2100),
+               names_to = "timeframe", values_to = "eez_count")
+
+```
+
+```{r}
+# Sperm whale is 137119 (from 213 EEZs to 88 EEZs)
+ggplot() +
+  geom_col(data = eez_count, aes(x = as.character(aphiaid), 
+                                 fill = timeframe,
+                                 y = eez_count),
+           position = "identity",
+           alpha = 0.7) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+        legend.position = "bottom") +
+  labs(y = "EEZ count",
+       x = "aphiaid")
+```
+
+
+
