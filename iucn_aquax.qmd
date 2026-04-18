@@ -75,6 +75,67 @@ for(i in 1:nrow(aquax_iucn)){
 }
 ```
 
+```{r}
+iucn_id_vector <- unlist(iucn_id_list)
+```
 
+```{r}
+saveRDS(iucn_id_vector, "iucn_id_vector_041726.rds")
+```
 
+```{r}
+# Run the assessment numbers collected from the iucn_id function
+# Note that 16,429 values went into the function, but api found 16,413 unique assessment IDs
+iucn_id_data <- assessment_data_many(api, iucn_id_vector, wait_time = 0.5)
+```
+
+```{r}
+saveRDS(iucn_id_data, "iucn_id_data_041726.rds")
+```
+
+```{r}
+# run element names to extract
+iucn_status <- extract_element(iucn_id_data, "red_list_category")
+```
+
+```{r}
+# run element names to extract
+sis_taxon_id <- extract_element(iucn_id_data, "sis_taxon_id")
+```
+
+```{r}
+# run element names to extract
+iucn_names <- extract_element(iucn_id_data, "taxon")
+```
+
+```{r}
+iucn_sis_status <- left_join(sis_taxon_id, iucn_status, by = "assessment_id")
+iucn_sis_status_names <- left_join(iucn_sis_status, iucn_names,
+                                           by = "assessment_id") %>% 
+  select(sis_id, assessment_id, scientific_name, description, code) %>% 
+    rename(iucn_category = description,
+           iucn_category_code = code,
+           iucn_sid = sis_id)
+```
+
+```{r}
+# Replace the same sis_ids 
+aquax_iucn_clean <- aquax_iucn
+
+aquax_iucn_clean[410,1] <- 21856
+aquax_iucn_clean[411,1] <- 21856
+aquax_iucn_clean[486,1] <- 3853
+aquax_iucn_clean[683,1] <- 41745
+aquax_iucn_clean[4015,1] <- 42838
+```
+
+```{r}
+# merge the iucn data with the crosswalk
+aquax_iucn_clean_threat <- inner_join(aquax_iucn_clean, iucn_sis_status_names)
+
+```
+```{r}
+# Warning that some rows had many-to-many match, but will save for now (sid 17030 and 21856)
+write_csv(aquax_iucn_clean_threat, "/home/abowd/R/repos/aquax_sample/data/iucn_to_worms_match_redlist_category.csv")
+```
 
