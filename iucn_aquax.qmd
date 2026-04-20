@@ -139,3 +139,39 @@ aquax_iucn_clean_threat <- inner_join(aquax_iucn_clean, iucn_sis_status_names)
 write_csv(aquax_iucn_clean_threat, "/home/abowd/R/repos/aquax_sample/data/iucn_to_worms_match_redlist_category.csv")
 ```
 
+# Read in sample set of AquaX species
+
+Associate SDM files with the metadata for the 564 sampled species
+```{r}
+# Not on server
+load('data/META_02122025.Rdata')
+
+spp_fs <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/2026_OHARA_TST_MORPHO/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+## See ifthe worms name from the AquaX data will match the IUCN x WoRMS crosswalk
+
+```{r}
+df_worms <- df %>% 
+  mutate(worms_name = tolower(ScientificName))
+```
+
+```{r}
+df_worms_iucn <- left_join(df_worms, aquax_iucn_clean_threat)
+```
+
+# Seems like alot of the species that don't match are not evaluated
+Using Gemini and fact-checking, looks like almost all of the non-matching species are not evaluated by the IUCN. 
+Balistoides conspicillum and Pseudobalistes fuscus are listed as LC but weren't on the old crosswalk. Amphiprion latezonatus is DD and not on the old crosswalk. 
+
+```{r}
+df_no_iucn <- df_worms_iucn %>% 
+  filter(is.na(iucn_sid))
+```
+
