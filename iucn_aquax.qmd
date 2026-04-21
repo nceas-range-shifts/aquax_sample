@@ -109,14 +109,32 @@ iucn_names <- extract_element(iucn_id_data, "taxon")
 ```
 
 ```{r}
+iucn_pop_trend <- extract_element(iucn_id_data, "population_trend")
+```
+
+```{r}
+iucn_pop_trend_clean <- iucn_pop_trend %>% 
+  select(assessment_id, description, code) %>% 
+  rename(pop_trend_desc = description,
+         pop_trend_code = code)
+```
+
+```{r}
 iucn_sis_status <- left_join(sis_taxon_id, iucn_status, by = "assessment_id")
 iucn_sis_status_names <- left_join(iucn_sis_status, iucn_names,
                                            by = "assessment_id") %>% 
-  select(sis_id, assessment_id, scientific_name, description, code) %>% 
+  select(sis_id, assessment_id, scientific_name, description, code,
+         kingdom_name:infrarank) %>% 
     rename(iucn_category = description,
            iucn_category_code = code,
            iucn_sid = sis_id)
 ```
+
+```{r}
+#there'll be some entries that don't have trend info (data deficient)
+iucn_sis_status_names_trends <- left_join(iucn_sis_status_names, iucn_pop_trend_clean)
+```
+
 
 ```{r}
 # Replace the same sis_ids 
@@ -130,13 +148,33 @@ aquax_iucn_clean[4015,1] <- 42838
 ```
 
 ```{r}
-# merge the iucn data with the crosswalk
-aquax_iucn_clean_threat <- inner_join(aquax_iucn_clean, iucn_sis_status_names)
+iucn_sis_status_names_trends_speciesonly <- iucn_sis_status_names_trends %>% 
+  filter(species == TRUE)
+```
+
+```{r}
+# no multijoins now (subpopulations, infraranks removed)
+aquax_iucn_clean_speciesonly <- inner_join(aquax_iucn_clean, iucn_sis_status_names_trends_speciesonly)
+```
+
+```{r}
+# merge the iucn data with the crosswalk (including subpopulations, etc.)
+aquax_iucn_clean_threat <- inner_join(aquax_iucn_clean, iucn_sis_status_names_trends)
 
 ```
 ```{r}
-# Warning that some rows had many-to-many match, but will save for now (sid 17030 and 21856)
 write_csv(aquax_iucn_clean_threat, "/home/abowd/R/repos/aquax_sample/data/iucn_to_worms_match_redlist_category.csv")
+```
+
+```{r}
+# save to aurora, since more species iucn data than just the 564 AquaX sample
+write_csv(aquax_iucn_clean_threat,
+          "/home/shares/usgs-cap-rangeshifts/data_iucn/iucn_to_worms_match_redlist_category.csv")
+```
+
+```{r}
+aquax_iucn_filtered <- aquax_iucn_clean_threat %>% 
+  filter(species == TRUE)
 ```
 
 # Read in sample set of AquaX species
@@ -159,15 +197,26 @@ df <- data.frame(f = spp_fs) %>%
 
 ```{r}
 df_worms <- df %>% 
-  mutate(worms_name = tolower(ScientificName))
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  rename(spp = species)
 ```
 
 ```{r}
-df_worms_iucn <- left_join(df_worms, aquax_iucn_clean_threat)
+# Joining only the species from IUCN (no subpopulations)
+df_worms_iucn <- left_join(df_worms, aquax_iucn_filtered)
 ```
 
+```{r}
+# May be duplicates
+# Looks like each of the following WoRMS/AquqX species: "conasprella emarginata" "conus australis"        "jasus paulensis"        "mobula kuhlii" are split into two species each in IUCN
+# Might just remove these for now
+df_worms_iucn_dupes <- df_worms_iucn %>% 
+  get_dupes(worms_name)
+```
+
+
 # Seems like alot of the species that don't match are not evaluated
-Using Gemini and fact-checking, looks like almost all of the non-matching species are not evaluated by the IUCN. 
+Using Gemini and fact-checking, looks like almost all of the species without matches are not evaluated by the IUCN. 
 Balistoides conspicillum and Pseudobalistes fuscus are listed as LC but weren't on the old crosswalk. Amphiprion latezonatus is DD and not on the old crosswalk. 
 
 ```{r}
@@ -175,3 +224,7 @@ df_no_iucn <- df_worms_iucn %>%
   filter(is.na(iucn_sid))
 ```
 
+```{r}
+df_iucn <- df_worms_iucn %>% 
+  filter(!is.na(iucn_sid))
+```
