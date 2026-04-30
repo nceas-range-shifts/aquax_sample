@@ -106,8 +106,8 @@ df <- data.frame(f = spp_fs) %>%
 A few issues to work out if regression is promising: global species, those species that might not fall into an eco realm, etc.
 
 ```{r}
-set.seed(123)
-test_spp_30 <- slice_sample(df, n = 30)
+#set.seed(123)
+test_spp_30 <- df[1:15,]
 files_30 <- test_spp_30$f
 aphiaid_30 <- test_spp_30$aphiaid
 group_30 <- test_spp_30$GROUP
@@ -135,17 +135,23 @@ extract_region <- function(id, df) {
   r_spp <- rast(spp_presence, crs = "EPSG:4326")
   
   # high seas flag (abnj)
-  hs_extract <- extract(r_spp, abnj, fun = max, na.rm = TRUE)
+  hs_extract <- extract(r_spp$current_presence, abnj, fun = max, na.rm = TRUE)
   # if max is 1 then spp is in high seas
-  in_high_seas <- any(hs_extract[, 2] == 1, na.rm = TRUE)
+  # get 1 if max is 1, will give NA for NA (options are 1 and NA)
+  in_high_seas <- ifelse(hs_extract[, 2] == 1, 1, 0)
   
   # ecoregion (max pixels in ecoregion)
   realm_extract <- extract(r_spp$current_presence, meow_realm, fun = sum, na.rm = TRUE)
   # get max
   colnames(realm_extract)[2] <- "presence_count"
   realm_count <- cbind(st_drop_geometry(meow_realm), realm_extract)
-  assigned_realm <- realm_count[which.max(realm_count$presence_count), 1]
   
+  # assign NA for no ecoregion (otherwise error)
+  if (sum(realm_count$presence_count, na.rm = TRUE) > 0) {
+    assigned_realm <- realm_count[which.max(realm_count$presence_count), 1]
+  } else {
+    assigned_realm <- NA # species range doesn't overlap with any MEOW realm
+  }
   
   results_df <- data.frame(
     aphia_id = id,
@@ -177,12 +183,87 @@ aphiaid <- df$aphiaid
 ```
 
 ```{r}
-# Time
+# Time (7 minutes)
 system.time({
   out_list <- parallel::mclapply(aphiaid, FUN = extract_region, df = df, mc.cores = 10)
 })
 ```
 
 ```{r}
-out_list_df <- bind_rows(out_list)
+out_list_df <- bind_rows(out_list) %>% 
+  rename(aphiaid = aphia_id) %>% 
+  # Replace NA with 0 in flag
+  replace_na(list(abnj_flag = 0))
 ```
+
+## Add in IUCN status, EEZ count, taxon, total pixels (could also calculate area)
+
+```{r}
+# Merge in group from df 
+df_group <- df %>% 
+  select(aphiaid, GROUP, ScientificName, range_pixels)
+
+spp_df_group <- left_join(out_list_df, df_group)
+```
+
+# Read in EEZ data
+
+```{r}
+eez_list_status <- read.csv("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_eez_pxl_count_041626.csv")
+```
+
+```{r}
+# How many EEZs are each spp present in for current period?
+eez_count_all <- eez_list_status %>% 
+  group_by(aphiaid) %>% 
+  summarize(current_eez_count = sum(n_current > 0)) %>% 
+  ungroup() 
+```
+
+```{r}
+# Merge in EEZ count
+spp_df_group_eez <- left_join(spp_df_group, eez_count_all) %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName)
+```
+
+```{r}
+# IUCN threat info
+iucn <- read.csv("/home/shares/usgs-cap-rangeshifts/data_iucn/iucn_to_worms_match_redlist_category.csv")
+```
+
+```{r}
+# Merge in IUCN info based on the worms_name
+spp_df_group_eez_iucn <- left_join(spp_df_group_eez, 
+                                   # merge in IUCN data and filter for species (no subpops)
+                                   iucn %>%  filter(species == TRUE))
+```
+
+```{r}
+# Drop those without IUCN sid
+spp_df_iucn <- spp_df_group_eez_iucn %>% 
+  filter(!is.na(iucn_sid))
+```
+
+```{r}
+# Assign numeric values to IUCN categories 
+spp_df_iucn_num <- spp_df_iucn %>% 
+  mutate(iucn_num = case_when(iucn_category_code == "DD" ~ NA,
+                              iucn_category_code == "LC" ~ 0,
+                              iucn_category_code == "NT" ~ 0.2,
+                              iucn_category_code == "VU" ~ 0.4,
+                              iucn_category_code == "EN" ~ 0.6,
+                              iucn_category_code == "CR" ~ 0.8,
+                              iucn_category_code == "EX" ~ 1))
+```
+
+```{r}
+# Run regression 
+iucn_reg <- lm(iucn_num ~ current_eez_count + abnj_flag + log(range_pixels) +
+                 eco_realm + GROUP, data = spp_df_iucn_num)
+```
+
+```{r}
+summary(iucn_reg)
+```
+
