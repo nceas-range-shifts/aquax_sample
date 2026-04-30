@@ -266,6 +266,22 @@ spp_df_iucn_num_narm <- spp_df_iucn_num %>%
 ```
 
 ```{r}
+spp_df_count <- spp_df_iucn_num_narm %>% 
+  group_by(iucn_num) %>% 
+  summarize(count = n())
+```
+
+```{r}
+spp_df_count_group <- spp_df_iucn_num_narm %>% 
+  group_by(GROUP) %>% 
+  summarize(count = n())
+
+spp_df_count_realm <- spp_df_iucn_num_narm %>% 
+  group_by(eco_realm) %>% 
+  summarize(count = n())
+```
+
+```{r}
 ggplot() +
   geom_density(data = spp_df_iucn_num, aes(x = iucn_num))
 ```
@@ -279,6 +295,44 @@ iucn_reg <- lm(iucn_num ~ current_eez_count + abnj_flag + log(range_pixels) +
 
 ```{r}
 summary(iucn_reg)
+```
+
+```{r}
+# Just try mammals and sea turtles
+spp_df_subgroup <- spp_df_iucn_num %>% 
+  filter(GROUP %in% c("MAMMALS", "REPTILES")) %>% 
+  # Filter out marine snakes
+  filter(order_name != "SQUAMATA")
+
+```
+
+
+```{r}
+# Run regression 
+subgroup_reg <- lm(iucn_num ~ current_eez_count + abnj_flag + log(range_pixels) +
+                 eco_realm + GROUP, data = spp_df_subgroup)
+```
+
+```{r}
+summary(subgroup_reg)
+```
+
+
+```{r}
+reptiles <- spp_df_iucn_num_narm %>% 
+  filter(GROUP == "REPTILES")
+```
+
+```{r}
+ggplot() +
+  geom_density(data = spp_df_subgroup, aes(x = iucn_num))
+```
+
+```{r}
+subgroup_count <- spp_df_subgroup %>% 
+  drop_na(iucn_num) %>%
+  group_by(iucn_num) %>% 
+  summarize(count = n())
 ```
 
 
