@@ -215,6 +215,8 @@ eez_list_status <- read.csv("/home/shares/usgs-cap-rangeshifts/data_aquax/output
 ```{r}
 # How many EEZs are each spp present in for current period?
 eez_count_all <- eez_list_status %>% 
+  # Replace NA with 0 for sum
+  replace_na(list(n_current = 0)) %>% 
   group_by(aphiaid) %>% 
   summarize(current_eez_count = sum(n_current > 0)) %>% 
   ungroup() 
@@ -258,6 +260,18 @@ spp_df_iucn_num <- spp_df_iucn %>%
 ```
 
 ```{r}
+spp_df_iucn_num_narm <- spp_df_iucn_num %>% 
+  drop_na(iucn_num) %>% 
+  drop_na(eco_realm)
+```
+
+```{r}
+ggplot() +
+  geom_density(data = spp_df_iucn_num, aes(x = iucn_num))
+```
+
+
+```{r}
 # Run regression 
 iucn_reg <- lm(iucn_num ~ current_eez_count + abnj_flag + log(range_pixels) +
                  eco_realm + GROUP, data = spp_df_iucn_num)
@@ -266,4 +280,5 @@ iucn_reg <- lm(iucn_num ~ current_eez_count + abnj_flag + log(range_pixels) +
 ```{r}
 summary(iucn_reg)
 ```
+
 
