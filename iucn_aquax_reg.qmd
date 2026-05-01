@@ -1,0 +1,338 @@
+---
+title: "Regression to predict IUCN status"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(terra)
+library(sf)
+library(janitor)
+```
+
+This document will run a regression to predict AquaX species IUCN status on the number of EEZs its range intersects, whether its range is in the area beyond national jurisdictions (ABNJ), its total range area, its ecoregion, and taxon.
+
+## Prep data 
+
+The number of EEZs and IUCN status is prepared in other files. Here, we need to determine whether each species range intersects with the ABNJ, its total range area, and its ecoregin. The species taxon is included in the AquaX data.
+
+```{r}
+# Load ABNJ (high seas)
+abnj <-  st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_High_Seas_v2_20241010')
+```
+
+```{r}
+# Load MEOW (marine ecoregions of the world)
+meow <-  st_read('/home/shares/usgs-cap-rangeshifts/spatial/MEOW-TNC')
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = meow, aes(geometry = geometry, fill = REALM))
+```
+
+```{r}
+meow_realm <- meow %>% 
+  group_by(REALM) %>% 
+  summarize(geometry = st_combine(geometry)) 
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = meow_realm %>% filter(REALM == "Central Indo-Pacific"),
+          aes(geometry = geometry, fill = REALM))
+```
+
+```{r}
+load('/home/shares/usgs-cap-rangeshifts/data_aquax/2026_OHARA_TST_MORPHO/SDM/FINAL_EMSDM_EMMEAN_SP_550138.Rdata')
+```
+
+```{r}
+f_test <- FINALEMMEAN %>% 
+  select(x, y, Current, cutoff) %>% 
+  mutate(historical = case_when(Current < cutoff ~ 0,
+                                Current >= cutoff ~ 1)) %>% 
+  # Filter for presence
+  filter(historical == 1)
+
+f_test_rast <- rast(f_test)
+```
+
+```{r}
+# Extract maximum value from species range in ABNJ (would be 1 if present in ABNJ)
+max_value_hs <- extract(f_test_rast$historical, abnj, fun = max, na.rm = TRUE)
+```
+
+```{r}
+# Count species pixels in each MEOW realm
+meow_count <- extract(f_test_rast$historical, meow_realm, fun = sum, na.rm= TRUE)
+
+colnames(meow_count)[2] <- "presence_count"
+
+meow_count_region <- cbind(meow_realm, meow_count)
+```
+
+```{r}
+assigned_ecoregion <- meow_count_region[which.max(meow_count_region$presence_count), ]
+```
+
+## Build species information
+
+```{r}
+# Not on server
+load('data/META_02122025.Rdata')
+```
+
+Associate SDM files with the metadata for the 564 sampled species
+```{r}
+spp_fs <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/2026_OHARA_TST_MORPHO/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+# Test sample 
+A few issues to work out if regression is promising: global species, those species that might not fall into an eco realm, etc.
+
+```{r}
+#set.seed(123)
+test_spp_30 <- df[1:15,]
+files_30 <- test_spp_30$f
+aphiaid_30 <- test_spp_30$aphiaid
+group_30 <- test_spp_30$GROUP
+#load(test_spp_30$f)
+
+```
+
+```{r}
+extract_region <- function(id, df) {
+  results_list <- list()
+  
+  spp_filter <- df %>% 
+    filter(aphiaid == id) 
+  
+  load(spp_filter$f)
+  
+  spp_presence <- FINALEMMEAN %>% 
+  mutate(aphiaid = id) %>% 
+  select(x, y, aphiaid, Current, cutoff) %>% 
+  mutate(current_presence = case_when(Current < cutoff ~ 0,
+                                Current >= cutoff ~ 1)) %>%
+  # filter only for presence (1)
+  filter(current_presence == 1)
+  
+  r_spp <- rast(spp_presence, crs = "EPSG:4326")
+  
+  # high seas flag (abnj)
+  hs_extract <- extract(r_spp$current_presence, abnj, fun = max, na.rm = TRUE)
+  # if max is 1 then spp is in high seas
+  # get 1 if max is 1, will give NA for NA (options are 1 and NA)
+  in_high_seas <- ifelse(hs_extract[, 2] == 1, 1, 0)
+  
+  # ecoregion (max pixels in ecoregion)
+  realm_extract <- extract(r_spp$current_presence, meow_realm, fun = sum, na.rm = TRUE)
+  # get max
+  colnames(realm_extract)[2] <- "presence_count"
+  realm_count <- cbind(st_drop_geometry(meow_realm), realm_extract)
+  
+  # assign NA for no ecoregion (otherwise error)
+  if (sum(realm_count$presence_count, na.rm = TRUE) > 0) {
+    assigned_realm <- realm_count[which.max(realm_count$presence_count), 1]
+  } else {
+    assigned_realm <- NA # species range doesn't overlap with any MEOW realm
+  }
+  
+  results_df <- data.frame(
+    aphia_id = id,
+    abnj_flag = in_high_seas,
+    eco_realm = assigned_realm
+  )
+  
+  #spp_region_df <- rbind(results_df)
+
+  return(results_df)
+}
+```
+
+```{r}
+region_df_30 <- lapply(aphiaid_30, 
+                       FUN = extract_region,
+                       df = test_spp_30)
+```
+
+
+```{r}
+region_df_30_df <- bind_rows(region_df_30)
+```
+
+## Run full sample, try parallel
+
+```{r}
+aphiaid <- df$aphiaid
+```
+
+```{r}
+# Time (7 minutes)
+system.time({
+  out_list <- parallel::mclapply(aphiaid, FUN = extract_region, df = df, mc.cores = 10)
+})
+```
+
+```{r}
+out_list_df <- bind_rows(out_list) %>% 
+  rename(aphiaid = aphia_id) %>% 
+  # Replace NA with 0 in flag
+  replace_na(list(abnj_flag = 0))
+```
+
+## Add in IUCN status, EEZ count, taxon, total pixels (could also calculate area)
+
+```{r}
+# Merge in group from df 
+df_group <- df %>% 
+  select(aphiaid, GROUP, ScientificName, range_pixels)
+
+spp_df_group <- left_join(out_list_df, df_group)
+```
+
+# Read in EEZ data
+
+```{r}
+eez_list_status <- read.csv("/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/spp_eez_pxl_count_041626.csv")
+```
+
+```{r}
+# How many EEZs are each spp present in for current period?
+eez_count_all <- eez_list_status %>% 
+  # Replace NA with 0 for sum
+  replace_na(list(n_current = 0)) %>% 
+  group_by(aphiaid) %>% 
+  summarize(current_eez_count = sum(n_current > 0)) %>% 
+  ungroup() 
+```
+
+```{r}
+# Merge in EEZ count
+spp_df_group_eez <- left_join(spp_df_group, eez_count_all) %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName)
+```
+
+```{r}
+# IUCN threat info
+iucn <- read.csv("/home/shares/usgs-cap-rangeshifts/data_iucn/iucn_to_worms_match_redlist_category.csv")
+```
+
+```{r}
+# Merge in IUCN info based on the worms_name
+spp_df_group_eez_iucn <- left_join(spp_df_group_eez, 
+                                   # merge in IUCN data and filter for species (no subpops)
+                                   iucn %>%  filter(species == TRUE))
+```
+
+```{r}
+# Drop those without IUCN sid
+spp_df_iucn <- spp_df_group_eez_iucn %>% 
+  filter(!is.na(iucn_sid))
+```
+
+```{r}
+# Assign numeric values to IUCN categories 
+spp_df_iucn_num <- spp_df_iucn %>% 
+  mutate(iucn_num = case_when(iucn_category_code == "DD" ~ NA,
+                              iucn_category_code == "LC" ~ 0,
+                              iucn_category_code == "NT" ~ 0.2,
+                              iucn_category_code == "VU" ~ 0.4,
+                              iucn_category_code == "EN" ~ 0.6,
+                              iucn_category_code == "CR" ~ 0.8,
+                              iucn_category_code == "EX" ~ 1))
+```
+
+```{r}
+spp_df_iucn_num_narm <- spp_df_iucn_num %>% 
+  drop_na(iucn_num) %>% 
+  drop_na(eco_realm)
+```
+
+```{r}
+spp_df_count <- spp_df_iucn_num_narm %>% 
+  group_by(iucn_num) %>% 
+  summarize(count = n())
+```
+
+```{r}
+spp_df_count_group <- spp_df_iucn_num_narm %>% 
+  group_by(GROUP) %>% 
+  summarize(count = n())
+
+spp_df_count_realm <- spp_df_iucn_num_narm %>% 
+  group_by(eco_realm) %>% 
+  summarize(count = n())
+```
+
+```{r}
+ggplot() +
+  geom_density(data = spp_df_iucn_num, aes(x = iucn_num))
+```
+
+
+```{r}
+# Run regression 
+iucn_reg <- lm(iucn_num ~ current_eez_count + abnj_flag + log(range_pixels) +
+                 eco_realm + GROUP, data = spp_df_iucn_num)
+```
+
+```{r}
+summary(iucn_reg)
+```
+
+```{r}
+# Just try mammals and sea turtles
+spp_df_subgroup <- spp_df_iucn_num %>% 
+  filter(GROUP %in% c("MAMMALS", "REPTILES")) %>% 
+  # Filter out marine snakes
+  filter(order_name != "SQUAMATA")
+
+```
+
+
+```{r}
+# Run regression 
+subgroup_reg <- lm(iucn_num ~ current_eez_count + abnj_flag + log(range_pixels) +
+                 eco_realm + GROUP, data = spp_df_subgroup)
+```
+
+```{r}
+summary(subgroup_reg)
+```
+
+
+```{r}
+reptiles <- spp_df_iucn_num_narm %>% 
+  filter(GROUP == "REPTILES")
+```
+
+```{r}
+ggplot() +
+  geom_density(data = spp_df_subgroup, aes(x = iucn_num))
+```
+
+```{r}
+subgroup_count <- spp_df_subgroup %>% 
+  drop_na(iucn_num) %>%
+  group_by(iucn_num) %>% 
+  summarize(count = n())
+```
+
+
