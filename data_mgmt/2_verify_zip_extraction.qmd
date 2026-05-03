@@ -1,0 +1,45 @@
+---
+title: "Verify successful unzips!"
+author: "Casey"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+If all .Rdata files have been extracted from the .zip, remove the .zip!
+
+```{r}
+zip_fs <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/iucn',
+                     pattern = '.zip$', full.names = TRUE)
+
+check_missing <- function(zip_contents) {
+  sdm_fs <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/iucn',
+                       pattern = '.Rdata$', recursive = TRUE)
+  missing <- zip_contents %>%
+    filter(!Name %in% sdm_fs)
+  return(missing)
+}
+
+for(z in zip_fs) {
+  ### z <- zip_fs[3]
+  zip_contents <- unzip(z, list = TRUE)
+  
+  missing <- check_missing(zip_contents)
+  
+  ### If any missing, unzip the file!
+  if(nrow(missing) != 0) unzip(z, overwrite = FALSE)
+  
+  ### Then check for missing again - at this point, if any still missing, error!
+  missing <- check_missing(zip_contents)
+  if(nrow(missing) != 0) stop('Missing files still unaccounted for after unzip!')
+  
+  ### if no more missing files, unlink the zip file!
+  unlink(z)
+}
+```
+
+-   Then run the next script to read in `.Rdata`s and save as `.parquet`.

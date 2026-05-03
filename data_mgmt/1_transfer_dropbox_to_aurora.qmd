@@ -1,0 +1,80 @@
+---
+title: "Transfer AquaX files from Dropbox to Aurora"
+author: "Casey"
+format: html
+editor: visual
+---
+
+## Test using `rdrop2` package
+
+```{r}
+library(tidyverse)
+# remotes::install_github('karthik/rdrop2')
+library(rdrop2)
+
+```
+
+## Authentication
+
+See https://github.com/karthik/rdrop2 for vignette
+```{r}
+### NOTE: drop_auth() seems to fail on Aurora, perhaps firewall?
+### Ran this on local and saved token as token.rds and then uploaded to Aurora
+### ... and then added to .gitignore
+
+# token <- drop_auth()
+# saveRDS(token, file = "token.rds")
+token <- readRDS(file = here::here('token.rds'))
+# Then in any drop_* function, pass `dtoken = token`
+# Tokens are valid until revoked.
+```
+
+NOTE: difficult to use this on Aurora - use on local and then copy to Aurora (and put token.rds in .gitignore):
+
+```
+scp token.rds ohara@aurora.nceas.ucsb.edu:~/github/aquax_sample/token.rds
+```
+
+## Access Dropbox and files
+
+```{r}
+acct_info <- drop_acc(dtoken = token) %>% 
+  data.frame()
+
+dropbox_dirs <- drop_dir(path = '', dtoken = token) %>% 
+    filter(.tag == "folder")
+
+```
+
+
+## Copy to Aurora
+
+Verify "download" vs. "copy": looks like "download" should grab file and make local copy, while "copy" creates a duplicate ON DROPBOX.
+
+
+```{r}
+dropbox_paths <- paste0('CASEY_IUCN_', 1:3)
+
+for(p in dropbox_paths) {
+  
+  ### identify all files in `p` path
+  aquax_files <- drop_dir(path = p, dtoken = token)
+  
+  out_dir <- '/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/'
+  if(!dir.exists(out_dir)) dir.create(out_dir)
+  
+  ### loop over each file and copy to directory
+  for(f in aquax_files$path_display) {
+    ### f <- aquax_files$path_display[1]
+    out_f <- file.path(out_dir, basename(f))
+    if(!file.exists(out_f)) {
+      drop_download(path = f, local_path = out_f,
+                    dtoken = token)
+    }
+  }
+}
+```
+
+At this stage, unzip files to `/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM`:
+
+* Navigate to `/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/` and unzip each .zip in turn.  The zips should each download the various .Rdata files into a folder called SDM (same for each of the three tranches).

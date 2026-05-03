@@ -1,0 +1,52 @@
+---
+title: "Convert .Rdata to .parquet"
+author: "Casey"
+format: html
+editor: visual
+---
+
+
+```{r}
+library(tidyverse)
+library(arrow)
+```
+
+```{r}
+sdm_loc <- '/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM'
+
+sdm_rdata_fs <- list.files(sdm_rdata_loc, pattern = '.Rdata$', full.names = TRUE)
+
+rdata_to_parquet <- function(f) {
+  ### f <- sdm_rdata_fs[1]
+  sdm_out <- str_replace(f, '.Rdata$', '.parquet')
+  
+  if(file.exists(sdm_out)) {
+    message('   file ', basename(sdm_out), ' exists... skipping!')
+    return()
+  }
+  
+  load(f) ### loads in as FINALEMMEAN
+  write_parquet(FINALEMMEAN, sink = sdm_out)
+  
+  ### Check: read in parquet, anti-join to original across all vars:
+  ### * if nrow of anti_join is not zero, error!
+  ### * if nrow of anti_join is zero, unlink original?
+  df <- read_parquet(sdm_out) %>% as.data.frame()
+  check <- anti_join(FINALEMMEAN, df)
+  if(nrow(check) != 0) stop('FINALEMMEAN from .Rdata is not exactly equal to parquet!')
+  # unlink(f)
+}
+
+parallel::mclapply(sdm_rdata_fs, FUN = rdata_to_parquet, mc.cores = 20)
+
+```
+
+verify all .Rdata transferred to .parquet, and then delete
+
+```{r}
+sdm_parquet_fs <- sdm_rdata_fs %>% str_replace('.Rdata$', '.parquet')
+if(all(file.exists(sdm_parquet_fs))) {
+  unlink(sdm_rdata_fs)
+}
+```
+
