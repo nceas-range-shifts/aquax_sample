@@ -181,9 +181,9 @@ aphiaid <- df_threatened$aphiaid
 ```
 
 ```{r}
-# Try // - took 21 min
+# Try // - took 31 min for 906 species
 system.time({
-  eez_list_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez, df = df, mc.cores = 20)
+  eez_list_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez, df = df_threatened, mc.cores = 20)
 })
 ```
 
@@ -193,4 +193,31 @@ eez_list_threatened <- bind_rows(eez_list_threatened) %>%
                             n_current > 0  & n_RCP85_2100 == 0 ~ 'exit from historical',
                             n_current == 0 & n_RCP85_2100 == 0 ~ 'no presence',
                             TRUE ~ 'continued presence'))
+```
+
+```{r}
+write_csv(eez_list_threatened, "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/iucn_threatened_spp_eez_pxl_count_050426.csv")
+```
+
+```{r}
+# How many EEZs are each spp present in for current and future?
+eez_count_threatened_all <- eez_list_threatened %>% 
+  # Replace NA with 0 for sum
+  replace_na(list(n_current = 0)) %>% 
+  replace_na(list(n_RCP85_2100 = 0)) %>% 
+  group_by(aphiaid) %>% 
+  summarize(current_eez_count = sum(n_current > 0),
+            RCP85_2100_eez_count = sum(n_RCP85_2100 > 0)) %>% 
+  ungroup() #%>% 
+  #pivot_longer(cols = c(current, RCP85_2100),
+               #names_to = "timeframe", values_to = "eez_count")
+
+```
+
+```{r}
+ggplot() +
+  geom_point(data = eez_count_threatened_all, aes(x = current_eez_count, y = RCP85_2100_eez_count),
+             alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "maroon") +
+  labs(title = "IUCN Threatened Species EEZ count")
 ```
