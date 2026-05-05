@@ -379,3 +379,67 @@ ggplot() +
 summary(eez_c_f_ssi$ssi)
 ```
 
+## Which species are projected down to 0 EEZs? Do they have any range left?
+All nine species don't have any pixels of suitable habitat in RCP8.5 2100
+
+```{r}
+eez_future_0 <- eez_count_threatened_all %>% 
+  filter(RCP85_2100_eez_count == 0)
+
+eez_future_0_aphiaid <- eez_future_0$aphiaid
+
+```
+
+```{r}
+# No pixels of suitable habitat for Rhincodon typus (whale shark) under rcp8.5 2100 
+# 190 EEZs to 0
+aphiaid_105847 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_105847.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Thunnus obesus (bigeye tuna) under rcp8.5 2100 
+# 180 EEZs to 0
+aphiaid_127028 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_127028.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Scymnodon ichiharai (Japanese velet dogfish) under rcp8.5 2100 
+# 13 EEZs to 0
+aphiaid_299099 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_299099.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Neoopisthopterus cubanus (Cuban longfin herring) under rcp8.5 2100 
+# 6 EEZs to 0
+aphiaid_281695 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_281695.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Rhynchobatus cooki (roughnose wedgefish) under rcp8.5 2100 
+# 6 EEZs to 0
+aphiaid_1022441 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_1022441.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Platyrhina hyugaensis (Hyuga fanray) under rcp8.5 2100 
+# 4 EEZs to 0
+aphiaid_712386 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_712386.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Holohalaelurus favus (honeycomb Izak) under rcp8.5 2100 
+# 3 EEZs to 0
+aphiaid_390077 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_390077.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Pseudocaranx chilensis (Juan Fernandez trevally) under rcp8.5 2100 
+# 2 EEZs to 0
+aphiaid_273281 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_273281.parquet")
+```
+
+```{r}
+# No pixels of suitable habitat for Anchoa choerostoma (Bermuda anchovy) under rcp8.5 2100 
+# 1 EEZs to 0
+aphiaid_275510 <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_275510.parquet")
+```
