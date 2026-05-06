@@ -411,8 +411,16 @@ eez_loss_gain_en <- eez_list_threatened_iucn %>%
 ```
 
 ```{r}
+eez_loss_gain_cr_en <- eez_list_threatened_iucn %>% 
+  filter(iucn_category == "Critically Endangered") %>% 
+  group_by(GEONAME, status) %>% 
+  summarize(n = n())
+```
+
+```{r}
 eez_loss_gain_en_sf <- left_join(eez_loss_gain_en, eez)
 eez_loss_gain_vu_sf <- left_join(eez_loss_gain_vu, eez)
+eez_loss_gain_cr_en_sf <- left_join(eez_loss_gain_cr_en, eez)
 ```
 
 ```{r}
@@ -420,6 +428,9 @@ eez_loss_gain_only_en_sf <- eez_loss_gain_en_sf %>%
   filter(status %in% c("entry into new", "exit from historical"))
 
 eez_loss_gain_only_vu_sf <- eez_loss_gain_vu_sf %>% 
+  filter(status %in% c("entry into new", "exit from historical"))
+
+eez_loss_gain_only_cr_en_sf <- eez_loss_gain_cr_en_sf %>% 
   filter(status %in% c("entry into new", "exit from historical"))
 ```
 
@@ -437,6 +448,13 @@ ggplot() +
   theme_bw() +
   facet_wrap(~status) +
   labs(title = "Endangered+ species count by EEZ")
+
+ggplot() +
+  geom_sf(data = eez_loss_gain_only_cr_en_sf, aes(geometry = geom, fill = n)) +
+  scale_fill_viridis_c() +
+  theme_bw() +
+  facet_wrap(~status) +
+  labs(title = "Critcally Endangered species count by EEZ")
 ```
 ```{r}
 eez_c_f_vu_sf <- eez_loss_gain_vu_sf %>% 
@@ -449,6 +467,15 @@ eez_c_f_vu_sf <- eez_loss_gain_vu_sf %>%
          future_spp = continued_presence + entry_into_new)
 
 eez_c_f_en_sf <- eez_loss_gain_en_sf %>% 
+  st_drop_geometry %>% 
+  mutate(status = str_replace_all(status, " ", "_")) %>% 
+  pivot_wider(names_from = status, values_from = n) %>% 
+  replace_na(list(continued_presence = 0, exit_from_historical = 0,
+                  entry_into_new = 0, no_presence = 0)) %>% 
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new)
+
+eez_c_f_cr_en_sf <- eez_loss_gain_cr_en_sf %>% 
   st_drop_geometry %>% 
   mutate(status = str_replace_all(status, " ", "_")) %>% 
   pivot_wider(names_from = status, values_from = n) %>% 
@@ -483,6 +510,18 @@ ggplot() +
        y = "future species count",
        x = "current species count") +
   theme_bw()
+
+ggplot() +
+  geom_point(data = eez_c_f_cr_en_sf, aes(x = current_spp, y = future_spp,
+                                            color = Y_1), alpha = 0.75,
+             position = position_jitterdodge()) +
+  scale_color_viridis_c() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+  labs(color = "latitude",
+       title = "Critically endangered current and future (RCP 8.5 2100) by EEZ",
+       y = "future species count",
+       x = "current species count") +
+  theme_bw()
 ```
 
 ```{r}
@@ -511,6 +550,64 @@ ggplot() +
        y = "species gain count",
        x = "species loss count") +
   theme_bw()
+
+# Can see that points above line are more yellow and purple (by poles)
+ggplot() +
+  geom_point(data = eez_c_f_cr_en_sf, aes(x = exit_from_historical, y = entry_into_new,
+                                            color = Y_1), alpha = 0.5,
+             position = position_jitterdodge()) +
+  scale_color_viridis_c() +
+  scale_x_continuous(limits = c(-1,10)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+  labs(color = "latitude",
+       title = "Critically endangered species loss and gain by EEZ",
+       y = "species gain count",
+       x = "species loss count") +
+  theme_bw()
+```
+
+```{r}
+# What about species change and SSI at EEZ level?
+eez_c_f_vu_ssi_sf <- eez_c_f_vu_sf %>% 
+  mutate(spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp))
+
+eez_c_f_en_ssi_sf <- eez_c_f_en_sf %>% 
+  mutate(spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp))
+
+eez_c_f_cr_en_ssi_sf <- eez_c_f_cr_en_sf %>% 
+  mutate(spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_c_f_vu_ssi_sf,
+          aes(geometry = geom, fill = spp_change)) +
+  #scale_fill_viridis_c() + 
+  scale_color_distiller(palette = "BrBG", direction = 1, limits = c(-40, 40)) + 
+  scale_fill_distiller(palette = "BrBG", direction = 1, limits = c(-40, 40)) +
+  theme_bw() +
+  labs(title = "Vulnerable species change")
+
+ggplot() +
+  geom_sf(data = eez_c_f_en_ssi_sf,
+          aes(geometry = geom, fill = spp_change)) +
+  #scale_fill_viridis_c() + 
+  scale_color_distiller(palette = "BrBG", direction = 1) + 
+  scale_fill_distiller(palette = "BrBG", direction = 1) +
+  theme_bw() +
+  labs(title = "Endangered+ species change")
+
+ggplot() +
+  geom_sf(data = eez_c_f_cr_en_ssi_sf,
+          aes(geometry = geom, fill = spp_change)) +
+  #scale_fill_viridis_c() + 
+  scale_color_distiller(palette = "BrBG", direction = 1, limits = c(-40, 40)) + 
+  scale_fill_distiller(palette = "BrBG", direction = 1, limits = c(-40, 40)) +
+  theme_bw() +
+  labs(title = "Critically endangered species change")
 ```
 
 ## Which species are projected down to 0 EEZs? Do they have any range left?
