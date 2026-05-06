@@ -187,6 +187,9 @@ write_csv(eez_list_status, "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs
 ```{r}
 # How many EEZs are each spp present in for current and future?
 eez_count_all <- eez_list_status %>% 
+  # Replace NA with 0 for sum
+  replace_na(list(n_current = 0)) %>% 
+  replace_na(list(n_RCP85_2100 = 0)) %>% 
   group_by(aphiaid) %>% 
   summarize(current_eez_count = sum(n_current > 0),
             RCP85_2100_eez_count = sum(n_RCP85_2100 > 0)) %>% 
