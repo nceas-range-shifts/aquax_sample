@@ -1,0 +1,48 @@
+---
+title: "Check missing files"
+author: "Casey"
+format: html
+---
+
+```{r}
+library(tidyverse)
+```
+
+Load the metadata and list the SDM files that were included in the IUCN tranche.
+
+```{r}
+load('/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/meta.Rdata')
+y <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM')
+head(y)
+# [1] "FINAL_EMSDM_EMMEAN_SP_1006774.parquet" "FINAL_EMSDM_EMMEAN_SP_1006776.parquet"
+# [3] "FINAL_EMSDM_EMMEAN_SP_1006783.parquet" "FINAL_EMSDM_EMMEAN_SP_1006784.parquet"
+# [5] "FINAL_EMSDM_EMMEAN_SP_1006787.parquet" "FINAL_EMSDM_EMMEAN_SP_1006788.parquet"
+```
+
+Create a dataframe of the IUCN files, extracting the Aphia ID from the filenames.  Then, in the metadata, include a column of `included` to account for those in IUCN and those excluded.
+
+```{r}
+iucn_df <- data.frame(f = y) %>% 
+  mutate(aphia_id = str_extract(f, '[0-9]+') %>% as.numeric())
+
+iucn_meta_df <- meta %>% 
+  janitor::clean_names() %>%
+  mutate(included = aphia_id %in% iucn_df$aphia_id) %>%
+  filter(iucn_map == 1) ### meta is just for this request but just in case!
+  
+```
+
+Check the metadata for the included vs. the excluded species.
+
+```{r}
+iucn_meta_short <- iucn_meta_df %>% 
+  select(contains('occ'), sdm, sdm_possible, included, aphia_id, scientific_name)
+
+x <- iucn_meta_short %>%
+  select(-aphia_id) %>%
+  group_by(included) %>%
+  summarize(across(where(is.numeric), ~mean(.x, na.rm = TRUE)))
+
+t(x)
+```
+

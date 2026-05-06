@@ -2,13 +2,11 @@
 title: "Verify successful unzips!"
 author: "Casey"
 format: html
-editor: visual
 ---
 
 ```{r}
 library(tidyverse)
 ```
-
 
 If all .Rdata files have been extracted from the .zip, remove the .zip!
 

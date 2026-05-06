@@ -2,9 +2,7 @@
 title: "Convert .Rdata to .parquet"
 author: "Casey"
 format: html
-editor: visual
 ---
-
 
 ```{r}
 library(tidyverse)
@@ -49,4 +47,3 @@ if(all(file.exists(sdm_parquet_fs))) {
   unlink(sdm_rdata_fs)
 }
 ```
-
