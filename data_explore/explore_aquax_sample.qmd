@@ -1,0 +1,51 @@
+---
+title: "Exploring AquaX Sample"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(terra)
+```
+```{r}
+load('data/META_02122025.Rdata')
+```
+
+## Build species information
+
+Associate SDM files with the metadata for the 564 sampled species
+```{r}
+spp_fs <- list.files('data/2026_OHARA_TST_MORPHO/SDM', full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+## Inspect a test species
+
+Identify the structure of the SDM .Rdata for a single species
+
+
+```{r}
+set.seed(123)
+test_spp <- slice_sample(df, n = 1)
+
+load(test_spp$f)
+
+summary(FINALEMMEAN)
+
+r <- rast(FINALEMMEAN)
+names(r)
+plot(r$Current)
+plot(r$Current_NR)
+plot(r$RCP85_2100)
+```
