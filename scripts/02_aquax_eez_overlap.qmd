@@ -38,11 +38,15 @@ eez_raster_blank <- rast(xmin = -180,
 eez_raster_output <- rasterize(eez, eez_raster_blank, field = "GEONAME")
 ```
 
+```{r}
+eez_raster_mgid <- rasterize(eez, eez_raster_blank, field = "MRGID")
+```
+
 ## Prep AquaX redlist data
 
 ```{r}
 # read in meta data on the aquax sample of redlist species
-load("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/meta.Rdata")
+load("/home/shares/data-aquax/iucn_request/meta.Rdata")
 ```
 
 ```{r}
@@ -104,7 +108,7 @@ aphiaid_threatened <- meta_iucn_threatened$AphiaID
 Here, there are just the 12,238 files -not totally sure why the files and meta data don't exactly line up. But when I filter for the 1,013 threatened AphiaIDs, I get 906 species.
 
 ```{r}
-spp_fs <- list.files('/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM',
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
                      full.names = TRUE)
 
 df <- data.frame(f = spp_fs) %>%
@@ -120,7 +124,7 @@ df_threatened <- df %>%
 ```
 
 ```{r}
-test_f <- read_parquet("/home/shares/usgs-cap-rangeshifts/data_aquax/iucn/SDM/FINAL_EMSDM_EMMEAN_SP_1006832.parquet")
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1006832.parquet")
 ```
 
 ```{r}
@@ -131,28 +135,36 @@ aphiaid_30 <- test_spp_30$aphiaid
 ```
 
 ```{r}
-extract_eez <- function(id, df) {
+extract_eez <- function(id, df, eez) {
   spp_filter <- df %>% 
     filter(aphiaid == id) 
   
-  spp_f <- read_parquet(spp_filter$f)
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
   
-  spp <- spp_f %>% 
+  spp <- read_parquet(spp_filter$f) %>% 
     mutate(aphiaid = id) 
   
   r_spp <- rast(spp, crs = "EPSG:4326")
   
-  # extend spp to the same extent as eez
-  r_spp_ex <- extend(r_spp, ext(eez_raster_output))
+  # extend spp to the same extent as eez raster
+  r_spp_ex <- extend(r_spp, ext(eez))
   
-  r_spp_eez <- c(r_spp_ex, eez_raster_output)
+  r_spp_eez <- c(r_spp_ex, eez)
   
   spp_df <- as.data.frame(r_spp_eez, xy = TRUE) %>% 
     filter(!is.na(GEONAME)) %>%
-    filter(!is.na(Current) | !is.na(RCP85_2100)) %>%
+    filter(!is.na(Current) | !is.na(RCP45_2050) |!is.na(RCP45_2100) |
+             !is.na(RCP85_2050) | !is.na(RCP85_2100)) %>%
     group_by(GEONAME, aphiaid) %>%
-    summarize(n_current = sum(Current >= cutoff),
-              n_RCP85_2100 = sum(RCP85_2100 >= cutoff))
+    summarize(n_current = sum(Current >= cutoff, na.rm = TRUE),
+              n_RCP45_2050 = sum(RCP45_2050 >= cutoff, na.rm = TRUE),
+              n_RCP45_2100 = sum(RCP45_2100 >= cutoff, na.rm = TRUE),
+              n_RCP85_2050 = sum(RCP45_2100 >= cutoff, na.rm = TRUE),
+              n_RCP85_2100 = sum(RCP85_2100 >= cutoff, na.rm = TRUE)) %>% 
+   ungroup()
   
   return(spp_df)
 }
@@ -161,17 +173,104 @@ extract_eez <- function(id, df) {
 ```{r}
 # Try // - took 2 min
 system.time({
-  eez_list <- parallel::mclapply(aphiaid_30, FUN = extract_eez, df = test_spp_30, mc.cores = 10)
+  eez_list <- parallel::mclapply(aphiaid_30, FUN = extract_eez, df = test_spp_30,
+                                 eez = eez_raster_output, 
+                                 mc.cores = 10)
 })
 ```
 
 ```{r}
 eez_list_all <- bind_rows(eez_list) %>% 
-  mutate(status = case_when(n_current == 0 &  n_RCP85_2100 > 0 ~ 'entry into new',
+  mutate(rcp85_2100_status = case_when(n_current == 0 &  n_RCP85_2100 > 0 ~ 'entry into new',
                             n_current > 0  & n_RCP85_2100 == 0 ~ 'exit from historical',
                             n_current == 0 & n_RCP85_2100 == 0 ~ 'no presence',
                             TRUE ~ 'continued presence'))
 ```
+
+## Alternative function
+
+```{r}
+test_r <- rast(test_f, crs = "EPSG:4326") %>%
+    extend(ext(eez_raster_mgid))
+```
+
+```{r}
+r_binary45_2050 <- ifel(test_r[["RCP45_2050"]] >= mean(test_f$cutoff, na.rm = TRUE), 1, NA)
+```
+
+```{r}
+plot(eez_raster_mgid)
+```
+
+
+```{r}
+extract_eez_zonal <- function(id, df, eez_raster) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  spp <- read_parquet(spp_filter$f) %>%
+    mutate(aphiaid = id)
+  
+  r_spp <- rast(spp, crs = "EPSG:4326") %>%
+    extend(ext(eez_raster))
+  
+  cutoff <- mean(spp$cutoff, na.rm = TRUE)
+  
+  # Create binary layers: 1 if >= cutoff, NA otherwise
+  # (zonal sum of 1s = count of cells above cutoff)
+  r_binary <- ifel(r_spp[["Current"]]    >= cutoff, 1, NA)
+  r_binary45_2050 <- ifel(r_spp[["RCP45_2050"]] >= cutoff, 1, NA)
+  r_binary45_2100 <- ifel(r_spp[["RCP45_2100"]] >= cutoff, 1, NA)
+  r_binary85_2050 <- ifel(r_spp[["RCP85_2050"]] >= cutoff, 1, NA)
+  r_binary85_2100 <- ifel(r_spp[["RCP85_2100"]] >= cutoff, 1, NA)
+  
+  # Stack and name for clean output
+  r_thresh <- c(r_binary, r_binary45_2050, r_binary45_2100,
+                r_binary85_2050, r_binary85_2100)
+  names(r_thresh) <- c("n_current", "n_RCP45_2050", "n_RCP45_2100",
+                      "n_RCP85_2050", "n_RCP85_2100")
+  
+  # zonal() sums the binary layers within each EEZ zone
+  result <- zonal(r_thresh, eez_raster, fun = "sum", na.rm = TRUE)
+  
+  # eez_raster zones are numeric IDs — join back to EEZ names
+  result %>%
+    #left_join(eez_zone_lookup, by = "GEONAME") %>%
+    # add aphiaid to track each species
+    mutate(aphiaid = id) %>% 
+    filter(!if_all(c(n_current, n_RCP45_2050, n_RCP45_2100,
+                     n_RCP85_2050, n_RCP85_2100), is.na))
+}
+```
+
+```{r}
+# Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
+# Try // - took 2 min
+system.time({
+  eez_list_zonal <- parallel::mclapply(aphiaid_30, FUN = extract_eez_zonal, df = test_spp_30,
+                                 eez_raster = eez_raster_mgid, 
+                                 mc.cores = 10)
+})
+```
+
+```{r}
+eez_list_all_zonal_2 <- bind_rows(eez_list_zonal) 
+```
+
+```{r}
+eez_ids <- eez %>% 
+  st_drop_geometry() %>% 
+  dplyr::select(MRGID, GEONAME)
+```
+
+```{r}
+eez_list_geoname <- left_join(eez_list_all_zonal_2, eez_ids)
+```
+
 
 ## Test out full threatened sample
 
@@ -188,15 +287,11 @@ system.time({
 ```
 
 ```{r}
-eez_list_threatened <- bind_rows(eez_list_threatened) %>% 
-  mutate(status = case_when(n_current == 0 &  n_RCP85_2100 > 0 ~ 'entry into new',
-                            n_current > 0  & n_RCP85_2100 == 0 ~ 'exit from historical',
-                            n_current == 0 & n_RCP85_2100 == 0 ~ 'no presence',
-                            TRUE ~ 'continued presence'))
+eez_list_threatened <- bind_rows(eez_list_threatened) 
 ```
 
 ```{r}
-write_csv(eez_list_threatened, "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/iucn_threatened_spp_eez_pxl_count_050426.csv")
+#write_csv(eez_list_threatened, "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/iucn_threatened_spp_eez_pxl_count_050426.csv")
 ```
 
 ```{r}
