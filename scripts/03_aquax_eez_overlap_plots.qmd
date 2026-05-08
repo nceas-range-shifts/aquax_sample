@@ -1,0 +1,195 @@
+---
+title: "EEZ x species analysis"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(terra)
+library(sf)
+library(here)
+library(janitor)
+library(arrow)
+```
+
+This script analyzes the counts of each threatened IUCN species in EEZs created in 02_aquax_eez_overlap.qmd
+
+```{r}
+eez_spp_pxls <- read_csv(here("data/iucn_threatened_spp_eez_pxls_iucncat_050826.csv"))
+```
+
+## EEZ shapefile
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+## Analysis
+
+```{r}
+# How many EEZs are each spp present in for current and future?
+eez_spp_counts <- eez_spp_pxls %>% 
+  # Replace NA with 0 for sum
+  #replace_na(list(n_current = 0)) %>% 
+  #replace_na(list(n_RCP85_2100 = 0)) %>% 
+  group_by(aphiaid, iucn_category_code) %>% 
+  summarize(current_eez_count = sum(n_current > 0, na.rm = TRUE),
+            RCP45_2050_eez_count = sum(n_RCP45_2050 >0, na.rm = TRUE),
+            RCP45_2100_eez_count = sum(n_RCP45_2100 > 0, na.rm = TRUE),
+            RCP85_2050_eez_count = sum(n_RCP85_2050 > 0, na.rm = TRUE),
+            RCP85_2100_eez_count = sum(n_RCP85_2100 > 0, na.rm = TRUE)) %>% 
+  ungroup() 
+
+```
+
+```{r}
+eez_spp_counts_plot <- eez_spp_counts %>% 
+  mutate(RCP45_trend = case_when(current_eez_count < RCP45_2100_eez_count ~ "increase",
+                                 current_eez_count > RCP45_2100_eez_count ~ "decrease",
+                                 current_eez_count == RCP45_2100_eez_count ~ "same"),
+         RCP85_trend = case_when(current_eez_count < RCP85_2100_eez_count ~ "increase",
+                                 current_eez_count > RCP85_2100_eez_count ~ "decrease",
+                                 current_eez_count == RCP85_2100_eez_count ~ "same")) %>% 
+  mutate(RCP45_current_eez_count = current_eez_count) %>% 
+  rename(RCP85_current_eez_count = current_eez_count) %>% 
+  pivot_longer(cols = ends_with("_eez_count"),
+               names_to = "scenario",
+               values_to = "n_cells") %>% 
+  mutate(scenario = str_remove(scenario, "_eez_count")) %>% 
+  # Add order to the scenarios for the line graph
+  mutate(scenario = factor(scenario,
+                           levels = c("RCP45_current",
+                                      "RCP45_2050",
+                                      "RCP45_2100",
+                                      "RCP85_current",
+                                      "RCP85_2050",
+                                      "RCP85_2100")))
+```
+
+```{r}
+rcp45_eez_spp_counts <- eez_spp_counts_plot %>% 
+  filter(str_detect(scenario, "RCP45"))
+```
+
+```{r}
+ggplot(data = rcp45_eez_spp_counts %>% 
+         # Filtering out the ones that keep the same EEZ count for visuals
+         filter(RCP45_trend != "same"), aes(x = scenario, y = n_cells, group = aphiaid, color = RCP45_trend)) +
+  geom_line() + 
+  geom_point() +
+  scale_x_discrete(labels = c("Current", "2050", "2100")) +
+  facet_wrap(~iucn_category_code)
+```
+
+```{r}
+rcp85_eez_spp_counts <- eez_spp_counts_plot %>% 
+  filter(str_detect(scenario, "RCP85"))
+```
+
+```{r}
+ggplot(data = rcp85_eez_spp_counts %>% 
+         # Filtering out the ones that keep the same EEZ count for visuals
+         filter(RCP85_trend != "same"), aes(x = scenario, y = n_cells, group = aphiaid, color = RCP85_trend)) +
+  geom_line() + 
+  geom_point() +
+  scale_x_discrete(labels = c("Current", "2050", "2100")) +
+  facet_wrap(~iucn_category_code)
+```
+
+
+```{r}
+ggplot() +
+  geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP85_2050_eez_count),
+             alpha = 0.5, color = "maroon") +
+  geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP85_2100_eez_count),
+             alpha = 0.5, color = "forestgreen") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
+  labs(title = "IUCN Threatened Species EEZ count (2050 in maroon, 2100 in blue)",
+       y = "RCP 85 future EEZ count")
+```
+
+```{r}
+ggplot() +
+  geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP45_2050_eez_count),
+             alpha = 0.5, color = "maroon") +
+  geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP45_2100_eez_count),
+             alpha = 0.5, color = "forestgreen") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
+  labs(title = "IUCN Threatened Species EEZ count (2050 in maroon, 2100 in blue)",
+       y = "RCP 45 future EEZ count")
+```
+
+# Addtional plots
+For the comparisions, I'll compared each scenario (RCP45_2050, RCP45_2100, etc.) back to current. So each plot should have four versions. 
+
+```{r}
+# Count of species loss and gained for EEZs
+eez_loss_gain <- eez_spp_pxls %>% 
+  mutate(spp_change = case_when(is.na(current_eez_count) &  eez_count > 0 ~ 'entry into new',
+                            current_eez_count > 0  & is.na(eez_count) ~ 'exit from historical',
+                            is.na(current_eez_count)  & is.na(eez_count) == 0 ~ 'no presence',
+                            TRUE ~ 'continued presence')) %>% 
+  group_by(GEONAME) %>% 
+  summarize(spp_current = n(n_current > 0, na.rm = TRUE),
+            spp_RCP45_2050 = n(n_RCP45_2050 > 0, na.rm = TRUE),
+            spp_RCP45_2100 = n(n_RCP45_2100 > 0, na.rm = TRUE),
+            spp_RCP85_2050 = n(n_RCP85_2050 > 0, na.rm = TRUE),
+            spp_RCP85_2100 = n(n_RCP85_2100 > 0, na.rm = TRUE))
+```
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- eez_spp_pxls %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  mutate(spp_change = case_when(is.na(n_current) &  pxl_count > 0 ~ 'entry into new',
+                            n_current > 0  & is.na(pxl_count) ~ 'exit from historical',
+                            is.na(n_current)  & is.na(pxl_count) == 0 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_change <- eez_spp_pxls_long %>% 
+  group_by(GEONAME, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+scenarios <- unique(eez_spp_pxls_long$scenario)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME)
+
+eez_spp_change_sf <- left_join(eez_spp_change, eez_simple)
+```
+
+```{r}
+plots <- map(scenarios, function(s) {
+  eez_spp_change_sf %>% 
+    filter(scenario == s) %>%
+    filter(spp_change %in% c("entry into new", "exit from historical")) %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geom, fill = spp_change_count)) +
+  scale_fill_viridis_c() +
+  theme_bw() +
+  facet_wrap(~spp_change) +
+  labs(title = paste("Species count by EEZ - ", s))})
+```
+
+```{r}
+plots
+```
+
