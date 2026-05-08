@@ -19,6 +19,8 @@ library(janitor)
 library(arrow)
 ```
 
+This script prepares the data for the count of pixels in EEZs for threatened IUCN redlist species.
+
 ## Load functions
 
 ```{r}
@@ -183,9 +185,12 @@ aphiaid <- df_threatened$aphiaid
 ```
 
 ```{r}
-# Try // - took 31 min for 906 species
+# Try // - took 18 min for 906 species and 4 scenarios
 system.time({
-  eez_list_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez, df = df_threatened, mc.cores = 20)
+  eez_list_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_zonal, 
+                                            df = df_threatened,
+                                            eez_raster = eez_raster_mrgid,
+                                            mc.cores = 20)
 })
 ```
 
@@ -194,8 +199,27 @@ eez_list_threatened_bind <- bind_rows(eez_list_threatened)
 ```
 
 ```{r}
-#write_csv(eez_list_threatened, "/home/shares/usgs-cap-rangeshifts/data_aquax/outputs/iucn_threatened_spp_eez_pxl_count_050426.csv")
+# Merge in EEZ names and IUCN status to save for future reference
+eez_threatened_ids <- left_join(eez_list_threatened_bind, eez_ids)
+
+meta_iucn_threatened_clean <- meta_iucn_threatened %>% 
+  dplyr::select(AphiaID, worms_name, GROUP, iucn_sid, sciname, iucn_category, iucn_category_code,
+                pop_trend_desc, pop_trend_code) %>% 
+  rename(aphiaid = AphiaID)
+
+eez_threatened_ids_iucncat <- left_join(eez_threatened_ids, meta_iucn_threatened_clean) %>% 
+  # reorganize columns 
+  dplyr::select(MRGID, GEONAME, aphiaid, worms_name, GROUP, n_current:n_RCP85_2100,
+                sciname, iucn_sid, iucn_category:pop_trend_code)
 ```
+
+```{r}
+# Save data
+write_csv(eez_threatened_ids_iucncat, here("data/iucn_threatened_spp_eez_pxls_iucncat_050826.csv"))
+```
+
+#### Move analysis below to another script
+
 
 ```{r}
 # How many EEZs are each spp present in for current and future?
