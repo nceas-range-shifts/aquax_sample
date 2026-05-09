@@ -193,3 +193,90 @@ plots <- map(scenarios, function(s) {
 plots
 ```
 
+```{r}
+plots_cont_pres <- map(scenarios, function(s) {
+  eez_spp_change_sf %>% 
+    filter(scenario == s) %>%
+    filter(spp_change == "continued presence") %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geom, fill = spp_change_count)) +
+  scale_fill_viridis_c() +
+  theme_bw() +
+  facet_wrap(~spp_change) +
+  labs(title = paste("Species continued presence - ", s),
+       fill = "count")})
+```
+
+```{r}
+plots_cont_pres
+```
+
+```{r}
+eez_c_f <- eez_spp_change %>% 
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
+  replace_na(list(continued_presence = 0, exit_from_historical = 0,
+                  entry_into_new = 0, no_presence = 0)) %>% 
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
+
+```{r}
+# Had a way to color by latitude (Y1) - need to add that in
+ggplot() +
+  geom_point(data = eez_c_f, aes(color = "GEONAME", x = current_spp, y = future_spp), alpha = 0.75, 
+             position = position_jitterdodge()) +
+  #scale_color_viridis_c() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+  labs(color = "latitude",
+       title = "Current and future spp by EEZ",
+       y = "future species count",
+       x = "current species count") +
+  theme_bw() +
+  facet_wrap(~scenario)
+```
+
+```{r}
+# Had a way to color by latitude (Y1) - need to add that in
+ggplot() +
+  geom_point(data = eez_c_f, aes(color = "GEONAME", x = exit_from_historical, y = entry_into_new), alpha = 0.75, 
+             position = position_jitterdodge()) +
+  #scale_color_viridis_c() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+  labs(#color = "latitude",
+       title = "Threatened species loss and gain by EEZ",
+       y = "species gain count",
+       x = "species loss count") +
+  theme_bw() +
+  facet_wrap(~scenario)
+```
+
+```{r}
+# Add sf 
+eez_c_f_sf <- left_join(eez_c_f, eez_simple)
+```
+
+```{r}
+# Threatened species change
+ggplot() +
+  geom_sf(data = eez_c_f_sf, aes(geometry = geom, fill = spp_change)) +
+  scale_color_distiller(palette = "BrBG", direction = 1) + 
+  scale_fill_distiller(palette = "BrBG", direction = 1) +
+  theme_bw() +
+  labs(title = "Threatened species change by EEZ") +
+  facet_wrap(~scenario)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_c_f_ssi_sf,
+          aes(geometry = geom, fill = spp_change)) +
+  #scale_fill_viridis_c() + 
+  scale_color_distiller(palette = "BrBG", direction = 1) + 
+  scale_fill_distiller(palette = "BrBG", direction = 1) +
+  theme_bw() +
+  labs(title = "Threatened species change")
+```
+
