@@ -293,7 +293,7 @@ aphiaid <- df_threatened$aphiaid
 ```
 
 ```{r}
-# Try // - took 18 min for 906 species
+# Try // - took ~1 min for 906 species
 system.time({
   eez_pixels_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
                                             df = df_threatened,
@@ -302,5 +302,30 @@ system.time({
 })
 ```
 
+```{r}
+eez_count_threatened_df <- bind_rows(eez_pixels_threatened)
+```
 
+```{r}
+# Sum by XY cell, create raster
+eez_sum_threatened_df <- eez_count_threatened_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+eez_sum_threatened_r <- rast(eez_sum_threatened_df, crs = "EPSG:4326")
+```
+
+```{r}
+plot(eez_sum_threatened_r)
+```
+
+```{r}
+# Will need to go back and check this - where are those entering Russia EEZ?
+ggplot() +
+  geom_tile(data = eez_sum_threatened_df, aes(x = x, y = y,
+                                               fill = n_entry_spp))
+```
 
