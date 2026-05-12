@@ -1,0 +1,306 @@
+---
+title: "AquaX species pixels entering EEZs"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(terra)
+library(sf)
+library(here)
+library(janitor)
+library(arrow)
+```
+
+This script prepares the data for the count of pixels in EEZs for threatened IUCN redlist species.
+
+## Load functions
+
+```{r}
+source(here("common_fxns.R"))
+```
+
+## EEZ 
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05)
+```
+
+```{r}
+eez_raster_geoname <- rasterize(eez, eez_raster_blank, field = "GEONAME")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez, eez_raster_blank, field = "MRGID")
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME)
+```
+
+
+## Prep AquaX redlist data
+
+```{r}
+# read in meta data on the aquax sample of redlist species
+load("/home/shares/data-aquax/iucn_request/meta.Rdata")
+```
+
+```{r}
+# IUCN threat info
+iucn <- read.csv("/home/shares/usgs-cap-rangeshifts/data_iucn/iucn_to_worms_match_redlist_category.csv")
+```
+
+```{r}
+meta_clean <- meta %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+# Merge in IUCN info based on the worms_name
+meta_iucn <- left_join(meta_clean, 
+                       # merge in IUCN data and filter for species (no subpops)
+                       iucn %>%  filter(species == TRUE),
+                       by = "worms_name")
+```
+
+```{r}
+# Drop those without IUCN sid (get 13,132 species remaining)
+meta_iucn_no_na <- meta_iucn %>% 
+  filter(!is.na(iucn_sid))
+```
+
+```{r}
+# May be duplicates (90 cases where AquaX/worms is two or more species in IUCN)
+# Might just remove these for now
+df_worms_iucn_dupes <- meta_iucn_no_na %>% 
+  get_dupes(worms_name)
+
+dupes <- unique(df_worms_iucn_dupes$worms_name)
+```
+
+```{r}
+# Drop those 90 worms species that are representing 2+ IUCN species 
+# 12,940 species remaining
+meta_iucn_no_na_no_dupes <- meta_iucn_no_na %>% 
+  filter(!worms_name %in% dupes)
+```
+
+```{r}
+# For now, focusing on only threatened species (1,013 species)
+meta_iucn_threatened <- meta_iucn_no_na_no_dupes %>% 
+  filter(iucn_category %in% c("Critically Endangered",
+                              "Endangered", "Vulnerable"))
+```
+
+```{r}
+# Get AphiaID of threatened species
+aphiaid_threatened <- meta_iucn_threatened$AphiaID
+```
+
+## Prep AquaX data
+Here, there are just the 12,238 files -not totally sure why the files and meta data don't exactly line up. But when I filter for the 1,013 threatened AphiaIDs, I get 906 species.
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(meta, by = c('aphiaid' = 'AphiaID'))
+```
+
+```{r}
+# Filter for the AphiaID of the threatend species (906)
+df_threatened <- df %>% 
+  filter(aphiaid %in% aphiaid_threatened)
+```
+
+## Test out subsample
+
+```{r}
+set.seed(123)
+test_spp_30 <- slice_sample(df_threatened, n = 30)
+files_30 <- test_spp_30$f
+aphiaid_30 <- test_spp_30$aphiaid
+```
+
+```{r}
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1006832.parquet")
+```
+
+```{r}
+test_r <- rast(test_f, crs = "EPSG:4326") %>%
+    extend(ext(eez_raster_mrgid))
+
+test_binary <- ifel(test_r[["Current"]]    >= 712, 1, NA)
+```
+
+```{r}
+current_counts <- zonal(test_binary, eez_raster_mrgid, fun = "sum", na.rm = TRUE)
+```
+
+## Test out filtering method
+
+```{r}
+eez_spp_pxls <- read_csv(here("data/iucn_threatened_spp_eez_pxls_iucncat_050826.csv"))
+```
+
+```{r}
+# How many EEZs are each spp present in for current and future?
+eez_spp_counts <- eez_spp_pxls %>% 
+  group_by(aphiaid, iucn_category_code) %>% 
+  summarize(current_eez_count = sum(n_current > 0, na.rm = TRUE),
+            RCP45_2050_eez_count = sum(n_RCP45_2050 >0, na.rm = TRUE),
+            RCP45_2100_eez_count = sum(n_RCP45_2100 > 0, na.rm = TRUE),
+            RCP85_2050_eez_count = sum(n_RCP85_2050 > 0, na.rm = TRUE),
+            RCP85_2100_eez_count = sum(n_RCP85_2100 > 0, na.rm = TRUE)) %>% 
+  ungroup() 
+
+```
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- eez_spp_pxls %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  mutate(spp_change = case_when(is.na(n_current) &  pxl_count > 0 ~ 'entry into new',
+                            n_current > 0  & is.na(pxl_count) ~ 'exit from historical',
+                            is.na(n_current)  & is.na(pxl_count) == 0 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_geoname, xy = TRUE)
+```
+
+```{r}
+# Join to the test df
+test_f_eez <- inner_join(test_f, eez_raster_df)
+
+test_f_us <- test_f_eez %>% 
+  filter(GEONAME == "United States Exclusive Economic Zone") %>% 
+  filter(RCP45_2050 >= cutoff) %>% 
+  mutate(bi_RCP45_2050 = 1)
+```
+
+```{r}
+test_r_us_r <- rast(test_f_us,  crs = "EPSG:4326")
+```
+
+```{r}
+plot(test_r_us_r$bi_RCP45_2050)
+```
+
+
+```{r}
+extract_eez_entry_pixels_df <- function(id, df, s) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  spp <- read_parquet(spp_filter$f) %>%
+    mutate(aphiaid = id) %>% 
+    dplyr::select(x, y, Current, all_of(s), cutoff)
+  
+  # Filter the df of entry into for this species & scenario
+  entry_spp_df <- eez_spp_entry %>% 
+    filter(aphiaid == id) %>% 
+    filter(scenario == s)
+  
+  # Get the EEZs for which the species & scenario is entry
+  spp_entry_eezs <- unique(entry_spp_df$GEONAME)
+  
+  # Join the eez dataframe and filter for the spp_entry_eezs
+  spp_eez <- inner_join(spp, eez_raster_df) %>% 
+    filter(GEONAME %in% spp_entry_eezs) %>% 
+    filter(.data[[s]] >= cutoff) %>% 
+    mutate(binary = 1) %>% 
+    bind_rows()
+  
+  return(spp_eez)
+}
+```
+
+```{r}
+system.time({
+  eez_list_count_df <- parallel::mclapply(aphiaid_30, FUN = extract_eez_entry_pixels_df, 
+                                       df = test_spp_30, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 10)
+})
+```
+
+```{r}
+eez_count_df <- bind_rows(eez_list_count_df)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_df <- eez_count_df %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+eez_sum_raster_30 <- rast(eez_sum_df, crs = "EPSG:4326")
+```
+
+```{r}
+plot(eez_sum_raster_30)
+```
+
+## Try full sample
+Going scenario by scenario - starting with RCP45_2050
+
+```{r}
+files <- df_threatened$f
+aphiaid <- df_threatened$aphiaid
+```
+
+```{r}
+# Try // - took 18 min for 906 species
+system.time({
+  eez_pixels_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            mc.cores = 20)
+})
+```
+
+
+
