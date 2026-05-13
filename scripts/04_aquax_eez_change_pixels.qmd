@@ -325,7 +325,123 @@ plot(eez_sum_threatened_r)
 ```{r}
 # Will need to go back and check this - where are those entering Russia EEZ?
 ggplot() +
+  geom_sf(data = eez) +
+  geom_sf(data = eez %>% filter(GEONAME == ""))
   geom_tile(data = eez_sum_threatened_df, aes(x = x, y = y,
-                                               fill = n_entry_spp))
+                                               fill = n_entry_spp)) +
+  scale_fill_viridis_c(limits = c(0,15), direction = -1) +
+  theme_bw()
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_threatened_45_2100 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_entry_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP45_2100",
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_45_2100_df <- bind_rows(eez_pixels_threatened_45_2100)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_threatened_45_2100_df <- eez_count_threatened_45_2100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+eez_sum_threatened_45_2100_r <- rast(eez_sum_threatened_45_2100_df, crs = "EPSG:4326")
+```
+
+```{r}
+# Will need to go back and check this - where are those entering Russia EEZ?
+ggplot() +
+  geom_sf(data = eez) +
+  geom_tile(data = eez_sum_threatened_45_2100_df, aes(x = x, y = y,
+                                               fill = n_entry_spp)) +
+  scale_fill_viridis_c(limits = c(0,15), direction = -1) +
+  theme_bw()
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_threatened_85_2050 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_entry_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP85_2050",
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_85_2050_df <- bind_rows(eez_pixels_threatened_85_2050)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_threatened_85_2050_df <- eez_count_threatened_85_2050_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+# Will need to go back and check this - where are those entering Russia EEZ?
+ggplot() +
+  geom_sf(data = eez) +
+  geom_tile(data = eez_sum_threatened_85_2050_df, aes(x = x, y = y,
+                                               fill = n_entry_spp)) +
+  geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
+          color = "red", fill = NA) +
+  scale_fill_viridis_c(limits = c(0,15), direction = -1) +
+  theme_bw()
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_threatened_85_2100 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_entry_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP85_2100",
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_85_2100_df <- bind_rows(eez_pixels_threatened_85_2100)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_threatened_85_2100_df <- eez_count_threatened_85_2100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+# Will need to go back and check this - where are those entering Russia EEZ?
+ggplot() +
+  geom_sf(data = eez) +
+  geom_tile(data = eez_sum_threatened_85_2050_df, aes(x = x, y = y,
+                                               fill = n_entry_spp)) +
+  geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
+          color = "red", fill = NA) +
+  scale_fill_viridis_c(limits = c(0,25), direction = -1) +
+  theme_bw()
+```
+
+```{r}
+russia_85_2100 <- eez_sum_threatened_85_2100_df %>% 
+  filter(GEONAME == "Russian Exclusive Economic Zone")
 ```
 
