@@ -462,18 +462,18 @@ entry_spp_count_pxl <- rbind(eez_sum_threatened_df,
 ```{r}
 ggplot() +
   geom_tile(data = entry_spp_count_pxl, aes(x = x, y = y,
-                                               fill = n_entry_spp,
-                                            color = n_entry_spp)) +
+                                               fill = log(n_entry_spp),
+                                            color = log(n_entry_spp))) +
   #geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
           #color = "red", fill = NA) +
-  scale_fill_viridis_c(limits = c(0,25), direction = -1) +
-  scale_color_viridis_c(limits = c(0,25), direction = -1) +
+  scale_fill_viridis_c( direction = -1) +
+  scale_color_viridis_c( direction = -1) +
   facet_wrap(~scenario) +
   geom_sf(data = eez, fill = NA) +
   theme_bw() +
   theme(legend.position= "bottom") +
-  labs(fill = "new species count by pixel",
-       color = "new species count by pixel")
+  labs(fill = "log of new species count by pixel",
+       color = "log of new species count by pixel")
 ```
 
 ## Try the same thing but with species leaving pixels 
@@ -673,26 +673,80 @@ exit_spp_count_pxl <- rbind(eez_sum_exit_45_2050_df,
 ```{r}
 ggplot() +
   geom_tile(data = exit_spp_count_pxl, aes(x = x, y = y,
-                                               fill = n_exit_spp,
-                                            color = n_exit_spp)) +
+                                               fill = log(n_exit_spp),
+                                            color = log(n_exit_spp))) +
   #geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
           #color = "red", fill = NA) +
-  scale_fill_viridis_c(limits = c(0,25), direction = -1) +
-  scale_color_viridis_c(limits = c(0,25), direction = -1) +
+  scale_fill_viridis_c(direction = -1) +
+  scale_color_viridis_c(direction = -1) +
   facet_wrap(~scenario) +
   geom_sf(data = eez, fill = NA) +
   theme_bw() +
   theme(legend.position= "bottom") +
-  labs(fill = "loss species count by pixel",
-       color = "loss species count by pixel")
+  labs(fill = "log of loss species count by pixel",
+       color = "log of loss species count by pixel")
 ```
 
-## Plot entry and exit spp
+## Test biplot
 
 ```{r}
 # Merge the entry and exit dataframes
 entry_exit_spp_count_pxl <- full_join(entry_spp_count_pxl, exit_spp_count_pxl) 
 ```
+
+```{r}
+entry_exit_spp_sqrt <- entry_exit_spp_count_pxl %>% 
+  replace_na(list(n_entry_spp = 0)) %>% 
+  replace_na(list(n_exit_spp = 0)) %>% 
+  mutate(n_entry_spp_sqrt = sqrt(n_entry_spp),
+         n_exit_spp_sqrt = sqrt(n_exit_spp))
+```
+
+
+```{r}
+library(biscale)
+library(cowplot)
+```
+
+```{r}
+biplot_data <- bi_class(entry_exit_spp_sqrt, x = n_entry_spp_sqrt, y = n_exit_spp_sqrt,
+                        style = "equal", dim = 3)
+```
+
+```{r}
+biplot_85_2100 <- ggplot() + 
+  geom_tile(data = biplot_data, mapping = aes(fill = bi_class,
+                                              color = bi_class,
+                                              x = x, y = y), show.legend = FALSE) +
+  bi_scale_fill(pal = "DkBlue2", dim = 3, rotate_pal = FALSE) +
+  bi_scale_color(pal = "DkBlue2", dim = 3, rotate_pal = FALSE) +
+  geom_sf(data = eez, fill = NA) +
+  labs(x = "",
+       y = "",
+       subtitle = "RCP 8.5 2100 spp change") +
+  bi_theme()
+```
+
+```{r}
+legend <- bi_legend(pal = "DkBlue2",
+                    dim = 3,
+                    xlab = "More new spp ",
+                    ylab = "More loss spp",
+                    size = 8)
+```
+
+```{r}
+final_plot_85_2100 <- ggdraw() +
+  draw_plot(biplot_85_2100, 0, 0, 1, 1) +
+  draw_plot(legend, .8, .8, 0.2, 0.2)
+```
+
+```{r}
+final_plot_85_2100
+```
+
+
+## Plot entry and exit spp
 
 ```{r}
 change_spp_count_pxl <- entry_exit_spp_count_pxl %>% 
