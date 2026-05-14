@@ -271,7 +271,8 @@ eez_count_df <- bind_rows(eez_list_count_df)
 ```{r}
 # Sum by XY cell, create raster
 eez_sum_df <- eez_count_df %>% 
-  group_by(x, y, GEONAME) %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  group_by(x, y, GEONAME,scenario) %>% 
   summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
   ungroup()
 ```
@@ -309,7 +310,8 @@ eez_count_threatened_df <- bind_rows(eez_pixels_threatened)
 ```{r}
 # Sum by XY cell, create raster
 eez_sum_threatened_df <- eez_count_threatened_df  %>% 
-  group_by(x, y, GEONAME) %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
   summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
   ungroup()
 ```
@@ -351,7 +353,8 @@ eez_count_threatened_45_2100_df <- bind_rows(eez_pixels_threatened_45_2100)
 ```{r}
 # Sum by XY cell, create raster
 eez_sum_threatened_45_2100_df <- eez_count_threatened_45_2100_df  %>% 
-  group_by(x, y, GEONAME) %>% 
+  mutate(scenario = "RCP45_2100") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
   summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
   ungroup()
 ```
@@ -388,7 +391,8 @@ eez_count_threatened_85_2050_df <- bind_rows(eez_pixels_threatened_85_2050)
 ```{r}
 # Sum by XY cell, create raster
 eez_sum_threatened_85_2050_df <- eez_count_threatened_85_2050_df  %>% 
-  group_by(x, y, GEONAME) %>% 
+  mutate(scenario = "RCP85_2050") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
   summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
   ungroup()
 ```
@@ -423,21 +427,24 @@ eez_count_threatened_85_2100_df <- bind_rows(eez_pixels_threatened_85_2100)
 ```{r}
 # Sum by XY cell, create raster
 eez_sum_threatened_85_2100_df <- eez_count_threatened_85_2100_df  %>% 
-  group_by(x, y, GEONAME) %>% 
+  mutate(scenario = "RCP85_2100") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
   summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
   ungroup()
 ```
 
 ```{r}
-# Will need to go back and check this - where are those entering Russia EEZ?
 ggplot() +
-  geom_sf(data = eez) +
   geom_tile(data = eez_sum_threatened_85_2050_df, aes(x = x, y = y,
-                                               fill = n_entry_spp)) +
-  geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
-          color = "red", fill = NA) +
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  #geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
+          #color = "red", fill = NA) +
   scale_fill_viridis_c(limits = c(0,25), direction = -1) +
-  theme_bw()
+  scale_color_viridis_c(limits = c(0,25), direction = -1) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw() +
+  theme(legend.position = "bottom")
 ```
 
 ```{r}
@@ -445,3 +452,285 @@ russia_85_2100 <- eez_sum_threatened_85_2100_df %>%
   filter(GEONAME == "Russian Exclusive Economic Zone")
 ```
 
+```{r}
+entry_spp_count_pxl <- rbind(eez_sum_threatened_df,
+                             eez_sum_threatened_45_2100_df,
+                             eez_sum_threatened_85_2050_df,
+                             eez_sum_threatened_85_2100_df)
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = entry_spp_count_pxl, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                            color = n_entry_spp)) +
+  #geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
+          #color = "red", fill = NA) +
+  scale_fill_viridis_c(limits = c(0,25), direction = -1) +
+  scale_color_viridis_c(limits = c(0,25), direction = -1) +
+  facet_wrap(~scenario) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw() +
+  theme(legend.position= "bottom") +
+  labs(fill = "new species count by pixel",
+       color = "new species count by pixel")
+```
+
+## Try the same thing but with species leaving pixels 
+
+```{r}
+eez_spp_exit <- eez_spp_pxls_long %>% 
+  filter(spp_change == "exit from historical")
+```
+
+
+```{r}
+extract_eez_exit_pixels_df <- function(id, df, s) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  spp <- read_parquet(spp_filter$f) %>%
+    mutate(aphiaid = id) %>% 
+    dplyr::select(x, y, Current, all_of(s), cutoff)
+  
+  # Filter the df of entry into for this species & scenario
+  exit_spp_df <- eez_spp_exit %>% 
+    filter(aphiaid == id) %>% 
+    filter(scenario == s)
+  
+  # Get the EEZs for which the species & scenario is entry
+  spp_exit_eezs <- unique(exit_spp_df$GEONAME)
+  
+  # Join the eez dataframe and filter for the spp_entry_eezs
+  spp_eez <- inner_join(spp, eez_raster_df) %>% 
+    filter(GEONAME %in% spp_exit_eezs) %>% 
+    filter(Current >= cutoff) %>% 
+    mutate(binary_loss = 1) %>% 
+    bind_rows()
+  
+  return(spp_eez)
+}
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_45_2050 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP45_2050",
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_exit_45_2050_df <- bind_rows(eez_pixels_exit_45_2050)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_exit_45_2050_df <- eez_count_exit_45_2050_df  %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = eez_sum_exit_45_2050_df , aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  #geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
+          #color = "red", fill = NA) +
+  scale_fill_viridis_c(limits = c(0,20), direction = -1) +
+  scale_color_viridis_c(limits = c(0,20), direction = -1) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_45_2100 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP45_2100",
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_exit_45_2100_df <- bind_rows(eez_pixels_exit_45_2100)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_exit_45_2100_df <- eez_count_exit_45_2100_df  %>% 
+  mutate(scenario = "RCP45_2100") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = eez_sum_exit_45_2100_df , aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  #geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
+          #color = "red", fill = NA) +
+  scale_fill_viridis_c(limits = c(0,20), direction = -1) +
+  scale_color_viridis_c(limits = c(0,20), direction = -1) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_85_2050 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP85_2050",
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_exit_85_2050_df <- bind_rows(eez_pixels_exit_85_2050)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_exit_85_2050_df <- eez_count_exit_85_2050_df  %>% 
+  mutate(scenario = "RCP85_2050") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = eez_sum_exit_85_2050_df , aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(limits = c(0,20), direction = -1) +
+  scale_color_viridis_c(limits = c(0,20), direction = -1) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+```
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_85_2100 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP85_2100",
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_exit_85_2100_df <- bind_rows(eez_pixels_exit_85_2100)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_exit_85_2100_df <- eez_count_exit_85_2100_df  %>% 
+  mutate(scenario = "RCP85_2100") %>% 
+  group_by(x, y, GEONAME, scenario) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = eez_sum_exit_85_2100_df , aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(limits = c(0,25), direction = -1) +
+  scale_color_viridis_c(limits = c(0,25), direction = -1) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw()+
+  theme(legend.position = "bottom")
+```
+
+```{r}
+exit_spp_count_pxl <- rbind(eez_sum_exit_45_2050_df,
+                             eez_sum_exit_45_2100_df,
+                             eez_sum_exit_85_2050_df,
+                             eez_sum_exit_85_2100_df)
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = exit_spp_count_pxl, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                            color = n_exit_spp)) +
+  #geom_sf(data = eez %>% filter(GEONAME == "Russian Exclusive Economic Zone"),
+          #color = "red", fill = NA) +
+  scale_fill_viridis_c(limits = c(0,25), direction = -1) +
+  scale_color_viridis_c(limits = c(0,25), direction = -1) +
+  facet_wrap(~scenario) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw() +
+  theme(legend.position= "bottom") +
+  labs(fill = "loss species count by pixel",
+       color = "loss species count by pixel")
+```
+
+## Plot entry and exit spp
+
+```{r}
+# Merge the entry and exit dataframes
+entry_exit_spp_count_pxl <- full_join(entry_spp_count_pxl, exit_spp_count_pxl) 
+```
+
+```{r}
+change_spp_count_pxl <- entry_exit_spp_count_pxl %>% 
+  replace_na(list(n_entry_spp = 0)) %>% 
+  replace_na(list(n_exit_spp = 0)) %>% 
+  mutate(spp_change = n_entry_spp - n_exit_spp)
+```
+
+```{r}
+ggplot() +
+  geom_tile(data = change_spp_count_pxl, mapping = aes(x = x, y = y,
+                                      fill = spp_change,
+                                      color = spp_change)) +
+  scale_color_distiller(palette = "BrBG", direction = 1, limits = c(-25, 25)) + 
+  scale_fill_distiller(palette = "BrBG", direction = 1, limits = c(-25, 25)) +
+  facet_wrap(~scenario) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw() +
+  theme(legend.position= "bottom") +
+  labs(fill = "EEZ new species - loss species",
+       color = "EEZ new species - loss species")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez, fill = "grey") +
+  geom_tile(data = change_spp_count_pxl %>% filter(scenario == "RCP85_2100"),
+            mapping = aes(x = x, y = y,
+                                      fill = spp_change,
+                                      color = spp_change)) +
+  scale_color_distiller(palette = "BrBG", direction = 1, limits = c(-25, 25)) + 
+  scale_fill_distiller(palette = "BrBG", direction = 1, limits = c(-25, 25)) +
+  #scale_color_viridis_c(option = "turbo", limits = c(-25, 25), direction = -1) +
+  #scale_fill_viridis_c(option = "turbo", limits = c(-25, 25), direction = -1) +
+  facet_wrap(~scenario) +
+  geom_sf(data = eez, fill = NA) +
+  theme_bw() +
+  theme(legend.position= "bottom") +
+  labs(fill = "EEZ new species - loss species",
+       color = "EEZ new species - loss species")
+```
