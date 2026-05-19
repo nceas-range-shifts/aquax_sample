@@ -1,0 +1,82 @@
+---
+title: "AquaX and IUCN status"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+```
+
+This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). 
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_species_assessments.csv")
+```
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+We'll use the functions to process the AquaX data for the count of threatened species entering and exiting EEZs. We'll use an equal area projection
+
+```{r}
+# Save crs for equal area projection
+eq_earth <- "+proj=eqearth"
+```
+
+## EEZ 
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez_eq <- st_transform(eez, crs = st_crs(eq_earth))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez, aes()) +
+  geom_sf(data = eez |> filter(GEONAME == "Russian Exclusive Economic Zone"), aes(), fill = "red") +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05)
+```
+
+```{r}
+eez_raster_geoname <- rasterize(eez, eez_raster_blank, field = "GEONAME")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez, eez_raster_blank, field = "MRGID")
+```
+
+
+```{r}
+# Transform to equal area projection
+eez_raster_mrgid_eq <- project(eez_raster_mrgid, eq_earth)
+```
