@@ -16,6 +16,7 @@ library(here)
 library(janitor)
 library(sf)
 library(terra)
+library(arrow)
 ```
 
 This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). 
@@ -52,8 +53,8 @@ eez_eq <- st_transform(eez, crs = st_crs(eq_earth))
 
 ```{r}
 ggplot() +
-  geom_sf(data = eez, aes()) +
-  geom_sf(data = eez |> filter(GEONAME == "Russian Exclusive Economic Zone"), aes(), fill = "red") +
+  geom_sf(data = eez_eq, aes()) +
+  geom_sf(data = eez_eq |> filter(GEONAME == "Russian Exclusive Economic Zone"), aes(), fill = "red") +
   theme_void() +
   theme(legend.position = "none")
 ```
@@ -79,4 +80,104 @@ eez_raster_mrgid <- rasterize(eez, eez_raster_blank, field = "MRGID")
 ```{r}
 # Transform to equal area projection
 eez_raster_mrgid_eq <- project(eez_raster_mrgid, eq_earth)
+```
+
+# IUCN threatened species
+
+```{r}
+iucn_threatened <- iucn_new_cat %>% 
+  filter(redlist_category %in% c("CR","EN", "VU"))
+```
+
+```{r}
+# Merge in the iucn_lookup to get the AphiaID for the threatened species
+aphiaid_threatened <- left_join(iucn_threatened, iucn_lookup, by = c("assessment_id" = "iucn_assessment_id")) 
+```
+
+```{r}
+# what are the NA values - they're the IUCN names w/o an AphiaID match in the lookup table
+aphiaid_threatened_na <- aphiaid_threatened %>% filter(is.na(aphia_id))
+```
+
+```{r}
+# Drop the NA values
+aphiaid_threatened_nona <- aphiaid_threatened %>% filter(!is.na(aphia_id))
+```
+
+```{r}
+# Get aphiaids for the threatened species
+aphiaid_threat <- unique(aphiaid_threatened_nona$aphia_id)
+```
+
+## Prep AquaX data
+We'll be working with the 1,485 thretened aphiaids
+
+```{r}
+# read in meta data on the aquax sample of redlist species
+load("/home/shares/data-aquax/iucn_request/meta.Rdata")
+```
+
+```{r}
+meta_clean <- meta %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(meta, by = c('aphiaid' = 'AphiaID'))
+```
+
+```{r}
+# Filter for the AphiaID of the threatend species
+# For example didn't get 1451203 (file doesn't exist)
+df_threatened <- df %>% 
+  filter(aphiaid %in% aphiaid_threat)
+```
+
+```{r}
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1017389.parquet")
+```
+
+```{r}
+set.seed(123)
+test_spp_30 <- slice_sample(df_threatened, n = 30)
+files_30 <- test_spp_30$f
+aphiaid_30 <- test_spp_30$aphiaid
+```
+
+```{r}
+test_r <- rast(test_f, crs = "EPSG:4326") %>%
+    extend(ext(eez_raster_mrgid))
+```
+
+```{r}
+test_r_eq <- project(test_r, eq_earth)
+```
+
+```{r}
+# Test plot
+plot(test_r_eq$RCP45_2050)
+```
+
+```{r}
+r_binary45_2050 <- ifel(test_r[["RCP45_2050"]] >= mean(test_f$cutoff, na.rm = TRUE), 1, NA)
+```
+
+```{r}
+# Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
+# Try // - took 2 min
+system.time({
+  eez_list_zonal <- parallel::mclapply(aphiaid_30, FUN = extract_eez_zonal, 
+                                       df = test_spp_30, 
+                                       eez_raster = eez_raster_mrgid, 
+                                       mc.cores = 10)
+})
 ```
