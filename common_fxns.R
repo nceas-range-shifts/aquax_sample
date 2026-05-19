@@ -1,5 +1,5 @@
 # Get species pixel counts by EEZ
-extract_eez_zonal <- function(id, df, eez_raster) {
+extract_eez_zonal <- function(id, df, eez_raster, crs) {
   spp_filter <- df %>% filter(aphiaid == id)
   
   if (nrow(spp_filter) == 0) {
@@ -12,16 +12,18 @@ extract_eez_zonal <- function(id, df, eez_raster) {
   
   r_spp <- rast(spp, crs = "EPSG:4326") %>%
     extend(ext(eez_raster))
+
+  r_spp_eq <- project(r_spp, crs)
   
   cutoff <- mean(spp$cutoff, na.rm = TRUE)
   
   # Create binary layers: 1 if >= cutoff, NA otherwise
   # (zonal sum of 1s = count of cells above cutoff)
-  r_binary <- ifel(r_spp[["Current"]]    >= cutoff, 1, NA)
-  r_binary45_2050 <- ifel(r_spp[["RCP45_2050"]] >= cutoff, 1, NA)
-  r_binary45_2100 <- ifel(r_spp[["RCP45_2100"]] >= cutoff, 1, NA)
-  r_binary85_2050 <- ifel(r_spp[["RCP85_2050"]] >= cutoff, 1, NA)
-  r_binary85_2100 <- ifel(r_spp[["RCP85_2100"]] >= cutoff, 1, NA)
+  r_binary <- ifel(r_spp_eq[["Current"]]    >= cutoff, 1, NA)
+  r_binary45_2050 <- ifel(r_spp_eq[["RCP45_2050"]] >= cutoff, 1, NA)
+  r_binary45_2100 <- ifel(r_spp_eq[["RCP45_2100"]] >= cutoff, 1, NA)
+  r_binary85_2050 <- ifel(r_spp_eq[["RCP85_2050"]] >= cutoff, 1, NA)
+  r_binary85_2100 <- ifel(r_spp_eq[["RCP85_2100"]] >= cutoff, 1, NA)
   
   # Stack and name for clean output
   r_thresh <- c(r_binary, r_binary45_2050, r_binary45_2100,
