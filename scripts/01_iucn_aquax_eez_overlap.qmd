@@ -38,7 +38,9 @@ We'll use the functions to process the AquaX data for the count of threatened sp
 
 ```{r}
 # Save crs for equal area projection
-eq_earth <- "+proj=eqearth"
+#eq_earth <- "+proj=eqearth"
+# 8857 is centered on Greenwich wherease 8859 is centered on the dateline (better for mapping Russia)
+eq_earth <- "EPSG:8857"
 ```
 
 ## EEZ 
@@ -48,7 +50,15 @@ eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025
 ```
 
 ```{r}
-eez_eq <- st_transform(eez, crs = st_crs(eq_earth))
+eez_simple <- eez |>
+  # Needs to be forced as an integer for the rasterization step 
+  mutate(MRGID = as.integer(MRGID)) |>
+    mutate(id = row_number()) |>
+  select(MRGID, GEONAME, id, geom)
+```
+
+```{r}
+eez_eq <- st_transform(eez_simple, crs = st_crs(eq_earth))
 ```
 
 ```{r}
@@ -65,21 +75,30 @@ eez_raster_blank <- rast(xmin = -180,
                   xmax = 180,
                   ymin = -90, 
                   ymax = 90,
-                  resolution = 0.05)
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
 ```
 
 ```{r}
-eez_raster_geoname <- rasterize(eez, eez_raster_blank, field = "GEONAME")
+eez_raster_geoname <- rasterize(eez_simple, eez_raster_blank, field = "GEONAME")
 ```
 
 ```{r}
-eez_raster_mrgid <- rasterize(eez, eez_raster_blank, field = "MRGID")
+eez_raster_mrgid <- rasterize(eez_simple, eez_raster_blank, field = "MRGID")
 ```
 
+```{r}
+eez_raster_id <- rasterize(eez_simple, eez_raster_blank, field = "id")
+```
+
+```{r}
+# Transform to equal area projection - use "near" method to select he closest value for the MRGID and avoid creating new values that don't exist in the original raster
+eez_raster_mrgid_eq <- project(eez_raster_mrgid, eq_earth, method = "near")
+```
 
 ```{r}
 # Transform to equal area projection
-eez_raster_mrgid_eq <- project(eez_raster_mrgid, eq_earth)
+eez_raster_id_eq <- project(eez_raster_id, eq_earth, method = "mode")
 ```
 
 # IUCN threatened species
@@ -136,7 +155,7 @@ df <- data.frame(f = spp_fs) %>%
 ```
 
 ```{r}
-# Filter for the AphiaID of the threatend species
+# Filter for the AphiaID of the threatend species - get 970 species
 # For example didn't get 1451203 (file doesn't exist)
 df_threatened <- df %>% 
   filter(aphiaid %in% aphiaid_threat)
@@ -173,11 +192,27 @@ r_binary45_2050 <- ifel(test_r[["RCP45_2050"]] >= mean(test_f$cutoff, na.rm = TR
 
 ```{r}
 # Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
-# Try // - took 2 min
+# Try // - took 4 min
 system.time({
   eez_list_zonal <- parallel::mclapply(aphiaid_30, FUN = extract_eez_zonal, 
                                        df = test_spp_30, 
-                                       eez_raster = eez_raster_mrgid, 
+                                       eez_raster = eez_raster_mrgid,
+                                       eez_raster_eq = eez_raster_mrgid_eq,
+                                       crs = eq_earth, 
                                        mc.cores = 10)
 })
+```
+
+```{r}
+eez_list_all_zonal <- bind_rows(eez_list_zonal) 
+```
+
+```{r}
+eez_ids <- eez %>% 
+  st_drop_geometry() %>% 
+  dplyr::select(MRGID, GEONAME)
+```
+
+```{r}
+eez_list_geoname <- left_join(eez_list_all_zonal, eez_ids)
 ```

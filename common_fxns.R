@@ -1,5 +1,5 @@
 # Get species pixel counts by EEZ
-extract_eez_zonal <- function(id, df, eez_raster, crs) {
+extract_eez_zonal <- function(id, df, eez_raster, eez_raster_eq, crs) {
   spp_filter <- df %>% filter(aphiaid == id)
   
   if (nrow(spp_filter) == 0) {
@@ -32,7 +32,7 @@ extract_eez_zonal <- function(id, df, eez_raster, crs) {
                        "n_RCP85_2050", "n_RCP85_2100")
   
   # zonal() sums the binary layers within each EEZ zone
-  result <- zonal(r_thresh, eez_raster, fun = "sum", na.rm = TRUE)
+  result <- zonal(r_thresh, eez_raster_eq, fun = "sum", na.rm = TRUE)
   
   # eez_raster zones are numeric IDs — join back to EEZ names
   result %>%
