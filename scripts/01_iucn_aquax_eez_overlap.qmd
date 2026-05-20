@@ -167,7 +167,7 @@ test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_101738
 
 ```{r}
 set.seed(123)
-test_spp_30 <- slice_sample(df_threatened, n = 30)
+test_spp_30 <- slice_sample(df_threatened, n = 5)
 files_30 <- test_spp_30$f
 aphiaid_30 <- test_spp_30$aphiaid
 ```
@@ -215,4 +215,126 @@ eez_ids <- eez %>%
 
 ```{r}
 eez_list_geoname <- left_join(eez_list_all_zonal, eez_ids)
+```
+
+
+```{r}
+eez_raster_df <- as.data.frame(eez_raster_mrgid_eq, xy = TRUE, cells = TRUE)
+eez_raster_df_non_eq <- as.data.frame(eez_raster_mrgid, xy = TRUE, cells = TRUE)
+```
+## Test out method for identifying the pixels entering/leaving the EEZs
+
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- eez_list_geoname %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  mutate(spp_change = case_when(is.na(n_current) &  pxl_count > 0 ~ 'entry into new',
+                            n_current > 0  & is.na(pxl_count) ~ 'exit from historical',
+                            is.na(n_current)  & is.na(pxl_count) == 0 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new")
+```
+
+
+```{r}
+# Test a sample species that is moving into new EEZs
+spp_test <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_126413.parquet")
+```
+```{r}
+spp_test_r <- rast(spp_test, crs = "EPSG:4326") %>%
+    extend(ext(eez_raster_mrgid))
+```
+
+```{r}
+spp_test_r_eq <- project(spp_test_r$RCP45_2050, eq_earth, method = "near")
+```
+```{r}
+# Get the MRGIDs for the future presence of species 
+spp_test_eez <- eez_spp_entry |> 
+  filter(aphiaid == 126413 & scenario == "RCP45_2050") |> 
+  pull(unique(MRGID))
+```
+
+```{r}
+# Create a mask of the EEZs that the species is predicted to be present in the future
+test_eez_mask <- ifel(eez_raster_mrgid_eq %in% spp_test_eez, 1, NA)
+```
+
+
+```{r}
+masked_spp <- terra::mask(spp_test_r_eq, test_eez_mask)
+```
+
+```{r}
+masked_spp_test_df <- as.data.frame(masked_spp, xy = TRUE, cells = TRUE)
+```
+
+# Running into issues here
+```{r}
+# Get entry pixels for a species by EEZ
+extract_eez_entry_pixels_df <- function(id, df, s, eez_raster, eez_raster_eq, eez_spp_entry, crs) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  spp <- read_parquet(spp_filter$f) %>%
+    mutate(aphiaid = id) %>% 
+    dplyr::select(x, y, Current, all_of(s), cutoff)
+
+  r_spp <- rast(spp, crs = "EPSG:4326") %>%
+    extend(ext(eez_raster))
+
+  r_spp_eq <- project(r_spp, crs, method = "near")
+  
+  cutoff <- mean(spp$cutoff, na.rm = TRUE)
+  
+  # Create binary layers: 1 if >= cutoff, NA otherwise
+  r_binary <- ifel(r_spp_eq[[s]] >= cutoff, 1, NA)
+  names(r_binary) <- s
+  
+  # Filter the df of entry into for this species & scenario
+  entry_spp_df <- eez_spp_entry %>% 
+    filter(aphiaid == id) %>% 
+    filter(scenario == s)
+  
+  # Get the EEZs for which the species & scenario is entry
+  spp_entry_eezs <- unique(entry_spp_df$MRGID)
+
+  # Create a mask of the EEZs that the species is predicted to be present in the future
+  eez_mask <- ifel(eez_raster_eq %in% spp_test_eez, 1, NA)
+
+  # Apply mask
+  masked_spp <- terra::mask(spp_test_r_eq, eez_mask)
+  
+  # Return stack of rasters
+  raster_list <- list()
+  raster_list[[aphiaid]] <- masked_spp
+  return(raster_list)
+}
+```
+
+
+```{r}
+system.time({
+  eez_list_pixels <- parallel::mclapply(aphiaid_30, FUN = extract_eez_entry_pixels_df, 
+                                       s = "RCP45_2050",
+                                       df = test_spp_30, 
+                                       eez_raster = eez_raster_mrgid,
+                                       eez_raster_eq = eez_raster_mrgid_eq,
+                                       eez_spp_entry = eez_spp_entry,
+                                       crs = eq_earth, 
+                                       mc.cores = 10)
+})
 ```

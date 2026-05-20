@@ -13,7 +13,7 @@ extract_eez_zonal <- function(id, df, eez_raster, eez_raster_eq, crs) {
   r_spp <- rast(spp, crs = "EPSG:4326") %>%
     extend(ext(eez_raster))
 
-  r_spp_eq <- project(r_spp, crs)
+  r_spp_eq <- project(r_spp, crs, method = "near")
   
   cutoff <- mean(spp$cutoff, na.rm = TRUE)
   
