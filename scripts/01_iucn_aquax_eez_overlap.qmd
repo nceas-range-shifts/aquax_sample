@@ -215,6 +215,93 @@ eez_threatened_ids <- left_join(eez_list_threatened_bind, eez_ids)
 write_csv(eez_threatened_ids, here("data/iucn_threatened_spp_eez_pxls_052126.csv"))
 ```
 
+# Identify pixels entering/exiting EEZs
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- eez_threatened_ids %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  mutate(spp_change = case_when(is.na(n_current) &  pxl_count > 0 ~ 'entry into new',
+                            n_current > 0  & is.na(pxl_count) ~ 'exit from historical',
+                            is.na(n_current)  & is.na(pxl_count) == 0 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_geoname, xy = TRUE)
+```
+
+```{r}
+# Join to the test df
+test_f_eez <- inner_join(test_f, eez_raster_df)
+
+test_f_us <- test_f_eez %>% 
+  filter(GEONAME == "United States Exclusive Economic Zone") %>% 
+  #mutate(bi_RCP45_2050 = ifelse(RCP45_2050 >= cutoff, 1, 0))
+  filter(RCP45_2050 >= cutoff) %>% 
+  mutate(bi_RCP45_2050 = 1)
+```
+
+```{r}
+test_r_us_r <- rast(test_f_us,  crs = "EPSG:4326") 
+```
+
+```{r}
+system.time({
+  eez_list_count_df <- parallel::mclapply(aphiaid_30, FUN = extract_eez_entry_pixels_df, 
+                                       df = test_spp_30, 
+                                       s = "RCP45_2050",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 10)
+})
+```
+
+```{r}
+eez_count_df <- bind_rows(eez_list_count_df)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_df <- eez_count_df %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+eez_sum_raster_30 <- rast(eez_sum_df, crs = "EPSG:4326")
+```
+
+```{r}
+plot(eez_sum_raster_30$n_entry_spp)
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            eez_spp_entry = eez_spp_entry,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_df <- bind_rows(eez_pixels_threatened)
+```
+
 ## Test out method for identifying the pixels entering/leaving the EEZs
 
 
