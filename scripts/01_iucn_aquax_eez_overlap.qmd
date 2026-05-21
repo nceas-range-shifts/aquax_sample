@@ -104,32 +104,28 @@ eez_raster_id_eq <- project(eez_raster_id, eq_earth, method = "mode")
 # IUCN threatened species
 
 ```{r}
+# Filter the iucn_lookup for species with an SDM
+iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
+```
+
+```{r}
+# Filter iucn categories for threatened species (CR, EN, VU)
 iucn_threatened <- iucn_new_cat %>% 
   filter(redlist_category %in% c("CR","EN", "VU"))
 ```
 
 ```{r}
-# Merge in the iucn_lookup to get the AphiaID for the threatened species
-aphiaid_threatened <- left_join(iucn_threatened, iucn_lookup, by = c("assessment_id" = "iucn_assessment_id")) 
-```
-
-```{r}
-# what are the NA values - they're the IUCN names w/o an AphiaID match in the lookup table
-aphiaid_threatened_na <- aphiaid_threatened %>% filter(is.na(aphia_id))
-```
-
-```{r}
-# Drop the NA values
-aphiaid_threatened_nona <- aphiaid_threatened %>% filter(!is.na(aphia_id))
+# Merge in the iucn_lookup_sdm to get the AphiaID for the threatened species
+aphiaid_threatened <- inner_join(iucn_lookup_sdm, iucn_threatened, by = c("iucn_assessment_id" = "assessment_id")) 
 ```
 
 ```{r}
 # Get aphiaids for the threatened species
-aphiaid_threat <- unique(aphiaid_threatened_nona$aphia_id)
+aphiaid_threat <- unique(aphiaid_threatened$aphia_id)
 ```
 
 ## Prep AquaX data
-We'll be working with the 1,485 thretened aphiaids
+We'll be working with the 1,047 thretened aphiaids
 
 ```{r}
 # read in meta data on the aquax sample of redlist species
@@ -155,8 +151,7 @@ df <- data.frame(f = spp_fs) %>%
 ```
 
 ```{r}
-# Filter for the AphiaID of the threatend species - get 970 species
-# For example didn't get 1451203 (file doesn't exist)
+# Filter for the AphiaID of the threatend species - get 987 species in AquaX data (even though the 1,047 species were in the iucn_lookup_sdm with AquaX SDMs)
 df_threatened <- df %>% 
   filter(aphiaid %in% aphiaid_threat)
 ```
@@ -167,7 +162,7 @@ test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_101738
 
 ```{r}
 set.seed(123)
-test_spp_30 <- slice_sample(df_threatened, n = 5)
+test_spp_30 <- slice_sample(df_threatened, n = 30)
 files_30 <- test_spp_30$f
 aphiaid_30 <- test_spp_30$aphiaid
 ```
