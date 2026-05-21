@@ -34,14 +34,7 @@ iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/c
 source(here( "common_fxns.R"))
 ```
 
-We'll use the functions to process the AquaX data for the count of threatened species entering and exiting EEZs. We'll use an equal area projection
-
-```{r}
-# Save crs for equal area projection
-#eq_earth <- "+proj=eqearth"
-# 8857 is centered on Greenwich wherease 8859 is centered on the dateline (better for mapping Russia)
-eq_earth <- "EPSG:8857"
-```
+We'll use the functions to process the AquaX data for the count of threatened species entering and exiting EEZs.
 
 ## EEZ 
 
@@ -51,20 +44,13 @@ eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025
 
 ```{r}
 eez_simple <- eez |>
-  # Needs to be forced as an integer for the rasterization step 
-  mutate(MRGID = as.integer(MRGID)) |>
-    mutate(id = row_number()) |>
-  select(MRGID, GEONAME, id, geom)
-```
-
-```{r}
-eez_eq <- st_transform(eez_simple, crs = st_crs(eq_earth))
+  select(MRGID, GEONAME, geom)
 ```
 
 ```{r}
 ggplot() +
-  geom_sf(data = eez_eq, aes()) +
-  geom_sf(data = eez_eq |> filter(GEONAME == "Russian Exclusive Economic Zone"), aes(), fill = "red") +
+  geom_sf(data = eez, aes()) +
+  geom_sf(data = eez |> filter(GEONAME == "Russian Exclusive Economic Zone"), aes(), fill = "red") +
   theme_void() +
   theme(legend.position = "none")
 ```
@@ -85,20 +71,6 @@ eez_raster_geoname <- rasterize(eez_simple, eez_raster_blank, field = "GEONAME")
 
 ```{r}
 eez_raster_mrgid <- rasterize(eez_simple, eez_raster_blank, field = "MRGID")
-```
-
-```{r}
-eez_raster_id <- rasterize(eez_simple, eez_raster_blank, field = "id")
-```
-
-```{r}
-# Transform to equal area projection - use "near" method to select he closest value for the MRGID and avoid creating new values that don't exist in the original raster
-eez_raster_mrgid_eq <- project(eez_raster_mrgid, eq_earth, method = "near")
-```
-
-```{r}
-# Transform to equal area projection
-eez_raster_id_eq <- project(eez_raster_id, eq_earth, method = "mode")
 ```
 
 # IUCN threatened species
@@ -173,10 +145,6 @@ test_r <- rast(test_f, crs = "EPSG:4326") %>%
 ```
 
 ```{r}
-test_r_eq <- project(test_r, eq_earth)
-```
-
-```{r}
 # Test plot
 plot(test_r_eq$RCP45_2050)
 ```
@@ -187,13 +155,11 @@ r_binary45_2050 <- ifel(test_r[["RCP45_2050"]] >= mean(test_f$cutoff, na.rm = TR
 
 ```{r}
 # Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
-# Try // - took 4 min
+# Try // - took 2 min
 system.time({
   eez_list_zonal <- parallel::mclapply(aphiaid_30, FUN = extract_eez_zonal, 
                                        df = test_spp_30, 
-                                       eez_raster = eez_raster_mrgid,
-                                       eez_raster_eq = eez_raster_mrgid_eq,
-                                       crs = eq_earth, 
+                                       eez_raster = eez_raster_mrgid, 
                                        mc.cores = 10)
 })
 ```
@@ -217,6 +183,38 @@ eez_list_geoname <- left_join(eez_list_all_zonal, eez_ids)
 eez_raster_df <- as.data.frame(eez_raster_mrgid_eq, xy = TRUE, cells = TRUE)
 eez_raster_df_non_eq <- as.data.frame(eez_raster_mrgid, xy = TRUE, cells = TRUE)
 ```
+
+## Test out full threatened sample
+
+```{r}
+files <- df_threatened$f
+aphiaid <- df_threatened$aphiaid
+```
+
+```{r}
+# Try // - took 21 min for 987 species and 4 scenarios
+system.time({
+  eez_list_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_zonal, 
+                                            df = df_threatened,
+                                            eez_raster = eez_raster_mrgid,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_list_threatened_bind <- bind_rows(eez_list_threatened) 
+```
+
+```{r}
+# Merge in EEZ ids
+eez_threatened_ids <- left_join(eez_list_threatened_bind, eez_ids)
+```
+
+```{r}
+# Save data
+write_csv(eez_threatened_ids, here("data/iucn_threatened_spp_eez_pxls_052126.csv"))
+```
+
 ## Test out method for identifying the pixels entering/leaving the EEZs
 
 
