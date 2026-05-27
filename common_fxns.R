@@ -102,3 +102,49 @@ extract_eez_exit_pixels_df <- function(id, df, s, eez_spp_exit, eez_raster_df) {
   
   return(spp_eez)
 }
+
+calculate_area <- function(id, df, scenario, unit) {
+    spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+
+  query_str <- paste0("SELECT x, y, cutoff, ", paste(scenario, collapse = ", "), 
+    " FROM read_parquet('", spp_filter$f, "')")
+
+ # Run query and filter for scenario pixels above cutoff threshold
+
+    spp_df <- DBI::dbGetQuery(con, query_str) %>% 
+        mutate(aphiaid = id) %>% 
+        mutate(binary = ifelse(.data[[scenario]] >= cutoff, 1, 0)) %>%
+        filter(binary == 1)
+
+  # Close connection
+  duckdb::dbDisconnect(con, shutdown = TRUE)
+
+  # Set option for if there are no pixels above the cutoff threshold
+    if (nrow(spp_df) == 0) {
+        warning("No pixels above cutoff threshold for aphiaid: ", id)
+        # Still need to shut connection in this case
+        duckdb::dbDisconnect(con, shutdown = TRUE)
+        # Return 0 to track loss species
+        return(data.frame(aphiaid = id, area = 0, s = scenario))
+    }
+  
+  # Create raster
+  r_spp <- rast(spp_df, crs = "EPSG:4326") 
+
+  # Calculate area of scenario pixels
+  r_spp_df <- r_spp$binary %>%
+    terra::expanse(unit = unit) %>% 
+    as.data.frame() %>% 
+    mutate(aphiaid = id,
+    s = scenario)
+  
+  return(r_spp_df)
+}
