@@ -1,0 +1,185 @@
+---
+title: "IUCN AquaX Range Area"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+```
+
+This document will process the range area for threatened species in the AquaX dataset. This will give us a sense for how many species are experiencing range contractions and expansions. 
+
+I'll also test out using duckdb to filter for pixels that are above the cutoff threshold before reading them in.
+
+## Prep data
+
+```{r}
+calculate_area <- function(id, df, scenario) {
+    spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+
+  query_str <- paste0("SELECT x, y, cutoff, ", paste(scenario, collapse = ", "), 
+    " FROM read_parquet('", spp_filter$f, "')")
+
+  # Read in those pixels (rows) that are above the cutoff threshold
+    #spp <- read_parquet(spp_filter$f) %>%
+        #select(x, y, scenario, cutoff) %>% 
+        #filter(scenario >= cutoff)
+
+    spp_df <- DBI::dbGetQuery(con, query_str) %>% 
+        mutate(aphiaid = id) %>% 
+        mutate(binary = ifelse(.data[[scenario]] >= cutoff, 1, 0)) %>%
+        filter(binary == 1)
+
+  # Close connection
+  duckdb::dbDisconnect(con, shutdown = TRUE)
+
+  # Set option for if there are no cells above the cutoff threshold
+    if (nrow(spp_df) == 0) {
+        warning("No pixels above cutoff threshold for aphiaid: ", id)
+        # Still need to shut connection in this case
+        duckdb::dbDisconnect(con, shutdown = TRUE)
+        # Return 0 to track loss species
+        return(data.frame(aphiaid = id, area = 0, s = scenario))
+    }
+  
+  # Create raster
+  r_spp <- rast(spp_df, crs = "EPSG:4326") 
+
+  # Calculate area of scenario pixels
+  r_spp_df <- r_spp$binary %>%
+    terra::expanse(unit = "km") %>% 
+    as.data.frame() %>% 
+    mutate(aphiaid = id,
+    s = scenario)
+  
+  return(r_spp_df)
+}
+```
+
+
+```{r}
+# read in meta data on the aquax sample of redlist species
+load("/home/shares/data-aquax/iucn_request/meta.Rdata")
+```
+
+```{r}
+meta_clean <- meta %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(meta, by = c('aphiaid' = 'AphiaID'))
+```
+
+```{r}
+set.seed(123)
+test_spp_30 <- slice_sample(df, n = 50)
+files_30 <- test_spp_30$f
+aphiaid_30 <- test_spp_30$aphiaid
+```
+
+```{r}
+# Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
+# Try // - took 2 min
+system.time({
+  eez_list_area <- parallel::mclapply(aphiaid_30, FUN = calculate_area, 
+                                       df = test_spp_30, 
+                                       scenario = "RCP85_2100", 
+                                       mc.cores = 2)
+})
+```
+
+```{r}
+# Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
+# Try // - took 2 min
+system.time({
+  eez_list_area_current <- parallel::mclapply(aphiaid_30, FUN = calculate_area, 
+                                       df = test_spp_30, 
+                                       scenario = "Current", 
+                                       mc.cores = 2)
+})
+```
+
+```{r}
+area_df <- bind_rows(c(eez_list_area_current, eez_list_area)) %>% 
+    pivot_wider(id_cols = aphiaid, names_from = s, values_from = area, names_glue = "{s}_area_km2") %>% 
+    mutate(area_change = case_when(
+        Current_area_km2 > RCP85_2100_area_km2 & RCP85_2100_area_km2 != 0 ~ "contraction",
+        Current_area_km2 < RCP85_2100_area_km2 ~ "expansion",
+        Current_area_km2 > RCP85_2100_area_km2 & RCP85_2100_area_km2 == 0 ~ "spp range loss",
+        TRUE ~ "no change"
+    ))
+```
+
+```{r}
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_209277.parquet")
+```
+
+
+```{r}
+test_f_sub <- test_f %>% 
+        mutate(binary = ifelse(RCP85_2100 >= cutoff, 1, 0)) %>%
+        filter(binary == 1)
+```
+
+
+```{r}
+# Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+
+  query_str <- paste0("SELECT x, y, cutoff, ", paste("RCP85_2100", collapse = ", "), 
+    " FROM read_parquet('", "/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_209277.parquet", "')")
+
+  # Read in those pixels (rows) that are above the cutoff threshold
+    #spp <- read_parquet(spp_filter$f) %>%
+        #select(x, y, scenario, cutoff) %>% 
+        #filter(scenario >= cutoff)
+
+    spp_df <- DBI::dbGetQuery(con, query_str) %>% 
+        #janitor::clean_names() %>% 
+        mutate(aphiaid = "209277") %>% 
+        mutate(binary = ifelse(RCP85_2100 >= cutoff, 1, 0)) %>%
+        filter(binary == 1)
+
+  # Close connection
+  duckdb::dbDisconnect(con, shutdown = TRUE)
+  
+  # Create raster
+  r_spp <- rast(spp_df, crs = "EPSG:4326") 
+
+  # Calculate area of scenario pixels
+  r_spp_df <- r_spp$binary %>%
+    terra::expanse(unit = "km") %>% 
+    as.data.frame() %>% 
+    mutate(aphiaid = "209277",
+    s = "RCP85_2100")
+```
