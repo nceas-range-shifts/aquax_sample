@@ -96,7 +96,7 @@ df_threatened <- df %>%
 ## Run sample of species through area calculations
 ```{r}
 set.seed(123)
-test_spp_30 <- slice_sample(df, n = 50)
+test_spp_30 <- slice_sample(df, n = 100)
 files_30 <- test_spp_30$f
 aphiaid_30 <- test_spp_30$aphiaid
 ```
@@ -107,7 +107,7 @@ system.time({
                                        df = test_spp_30, 
                                        scenario = "RCP85_2100",
                                        unit = "km", 
-                                       mc.cores = 2)
+                                       mc.cores = 20)
 })
 ```
 
@@ -117,7 +117,7 @@ system.time({
                                        df = test_spp_30, 
                                        scenario = "Current",
                                        unit = "km", 
-                                       mc.cores = 2)
+                                       mc.cores = 20)
 })
 ```
 
@@ -137,12 +137,16 @@ area_df <- bind_rows(c(eez_list_area_current, eez_list_area)) %>%
 Each scenario is run separately.
 
 ```{r}
+files <- df_threatened$f
+aphiaid <- df_threatened$aphiaid
+```
+
+```{r}
 system.time({
-  area_current <- parallel::mclapply(aphiaid_30, FUN = calculate_area, 
-                                       df = test_spp_30, 
+  area_current <- parallel::mclapply(aphiaid, FUN = calculate_area, 
+                                       df = df_threatened, 
                                        scenario = "Current",
                                        unit = "km", 
                                        mc.cores = 20)
 })
 ```
-

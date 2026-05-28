@@ -115,14 +115,12 @@ calculate_area <- function(id, df, scenario, unit) {
   con <- DBI::dbConnect(duckdb::duckdb())
 
   query_str <- paste0("SELECT x, y, cutoff, ", paste(scenario, collapse = ", "), 
-    " FROM read_parquet('", spp_filter$f, "')")
+    " FROM read_parquet('", spp_filter$f, "')",
+    " WHERE ", paste(scenario, collapse = ", "), " >= cutoff")
 
  # Run query and filter for scenario pixels above cutoff threshold
 
-    spp_df <- DBI::dbGetQuery(con, query_str) %>% 
-        mutate(aphiaid = id) %>% 
-        mutate(binary = ifelse(.data[[scenario]] >= cutoff, 1, 0)) %>%
-        filter(binary == 1)
+    spp_df <- DBI::dbGetQuery(con, query_str) 
 
   # Close connection
   duckdb::dbDisconnect(con, shutdown = TRUE)
