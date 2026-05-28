@@ -138,9 +138,9 @@ calculate_area <- function(id, df, scenario, unit) {
   r_spp <- rast(spp_df, crs = "EPSG:4326") 
 
   # Calculate area of scenario pixels
-  r_spp_df <- r_spp$binary %>%
+  r_spp_df <- r_spp[[scenario]] %>%
     terra::expanse(unit = unit) %>% 
-    as.data.frame() %>% 
+    #as.data.frame() %>% 
     mutate(aphiaid = id,
     s = scenario)
   
