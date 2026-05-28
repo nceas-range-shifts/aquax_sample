@@ -134,7 +134,7 @@ area_df <- bind_rows(c(eez_list_area_current, eez_list_area)) %>%
 
 ## Run full set of threatened species through area calculations
 
-Each scenario is run separately.
+Each scenario is run separately and takes about 30 seconds each to run.
 
 ```{r}
 files <- df_threatened$f
@@ -142,6 +142,7 @@ aphiaid <- df_threatened$aphiaid
 ```
 
 ```{r}
+# 30 seconds
 system.time({
   area_current <- parallel::mclapply(aphiaid, FUN = calculate_area, 
                                        df = df_threatened, 
@@ -149,4 +150,142 @@ system.time({
                                        unit = "km", 
                                        mc.cores = 20)
 })
+```
+
+```{r}
+# 30 seconds
+system.time({
+  area_rcp45_2050 <- parallel::mclapply(aphiaid, FUN = calculate_area, 
+                                       df = df_threatened, 
+                                       scenario = "RCP45_2050",
+                                       unit = "km", 
+                                       mc.cores = 20)
+})
+```
+
+```{r}
+# 30 seconds
+system.time({
+  area_rcp85_2050 <- parallel::mclapply(aphiaid, FUN = calculate_area, 
+                                       df = df_threatened, 
+                                       scenario = "RCP85_2050",
+                                       unit = "km", 
+                                       mc.cores = 20)
+})
+```
+
+```{r}
+# 30 seconds
+system.time({
+  area_rcp45_2100 <- parallel::mclapply(aphiaid, FUN = calculate_area, 
+                                       df = df_threatened, 
+                                       scenario = "RCP45_2100",
+                                       unit = "km", 
+                                       mc.cores = 20)
+})
+```
+
+```{r}
+# 30 seconds
+system.time({
+  area_rcp85_2100 <- parallel::mclapply(aphiaid, FUN = calculate_area, 
+                                       df = df_threatened, 
+                                       scenario = "RCP85_2100",
+                                       unit = "km", 
+                                       mc.cores = 20)
+})
+```
+
+## Format data
+
+```{r}
+area_45_2050_df <- bind_rows(c(area_current, area_rcp45_2050)) %>% 
+    pivot_wider(id_cols = aphiaid, names_from = s, values_from = area, names_glue = "{s}_area_km2") %>% 
+    mutate(area_change = case_when(
+        Current_area_km2 > RCP45_2050_area_km2 & RCP45_2050_area_km2 != 0 ~ "contraction",
+        Current_area_km2 < RCP45_2050_area_km2 ~ "expansion",
+        Current_area_km2 > RCP45_2050_area_km2 & RCP45_2050_area_km2 == 0 ~ "spp range loss",
+        TRUE ~ "no change"
+    ))
+```
+
+```{r}
+area_85_2050_df <- bind_rows(c(area_current, area_rcp85_2050)) %>% 
+    pivot_wider(id_cols = aphiaid, names_from = s, values_from = area, names_glue = "{s}_area_km2") %>% 
+    mutate(area_change = case_when(
+        Current_area_km2 > RCP85_2050_area_km2 & RCP85_2050_area_km2 != 0 ~ "contraction",
+        Current_area_km2 < RCP85_2050_area_km2 ~ "expansion",
+        Current_area_km2 > RCP85_2050_area_km2 & RCP85_2050_area_km2 == 0 ~ "spp range loss",
+        TRUE ~ "no change"
+    ))
+```
+
+```{r}
+area_45_2100_df <- bind_rows(c(area_current, area_rcp45_2100)) %>% 
+    pivot_wider(id_cols = aphiaid, names_from = s, values_from = area, names_glue = "{s}_area_km2") %>% 
+    mutate(area_change = case_when(
+        Current_area_km2 > RCP45_2100_area_km2 & RCP45_2100_area_km2 != 0 ~ "contraction",
+        Current_area_km2 < RCP45_2100_area_km2 ~ "expansion",
+        Current_area_km2 > RCP45_2100_area_km2 & RCP45_2100_area_km2 == 0 ~ "spp range loss",
+        TRUE ~ "no change"
+    ))
+```
+
+```{r}
+area_85_2100_df <- bind_rows(c(area_current, area_rcp85_2100)) %>% 
+    pivot_wider(id_cols = aphiaid, names_from = s, values_from = area, names_glue = "{s}_area_km2") %>% 
+    mutate(area_change = case_when(
+        Current_area_km2 > RCP85_2100_area_km2 & RCP85_2100_area_km2 != 0 ~ "contraction",
+        Current_area_km2 < RCP85_2100_area_km2 ~ "expansion",
+        Current_area_km2 > RCP85_2100_area_km2 & RCP85_2100_area_km2 == 0 ~ "spp range loss",
+        TRUE ~ "no change"
+    ))
+```
+
+## Save data in a different format
+
+```{r}
+area_current_df <- bind_rows(area_current) %>% 
+  dplyr::select(aphiaid, area) %>% 
+  rename(current_area_km2 = area)
+
+area_scenarios_df <- bind_rows(c(area_rcp45_2050, area_rcp45_2100, area_rcp85_2050, area_rcp85_2100)) %>% 
+  dplyr::select(aphiaid, s, area) %>%
+  rename(scenario = s, scenario_area_km2 = area)
+```
+
+```{r}
+# Merge current and scenario area dataframes
+area_all_df <- left_join(area_current_df, area_scenarios_df) %>% 
+  mutate(area_change = case_when(
+    current_area_km2 > scenario_area_km2 & scenario_area_km2 != 0 ~ "contraction",
+    current_area_km2 < scenario_area_km2 ~ "expansion",
+    current_area_km2 > scenario_area_km2 & scenario_area_km2 == 0 ~ "spp range loss",
+    TRUE ~ "no change"
+  ))
+```
+
+```{r}
+# Save data
+write_csv(area_all_df, here("data/iucn_threatened_spp_range_area_052826.csv"))
+```
+
+## Summary table
+
+```{r}
+area_summary <- area_all_df %>% 
+  group_by(scenario, area_change) %>% 
+  summarise(n_spp = n(),
+  perc_spp = n()/length(unique(area_all_df$aphiaid))* 100)
+```
+
+## Summary graph
+
+```{r}
+ggplot(area_summary, aes(x = scenario, y = perc_spp, fill = area_change)) +
+  geom_col(position = "stack") +
+  labs(x = "Scenario", y = "Percentage of species", fill = "Change",
+  title = "Threatened species range area change (n = 987)") +
+  scale_fill_viridis_d() + 
+  theme_minimal()
 ```
