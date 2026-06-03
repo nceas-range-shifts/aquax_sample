@@ -311,6 +311,152 @@ final_plot_85_2100 <- ggdraw() +
 final_plot_85_2100
 ```
 
+## Plots by taxonomic group
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_species_assessments.csv")
+```
+
+```{r}
+# Add aphiaid to iucn_cat
+iucn_cat_aphiaid <- left_join(iucn_cat, (iucn_lookup %>% dplyr::select(iucn_assessment_id, aphia_id)),
+ by = c("assessment_id" = "iucn_assessment_id")) %>% 
+  rename(aphiaid = aphia_id) 
+```
+
+```{r}
+# Merge in iucn_cat to get group for each species
+spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
+```
+
+```{r}
+# Get count of number of EEZ by group and count of IUCN cat by group (create figure similar to bar chart)
+group_eez_count <- spp_eez_pxl_count_group %>% 
+  group_by(group, aphiaid, redlist_category) %>% 
+  summarize(current_eez_count = sum(n_current > 0, na.rm = TRUE),
+            RCP45_2050_eez_count = sum(n_RCP45_2050 >0, na.rm = TRUE),
+            RCP45_2100_eez_count = sum(n_RCP45_2100 > 0, na.rm = TRUE),
+            RCP85_2050_eez_count = sum(n_RCP85_2050 > 0, na.rm = TRUE),
+            RCP85_2100_eez_count = sum(n_RCP85_2100 > 0, na.rm = TRUE)) %>% 
+  ungroup()
+
+group_iucncat_count <- group_eez_count %>% 
+  group_by(group, redlist_category) %>% 
+  summarize(redlist_count = n()) %>% 
+  ungroup()
+```
 
 
+```{r}
+ggplot() +
+  geom_density(data = group_eez_count, aes(x = current_eez_count, fill = group), alpha = 0.5) +
+  labs(title = "Distribution of current EEZ counts by taxonomic group",
+       x = "current EEZ count") +
+  facet_wrap(~group) +
+  theme_bw()
+```
 
+```{r}
+ggplot() +
+  geom_density(data = group_eez_count, aes(x = RCP85_2100_eez_count, fill = group), alpha = 0.5) +
+  labs(title = "Distribution of RCP85_2100 EEZ counts by taxonomic group",
+       x = "RCP85_2100 EEZ count") +
+  facet_wrap(~group) +
+  theme_bw()
+```
+
+
+```{r}
+# Assign EEZ count thresholds based on plotted density (drop not comprehensively assessed)
+group_eez_count_threshold <- group_eez_count %>% 
+  filter(group != "not comprehensively assessed") %>%
+  mutate(current_eez_count_cat = case_when(current_eez_count == 1 ~ "1",
+                                          current_eez_count == 2 ~ "2",
+                                           current_eez_count > 2 & current_eez_count <= 10 ~ "3-10",
+                                           current_eez_count > 10 & current_eez_count <= 25 ~ "11-25",
+                                           current_eez_count > 25 & current_eez_count <= 100 ~ "26-100",
+                                           current_eez_count > 100 ~ ">100"),
+         RCP85_2050_eez_count_cat = case_when(RCP85_2050_eez_count == 1 ~ "1",
+                                            RCP85_2050_eez_count == 2 ~ "2",
+                                           RCP85_2050_eez_count > 2 & RCP85_2050_eez_count <= 10 ~ "3-10",
+                                           RCP85_2050_eez_count > 10 & RCP85_2050_eez_count <= 25 ~ "11-25",
+                                           RCP85_2050_eez_count > 25 & RCP85_2050_eez_count <= 100 ~ "26-100",
+                                           RCP85_2050_eez_count > 100 ~ ">100"))
+```
+
+```{r}
+cat_summary <- group_eez_count_threshold %>% 
+  group_by(group, current_eez_count_cat) %>% 
+  summarise(n_cat = n()) %>% 
+  ungroup()
+
+# Get total number in each group
+group_count <- group_eez_count_threshold %>% 
+  group_by(group) %>% 
+  summarise(n_group = n()) %>% 
+  ungroup()
+
+# Merge in group count to get percentage
+cat_summary_perc <- left_join(cat_summary, group_count) %>% 
+  mutate(perc_cat = n_cat/n_group * 100)
+```
+
+```{r}
+group_eez_count_threshold$current_eez_count_cat <- factor(group_eez_count_threshold$current_eez_count_cat, 
+levels = c("1", "2", "3-10", "11-25", "26-100", ">100"))
+
+group_eez_count_threshold$RCP85_2050_eez_count_cat <- factor(group_eez_count_threshold$RCP85_2050_eez_count_cat, 
+levels = c("1", "2", "3-10", "11-25", "26-100", ">100"))
+```
+
+```{r}
+library(forcats)
+# Plot a bar graph by group with fill as the EEZ count category
+ggplot() +
+  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(group), fill = fct_rev(current_eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d() +
+  labs(title = "Current EEZ count category by IUCN group",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw()
+```
+
+```{r}
+# Plot a bar graph by group with fill as the EEZ count category
+ggplot() +
+  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(group), fill = fct_rev(RCP85_2050_eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d() +
+  labs(title = "RCP 8.5 2050 EEZ count category by IUCN group",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw()
+```
+
+## Set up dataframe so that it's easier to plot current vs future side by side for each group 
+```{r}
+eez_count_group_simple <- group_eez_count_threshold %>% 
+  dplyr::select(group, current_eez_count_cat, RCP85_2050_eez_count_cat) %>% 
+  pivot_longer(cols = c(current_eez_count_cat, RCP85_2050_eez_count_cat), names_to = "scenario", values_to = "eez_count_cat") %>% 
+  mutate(scenario = str_replace(scenario, "current_eez_count_cat", "current"),
+         scenario = str_replace(scenario, "RCP85_2050_eez_count_cat", "RCP85_2050"))
+```
+
+```{r}
+# Plot a bar graph by group with fill as the EEZ count category
+ggplot() +
+  geom_bar(data = eez_count_group_simple, aes(y = fct_rev(group), fill = fct_rev(eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d() +
+  labs(title = "Threatened species EEZ count by IUCN comprehensive group",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
