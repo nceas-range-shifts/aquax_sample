@@ -385,7 +385,11 @@ group_eez_count_threshold <- group_eez_count %>%
                                            RCP85_2050_eez_count > 2 & RCP85_2050_eez_count <= 10 ~ "3-10",
                                            RCP85_2050_eez_count > 10 & RCP85_2050_eez_count <= 25 ~ "11-25",
                                            RCP85_2050_eez_count > 25 & RCP85_2050_eez_count <= 100 ~ "26-100",
-                                           RCP85_2050_eez_count > 100 ~ ">100"))
+                                           RCP85_2050_eez_count > 100 ~ ">100")) %>% 
+
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   TRUE ~ group))
 ```
 
 ```{r}
@@ -417,7 +421,7 @@ levels = c("1", "2", "3-10", "11-25", "26-100", ">100"))
 library(forcats)
 # Plot a bar graph by group with fill as the EEZ count category
 ggplot() +
-  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(group), fill = fct_rev(current_eez_count_cat)), position = "fill") +
+  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(general_group), fill = fct_rev(current_eez_count_cat)), position = "fill") +
   scale_fill_viridis_d() +
   labs(title = "Current EEZ count category by IUCN group",
        y = "",
@@ -429,7 +433,7 @@ ggplot() +
 ```{r}
 # Plot a bar graph by group with fill as the EEZ count category
 ggplot() +
-  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(group), fill = fct_rev(RCP85_2050_eez_count_cat)), position = "fill") +
+  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(general_group), fill = fct_rev(RCP85_2050_eez_count_cat)), position = "fill") +
   scale_fill_viridis_d() +
   labs(title = "RCP 8.5 2050 EEZ count category by IUCN group",
        y = "",
@@ -441,7 +445,7 @@ ggplot() +
 ## Set up dataframe so that it's easier to plot current vs future side by side for each group 
 ```{r}
 eez_count_group_simple <- group_eez_count_threshold %>% 
-  dplyr::select(group, current_eez_count_cat, RCP85_2050_eez_count_cat) %>% 
+  dplyr::select(general_group, current_eez_count_cat, RCP85_2050_eez_count_cat) %>% 
   pivot_longer(cols = c(current_eez_count_cat, RCP85_2050_eez_count_cat), names_to = "scenario", values_to = "eez_count_cat") %>% 
   mutate(scenario = str_replace(scenario, "current_eez_count_cat", "current"),
          scenario = str_replace(scenario, "RCP85_2050_eez_count_cat", "RCP85_2050"))
@@ -450,7 +454,7 @@ eez_count_group_simple <- group_eez_count_threshold %>%
 ```{r}
 # Plot a bar graph by group with fill as the EEZ count category
 ggplot() +
-  geom_bar(data = eez_count_group_simple, aes(y = fct_rev(group), fill = fct_rev(eez_count_cat)), position = "fill") +
+  geom_bar(data = eez_count_group_simple, aes(y = fct_rev(general_group), fill = fct_rev(eez_count_cat)), position = "fill") +
   scale_fill_viridis_d() +
   labs(title = "Threatened species EEZ count by IUCN comprehensive group",
        y = "",
@@ -461,8 +465,30 @@ ggplot() +
   facet_wrap(~scenario)
 ```
 
+## Create jitter plot of the difference btwn RCP85_2050 and current EEZ count by group 
+
+```{r}
+group_eez_count_diff <- group_eez_count_threshold %>% 
+  mutate(eez_count_diff = RCP85_2050_eez_count - current_eez_count) %>% 
+  dplyr::select(group, general_group, aphiaid, current_eez_count,RCP85_2050_eez_count, eez_count_diff)
+```
+
+```{r}
+ggplot() +
+  geom_jitter(data = group_eez_count_diff, aes(x = eez_count_diff, y = fct_rev(general_group), color = general_group),
+   alpha = 0.6, position = position_jitterdodge(dodge.width = 1, jitter.width = .25),) +
+  labs(title = "EEZ counts change by IUCN comprehensive group",
+       x = "EEZ count change (RCP85 2050 - current)",
+       y = "") +
+  theme_bw() +
+  theme(legend.position = "none") 
+```
+
 ## IUCN threats
 For those species experiencing range shifts, what are the most common IUCN threats? Are there particular threats that are more common for species experiencing range loss vs gain?
+https://www.iucnredlist.org/resources/threat-classification-scheme
+
+According to the IUCN, threats marked with timing as “ongoing”, severity as “rapid” or “very rapid” declines and scopes of “majority” or “whole” are typically considered major threats to a species. IUCN stopped using scores in 2022 due to lack of sceintific method.
 
 ```{r}
 library(iucnredlist) ### remotes::install_github("IUCN-UK/iucnredlist")
@@ -514,5 +540,84 @@ iucn_id_data_eez_top <- assessment_data_many(api, iucn_ids_exit_eez_top, wait_ti
 
 ```{r}
 # run element_names() to see what categories can be extracted
-iucn_threats_eez_top <- extract_element(iucn_id_data_eez_top, "threats")
+iucn_threats_eez_top <- extract_element(iucn_id_data_eez_top, "threats") %>% 
+  mutate(assessment_id = as.numeric(assessment_id))
+```
+
+```{r}
+# Merge in the threat data to the spp_exit_eez_top dataframe to see if there are particular threats that are more common for species exiting this EEZ
+spp_exit_eez_top_threats <- inner_join(spp_exit_eez_top, iucn_threats_eez_top, by = c("assessment_id" = "assessment_id"))
+```
+
+
+```{r}
+spp_exit_eez_top_threats_summary <- spp_exit_eez_top_threats %>% 
+  group_by(MRGID, GEONAME, code, description) %>% 
+  summarize(n_spp = n()) %>% 
+  ungroup() %>% 
+  arrange(desc(n_spp))
+
+```
+
+```{r}
+# Try filtering for only severe threats (scope of majority or whole, severity of rapid or very rapid, timing of ongoing)
+# 7 of the 75 species exiting the Singapore/Malaysia EEZ under RCP8.5 2050 are experiencing severe threats according to IUCN criteria
+# Threats are all connected to fishing and harvest, along with shipping lanes
+spp_exit_eez_top_severe_threats_summary <- spp_exit_eez_top_threats %>% 
+  filter(scope.y %in% c("Majority (50-90%)", "Whole (>90%)") &
+         severity %in% c("Rapid Declines", "Very Rapid Declines") &
+         timing == "Ongoing") %>%
+  group_by(MRGID, GEONAME, code, description) %>% 
+  summarize(n_spp = n()) %>% 
+  ungroup() %>% 
+  arrange(desc(n_spp))
+
+```
+
+
+```{r}
+# What about all the threatened species leaving EEZs under RCP8.5 2050
+spp_exit_eez <- spp_eez_pxl_count_group %>% 
+  filter(is.na(n_RCP85_2050) & n_current > 0)
+```
+
+```{r}
+# Get IUCN IDs for these species
+iucn_ids_exit_eez <- unique(spp_exit_eez$assessment_id)
+```
+
+```{r}
+# still need to run this through assesment_data_many
+iucn_id_data_eez <- assessment_data_many(api, iucn_ids_exit_eez, wait_time = 0.5)
+```
+
+```{r}
+# run element_names() to see what categories can be extracted
+iucn_threats_eez <- extract_element(iucn_id_data_eez, "threats") %>% 
+  mutate(assessment_id = as.numeric(assessment_id))
+```
+
+```{r}
+# Merge in the threat data to the spp_exit_eez_top dataframe to see if there are particular threats that are more common for species exiting this EEZ
+spp_exit_eez_threats <- inner_join(spp_exit_eez, iucn_threats_eez, by = c("assessment_id" = "assessment_id"))
+```
+
+```{r}
+# Filter for the severe threats (33 threatened species experiencing severe threats)
+spp_exit_eez_severe_threats <- spp_exit_eez_threats %>% 
+  filter(scope.y %in% c("Majority (50-90%)", "Whole (>90%)") &
+         severity %in% c("Rapid Declines", "Very Rapid Declines") &
+         timing == "Ongoing")  
+
+spp_exit_eez_severe_threats_summary <- spp_exit_eez_severe_threats %>% 
+  group_by(MRGID, GEONAME, code, description) %>% 
+  summarize(n_spp = n()) %>% 
+  ungroup() %>% 
+  arrange(desc(n_spp))
+```
+
+
+```{r}
+# IDs for severe threat species that are leaving EEZS under RCP8.5 2050
+iucn_ids_exit_eez_severe_threats <- unique(spp_exit_eez_severe_threats$aphiaid)
 ```
