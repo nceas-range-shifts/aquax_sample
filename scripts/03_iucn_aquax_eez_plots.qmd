@@ -460,3 +460,59 @@ ggplot() +
   theme(legend.position = "bottom") +
   facet_wrap(~scenario)
 ```
+
+## IUCN threats
+For those species experiencing range shifts, what are the most common IUCN threats? Are there particular threats that are more common for species experiencing range loss vs gain?
+
+```{r}
+library(iucnredlist) ### remotes::install_github("IUCN-UK/iucnredlist")
+```
+
+```{r}
+api_key <- Sys.getenv("IUCN_API_KEY") ### usethis::edit_r_environ() to add key to R environment file
+api <- init_api(api_key)
+```
+
+```{r}
+iucn_cat_threat <- iucn_cat %>% 
+  filter(redlist_category %in% c("CR", "EN", "VU"))
+```
+
+```{r}
+# Get IUCN ID data 
+iucn_id_data <- iucn_cat_threat$assessment_id
+```
+
+```{r}
+# still need to run this through assesment_data_many
+iucn_id_data <- assessment_data_many(api, iucn_id_data[1:5], wait_time = 0.5)
+```
+
+```{r}
+# run element_names() to see what categories can be extracted
+iucn_threats <- extract_element(iucn_id_data, "threats")
+```
+
+Threat information is pretty complicated, so maybe will focus on a subset of species for now. Perhaps exiting a certain EEZ. 
+
+```{r}
+# Singapore / Malaysia & Malaysia EEZs has the most threatened species exits under RCP8.5 2050 - get list of species exiting this EEZ
+spp_exit_eez_top <- spp_eez_pxl_count_group %>% 
+  filter(MRGID %in% c("64440", "8485")) %>%
+  filter(is.na(n_RCP85_2050) & n_current > 0)
+```
+
+```{r}
+# Get IUCN IDs for these species
+iucn_ids_exit_eez_top <- unique(spp_exit_eez_top$assessment_id)
+```
+
+```{r}
+# still need to run this through assesment_data_many
+iucn_id_data_eez_top <- assessment_data_many(api, iucn_ids_exit_eez_top, wait_time = 0.5)
+```
+
+```{r}
+# run element_names() to see what categories can be extracted
+iucn_threats_eez_top <- extract_element(iucn_id_data_eez_top, "threats")
+```
