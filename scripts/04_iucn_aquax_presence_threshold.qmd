@@ -190,7 +190,7 @@ ggplot(eez_spp_pxls_long %>%
   theme_minimal()
 ```
 
-# Identify pixels entering/exiting EEZs - 10 pixel threshold
+# Identify pixels entering EEZs - 10 pixel threshold
 ```{r}
 # Get counts of entry into new by EEZ for 10 pixel threshold
 eez_spp_entry_10 <- eez_spp_pxls_long_10 %>% 
@@ -203,7 +203,7 @@ eez_raster_df <- as.data.frame(eez_raster_geoname, xy = TRUE)
 ```
 
 ```{r}
-# Try // - took ~1 min for 987 species
+# Try // - took ~40 seconds for 987 species
 system.time({
   eez_pixels_threatened_10 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
                                             df = df_threatened,
@@ -212,4 +212,217 @@ system.time({
                                             eez_raster_df = eez_raster_df,
                                             mc.cores = 20)
 })
+```
+
+```{r}
+eez_count_threatened_10_df <- bind_rows(eez_pixels_threatened_10)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_threatened_10_df <- eez_count_threatened_10_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050",
+         pxl_thresh = "10") %>% 
+  ungroup()
+```
+
+# Identify pixels entering EEZs - 100 pixel threshold
+```{r}
+# Get counts of entry into new by EEZ for 10 pixel threshold
+eez_spp_entry_100 <- eez_spp_pxls_long_100 %>% 
+  filter(spp_change == "entry into new")
+```
+
+```{r}
+# Try // - took ~40 seconds for 987 species
+system.time({
+  eez_pixels_threatened_100 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            eez_spp_entry = eez_spp_entry_100,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_100_df <- bind_rows(eez_pixels_threatened_100)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_threatened_100_df <- eez_count_threatened_100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050",
+         pxl_thresh = "100") %>% 
+  ungroup()
+```
+
+## Plot species pixels
+
+```{r}
+# Convert to equal area projection for plotting
+eez_eq <- st_transform(eez, crs = "EPSG:8857")
+```
+
+```{r}
+# Convert to equal area projection for plotting
+spp_entry_10_r <- rast(eez_sum_threatened_10_df, crs = "EPSG:4326") %>% 
+  project("EPSG:8857", method = "near")
+
+spp_entry_100_r <- rast(eez_sum_threatened_100_df, crs = "EPSG:4326") %>% 
+  project("EPSG:8857", method = "near")
+```
+
+```{r}
+# Back to df for ggplot
+spp_entry_10_df_eq <- as.data.frame(spp_entry_10_r , xy = TRUE) 
+spp_entry_100_df_eq <- as.data.frame(spp_entry_100_r , xy = TRUE) 
+```
+
+```{r}
+# Plot EEZ entry pixels
+ggplot() +
+  geom_sf(data = eez) +
+  geom_tile(data = eez_sum_threatened_10_df, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(limits = c(1,9), direction = -1) +
+  scale_color_viridis_c(limits = c(1,9), direction = -1) +
+  theme_minimal()
+```
+
+```{r}
+# Plot EEZ entry pixels
+ggplot() +
+  geom_sf(data = eez) +
+  geom_tile(data = eez_sum_threatened_100_df, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(limits = c(1,9), direction = -1) +
+  scale_color_viridis_c(limits = c(1,9), direction = -1) +
+  theme_minimal()
+```
+
+For 100 threshold, let's plot density diagram on side
+
+```{r}
+lat_sum_100_df <- eez_sum_threatened_100_df %>% 
+  group_by(y, scenario, pxl_thresh) %>% 
+  summarize(n_entry_spp = sum(n_entry_spp))
+```
+
+```{r}
+ggplot(eez_sum_threatened_100_df, aes(x = y)) +
+  geom_density(fill = "forestgreen", alpha = 0.5) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal()
+```
+
+
+# Identify pixels exiting EEZs - 10 pixel threshold
+```{r}
+# Get counts of exit from historical by EEZ for 10 pixel threshold
+eez_spp_exit_10 <- eez_spp_pxls_long_10 %>% 
+  filter(spp_change == "exit from historical")
+```
+
+```{r}
+# Try // - took ~40 seconds for 987 species
+system.time({
+  eez_pixels_exit_10 <- parallel::mclapply(aphiaid, FUN = extract_eez_exit_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            eez_spp_exit = eez_spp_exit_10,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_exit_10_df <- bind_rows(eez_pixels_exit_10)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_exit_10_df <- eez_count_exit_10_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050",
+         pxl_thresh = "10") %>% 
+  ungroup()
+```
+
+# Identify pixels entering EEZs - 100 pixel threshold
+```{r}
+# Get counts of exit from historical by EEZ for 100 pixel threshold
+eez_spp_exit_100 <- eez_spp_pxls_long_100 %>% 
+  filter(spp_change == "exit from historical")
+```
+
+```{r}
+# Try // - took ~40 seconds for 987 species
+system.time({
+  eez_pixels_exit_100 <- parallel::mclapply(aphiaid, FUN = extract_eez_exit_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            eez_spp_exit = eez_spp_exit_100,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_exit_100_df <- bind_rows(eez_pixels_exit_100)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_exit_100_df <- eez_count_exit_100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050",
+         pxl_thresh = "100") %>% 
+  ungroup()
+```
+
+## Plot species pixels
+
+```{r}
+# Plot EEZ exit pixels
+ggplot() +
+  geom_sf(data = eez) +
+  geom_tile(data = eez_sum_exit_10_df, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(limits = c(1,20), direction = -1) +
+  scale_color_viridis_c(limits = c(1,20), direction = -1) +
+  theme_minimal()
+```
+```{r}
+# Plot EEZ exit pixels
+ggplot() +
+  geom_sf(data = eez) +
+  geom_tile(data = eez_sum_exit_100_df, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(limits = c(1,20), direction = -1) +
+  scale_color_viridis_c(limits = c(1,20), direction = -1) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(eez_sum_exit_100_df, aes(x = y)) +
+  geom_density(fill = "darkmagenta", alpha = 0.5,
+               color = "darkmagenta") +
+  geom_density(data = eez_sum_threatened_100_df, aes(x = y),
+               fill = "darkgreen", alpha = 0.5,
+               color = "darkgreen") +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal()
 ```
