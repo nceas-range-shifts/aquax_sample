@@ -1,0 +1,531 @@
+---
+title: "AquaX and IUCN status"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+```
+
+This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). 
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_species_assessments.csv")
+```
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+We'll use the functions to process the AquaX data for the count of threatened species entering and exiting EEZs.
+
+## EEZ 
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez_simple <- eez |>
+  select(MRGID, GEONAME, geom)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez, aes()) +
+  geom_sf(data = eez |> filter(GEONAME == "Russian Exclusive Economic Zone"), aes(), fill = "red") +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
+```
+
+```{r}
+eez_raster_geoname <- rasterize(eez_simple, eez_raster_blank, field = "GEONAME")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez_simple, eez_raster_blank, field = "MRGID")
+```
+
+# IUCN threatened species
+
+```{r}
+# Filter the iucn_lookup for species with an SDM
+iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
+```
+
+```{r}
+# Filter iucn categories for threatened species (CR, EN, VU)
+iucn_threatened <- iucn_new_cat %>% 
+  filter(redlist_category %in% c("CR","EN", "VU"))
+```
+
+```{r}
+# Merge in the iucn_lookup_sdm to get the AphiaID for the threatened species
+aphiaid_threatened <- inner_join(iucn_lookup_sdm, iucn_threatened, by = c("iucn_assessment_id" = "assessment_id")) 
+```
+
+```{r}
+# Get aphiaids for the threatened species
+aphiaid_threat <- unique(aphiaid_threatened$aphia_id)
+```
+
+## Prep AquaX data
+We'll be working with the 1,047 thretened aphiaids
+
+```{r}
+# read in meta data on the aquax sample of redlist species
+load("/home/shares/data-aquax/iucn_request/meta.Rdata")
+```
+
+```{r}
+meta_clean <- meta %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(meta, by = c('aphiaid' = 'AphiaID'))
+```
+
+```{r}
+# Filter for the AphiaID of the threatend species - get 987 species in AquaX data (even though the 1,047 species were in the iucn_lookup_sdm with AquaX SDMs)
+df_threatened <- df %>% 
+  filter(aphiaid %in% aphiaid_threat)
+```
+
+```{r}
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1017389.parquet")
+```
+
+```{r}
+set.seed(123)
+test_spp_30 <- slice_sample(df_threatened, n = 30)
+files_30 <- test_spp_30$f
+aphiaid_30 <- test_spp_30$aphiaid
+```
+
+```{r}
+test_r <- rast(test_f, crs = "EPSG:4326") %>%
+    extend(ext(eez_raster_mrgid))
+```
+
+```{r}
+# Test plot
+plot(test_r_eq$RCP45_2050)
+```
+
+```{r}
+r_binary45_2050 <- ifel(test_r[["RCP45_2050"]] >= mean(test_f$cutoff, na.rm = TRUE), 1, NA)
+```
+
+```{r}
+# Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
+# Try // - took 2 min
+system.time({
+  eez_list_zonal <- parallel::mclapply(aphiaid_30, FUN = extract_eez_zonal, 
+                                       df = test_spp_30, 
+                                       eez_raster = eez_raster_mrgid, 
+                                       mc.cores = 10)
+})
+```
+
+```{r}
+eez_list_all_zonal <- bind_rows(eez_list_zonal) 
+```
+
+```{r}
+eez_ids <- eez %>% 
+  st_drop_geometry() %>% 
+  dplyr::select(MRGID, GEONAME)
+```
+
+```{r}
+eez_list_geoname <- left_join(eez_list_all_zonal, eez_ids)
+```
+
+
+```{r}
+eez_raster_df <- as.data.frame(eez_raster_mrgid_eq, xy = TRUE, cells = TRUE)
+eez_raster_df_non_eq <- as.data.frame(eez_raster_mrgid, xy = TRUE, cells = TRUE)
+```
+
+## Test out full threatened sample
+
+```{r}
+files <- df_threatened$f
+aphiaid <- df_threatened$aphiaid
+```
+
+```{r}
+# Try // - took 21 min for 987 species and 4 scenarios
+system.time({
+  eez_list_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_zonal, 
+                                            df = df_threatened,
+                                            eez_raster = eez_raster_mrgid,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_list_threatened_bind <- bind_rows(eez_list_threatened) 
+```
+
+```{r}
+# Merge in EEZ ids
+eez_threatened_ids <- left_join(eez_list_threatened_bind, eez_ids)
+```
+
+```{r}
+# Save data
+write_csv(eez_threatened_ids, here("data/iucn_threatened_spp_eez_pxls_052126.csv"))
+```
+
+# Identify pixels entering/exiting EEZs
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- eez_threatened_ids %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  mutate(spp_change = case_when(is.na(n_current) &  pxl_count > 0 ~ 'entry into new',
+                            n_current > 0  & is.na(pxl_count) ~ 'exit from historical',
+                            is.na(n_current)  & is.na(pxl_count) == 0 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_geoname, xy = TRUE)
+```
+
+```{r}
+# Join to the test df
+test_f_eez <- inner_join(test_f, eez_raster_df)
+
+test_f_us <- test_f_eez %>% 
+  filter(GEONAME == "United States Exclusive Economic Zone") %>% 
+  #mutate(bi_RCP45_2050 = ifelse(RCP45_2050 >= cutoff, 1, 0))
+  filter(RCP45_2050 >= cutoff) %>% 
+  mutate(bi_RCP45_2050 = 1)
+```
+
+```{r}
+test_r_us_r <- rast(test_f_us,  crs = "EPSG:4326") 
+```
+
+```{r}
+system.time({
+  eez_list_count_df <- parallel::mclapply(aphiaid_30, FUN = extract_eez_entry_pixels_df, 
+                                       df = test_spp_30, 
+                                       s = "RCP45_2050",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 10)
+})
+```
+
+```{r}
+eez_count_df <- bind_rows(eez_list_count_df)
+```
+
+```{r}
+# Sum by XY cell, create raster
+eez_sum_df <- eez_count_df %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+eez_sum_raster_30 <- rast(eez_sum_df, crs = "EPSG:4326")
+```
+
+```{r}
+plot(eez_sum_raster_30$n_entry_spp)
+```
+
+```{r}
+# Try // - took ~1 min for 987 species
+system.time({
+  eez_pixels_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            eez_spp_entry = eez_spp_entry,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_df <- bind_rows(eez_pixels_threatened)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_threatened_df <- eez_count_threatened_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  ungroup()
+```
+
+```{r}
+# Try // - took ~1 min for 987 species
+system.time({
+  eez_pixels_threatened_45_2100 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2100",
+                                            eez_spp_entry = eez_spp_entry,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_45_2100_df <- bind_rows(eez_pixels_threatened_45_2100)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_threatened_45_2100_df <- eez_count_threatened_45_2100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2100") %>% 
+  ungroup()
+```
+
+```{r}
+# Try // - took ~1 min for 987 species
+system.time({
+  eez_pixels_threatened_85_2050 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP85_2050",
+                                            eez_spp_entry = eez_spp_entry,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_85_2050_df <- bind_rows(eez_pixels_threatened_85_2050)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_threatened_85_2050_df <- eez_count_threatened_85_2050_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP85_2050") %>% 
+  ungroup()
+```
+
+```{r}
+# Try // - took ~1 min for 987 species
+system.time({
+  eez_pixels_threatened_85_2100 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP85_2100",
+                                            eez_spp_entry = eez_spp_entry,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_85_2100_df <- bind_rows(eez_pixels_threatened_85_2100)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_threatened_85_2100_df <- eez_count_threatened_85_2100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP85_2100") %>% 
+  ungroup()
+```
+
+```{r}
+# Bind the entry cells together, add in MRGID for EEZs
+eez_sum_threatened_scenarios <- rbind(eez_sum_threatened_df,
+                                      eez_sum_threatened_45_2100_df,
+                                      eez_sum_threatened_85_2050_df,
+                                      eez_sum_threatened_85_2100_df)
+
+eez_sum_threatened_scenarios_mrgid <- left_join(eez_sum_threatened_scenarios, eez_ids) %>% 
+  dplyr::select(x, y, GEONAME, MRGID, scenario, n_entry_spp)
+```
+
+```{r}
+# save data as rds
+saveRDS(eez_sum_threatened_scenarios_mrgid, here("data/iucn_threatened_entry_pxls_052126.rds"))
+```
+
+## Extract exit pixels
+
+```{r}
+eez_spp_exit <- eez_spp_pxls_long %>% 
+  filter(spp_change == "exit from historical")
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_45_2050 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP45_2050",
+                                                      eez_spp_exit = eez_spp_exit,
+                                                      eez_raster_df = eez_raster_df,
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_pixels_exit_45_2050_df <- bind_rows(eez_pixels_exit_45_2050)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_exit_45_2050_df <- eez_pixels_exit_45_2050_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  ungroup()
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_45_2100 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP45_2100",
+                                                      eez_spp_exit = eez_spp_exit,
+                                                      eez_raster_df = eez_raster_df,
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_pixels_exit_45_2100_df <- bind_rows(eez_pixels_exit_45_2100)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_exit_45_2100_df <- eez_pixels_exit_45_2100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2100") %>% 
+  ungroup()
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_85_2050 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP85_2050",
+                                                      eez_spp_exit = eez_spp_exit,
+                                                      eez_raster_df = eez_raster_df,
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_pixels_exit_85_2050_df <- bind_rows(eez_pixels_exit_85_2050)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_exit_85_2050_df <- eez_pixels_exit_85_2050_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP85_2050") %>% 
+  ungroup()
+```
+
+```{r}
+# Try // - took ~1 min for 906 species
+system.time({
+  eez_pixels_exit_85_2100 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_exit_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP85_2100",
+                                                      eez_spp_exit = eez_spp_exit,
+                                                      eez_raster_df = eez_raster_df,
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_pixels_exit_85_2100_df <- bind_rows(eez_pixels_exit_85_2100)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_exit_85_2100_df <- eez_pixels_exit_85_2100_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP85_2100") %>% 
+  ungroup()
+```
+
+```{r}
+# Bind the exit cells together, add in MRGID for EEZs
+eez_sum_exit_scenarios <- rbind(eez_sum_exit_45_2050_df,
+                                      eez_sum_exit_45_2100_df,
+                                      eez_sum_exit_85_2050_df,
+                                      eez_sum_exit_85_2100_df)
+
+eez_sum_exit_scenarios_mrgid <- left_join(eez_sum_exit_scenarios, eez_ids) %>% 
+  dplyr::select(x, y, GEONAME, MRGID, scenario, n_exit_spp)
+```
+
+```{r}
+# save data as rds
+saveRDS(eez_sum_exit_scenarios_mrgid, here("data/iucn_threatened_exit_pxls_052126.rds"))
+```
+
