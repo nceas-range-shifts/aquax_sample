@@ -152,6 +152,8 @@ eez_spp_pxls_long_10 <- spp_eez_pxl_count %>%
                values_to = "pxl_count") %>% 
   mutate(scenario = str_remove(scenario, "n_"),
         pxl_thres = 10) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
   mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
                             n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
                             n_current < 10  & pxl_count < 10 ~ 'no presence',
@@ -166,6 +168,8 @@ eez_spp_pxls_long_100 <- spp_eez_pxl_count %>%
                values_to = "pxl_count") %>% 
   mutate(scenario = str_remove(scenario, "n_"),
         pxl_thres = 100) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
   mutate(spp_change = case_when(n_current < 100 &  pxl_count >= 100 ~ 'entry into new',
                             n_current >= 100  & pxl_count < 100 ~ 'exit from historical',
                             n_current < 100  & pxl_count < 100 ~ 'no presence',
@@ -305,8 +309,8 @@ plot_entry_100_map <- ggplot() +
   geom_tile(data = eez_sum_threatened_100_df, aes(x = x, y = y,
                                                fill = n_entry_spp,
                                                color = n_entry_spp)) +
-  scale_fill_viridis_c(limits = c(1,9), direction = -1) +
-  scale_color_viridis_c(limits = c(1,9), direction = -1)  +
+  scale_fill_viridis_c(limits = c(1,15), direction = -1) +
+  scale_color_viridis_c(limits = c(1,15), direction = -1)  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species entry count",
@@ -354,8 +358,8 @@ plot_entry_10_map <- ggplot() +
   geom_tile(data = eez_sum_threatened_10_df, aes(x = x, y = y,
                                                fill = n_entry_spp,
                                                color = n_entry_spp)) +
-  scale_fill_viridis_c(limits = c(1,9), direction = -1) +
-  scale_color_viridis_c(limits = c(1,9), direction = -1)  +
+  scale_fill_viridis_c(limits = c(1,15), direction = -1) +
+  scale_color_viridis_c(limits = c(1,15), direction = -1)  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species entry count",
@@ -550,8 +554,8 @@ plot_exit_10_map <- ggplot() +
   geom_tile(data = eez_sum_exit_10_df, aes(x = x, y = y,
                                                fill = n_exit_spp,
                                                color = n_exit_spp)) +
-  scale_fill_viridis_c(limits = c(1,20), direction = -1) +
-  scale_color_viridis_c(limits = c(1,20), direction = -1)  +
+  scale_fill_viridis_c(limits = c(1,25), direction = -1) +
+  scale_color_viridis_c(limits = c(1,25), direction = -1)  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species exit count",
@@ -588,8 +592,8 @@ plot_exit_100_map <- ggplot() +
   geom_tile(data = eez_sum_exit_100_df, aes(x = x, y = y,
                                                fill = n_exit_spp,
                                                color = n_exit_spp)) +
-  scale_fill_viridis_c(limits = c(1,20), direction = -1) +
-  scale_color_viridis_c(limits = c(1,20), direction = -1)  +
+  scale_fill_viridis_c(limits = c(1,25), direction = -1) +
+  scale_color_viridis_c(limits = c(1,25), direction = -1)  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species exit count",
@@ -632,8 +636,8 @@ plot_exit_1_map <- ggplot() +
   geom_tile(data = eez_sum_exit_1_df, aes(x = x, y = y,
                                                fill = n_exit_spp,
                                                color = n_exit_spp)) +
-  scale_fill_viridis_c(limits = c(1,20), direction = -1) +
-  scale_color_viridis_c(limits = c(1,20), direction = -1)  +
+  scale_fill_viridis_c(limits = c(1,25), direction = -1) +
+  scale_color_viridis_c(limits = c(1,25), direction = -1)  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species exit count",
@@ -758,3 +762,12 @@ ggplot(data = spp_exit_summary, aes(x = n_spp_exit_cat, y = n_eez,
        y = "EEZ count",
        x = "Species exit count")
 ```
+# Why more species entries under 100 threshold than 10 threshold 
+
+```{r}
+thres_under100 <- bind_rows(eez_spp_pxls_long_1, eez_spp_pxls_long_10, eez_spp_pxls_long_100) %>% 
+    filter(scenario == "RCP85_2050", 
+           pxl_thres %in% c("10", "100")) %>% 
+  filter(n_current <= 100)
+```
+
