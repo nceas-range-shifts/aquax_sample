@@ -27,16 +27,16 @@ source(here( "common_fxns.R"))
 ```
 
 ```{r}
-iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_worms_aphia_id_complete.csv")
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
 ```
 
 ```{r}
-iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_species_assessments.csv")
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_species_assessments.csv")
 ```
 
 ```{r}
 # Spp in EEZs
-spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_052126.csv"))
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
 ```
 
 # IUCN threatened species
@@ -47,9 +47,9 @@ iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
 ```
 
 ```{r}
-# Filter iucn categories for threatened species (CR, EN, VU)
+# Filter iucn categories for threatened species (CR, EN, VU) and near threatened (NT)
 iucn_threatened <- iucn_new_cat %>% 
-  filter(redlist_category %in% c("CR","EN", "VU"))
+  filter(redlist_category %in% c("CR","EN", "VU", "NT"))
 ```
 
 ```{r}
@@ -63,15 +63,15 @@ aphiaid_threat <- unique(aphiaid_threatened$aphia_id)
 ```
 
 ## Prep AquaX data
-We'll be working with the 1,047 thretened aphiaids
+We'll be working with the 1,047 threatened aphiaids and 237 near threatened species
 
 ```{r}
 # read in meta data on the aquax sample of redlist species
-load("/home/shares/data-aquax/iucn_request/meta.Rdata")
+load("/home/shares/data-aquax/META_02122025.Rdata")
 ```
 
 ```{r}
-meta_clean <- meta %>% 
+meta_clean <- META %>% 
   mutate(worms_name = tolower(ScientificName)) %>% 
   select(!ScientificName) %>% 
   # simplify for now for easier viewing
@@ -85,11 +85,11 @@ spp_fs <- list.files('/home/shares/data-aquax/SDM',
 df <- data.frame(f = spp_fs) %>%
     mutate(fsize = file.size(f),
            aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
-    left_join(meta, by = c('aphiaid' = 'AphiaID'))
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
 ```
 
 ```{r}
-# Filter for the AphiaID of the threatend species - get 987 species in AquaX data (even though the 1,047 species were in the iucn_lookup_sdm with AquaX SDMs)
+# Filter for the AphiaID of the threatend species 
 df_threatened <- df %>% 
   filter(aphiaid %in% aphiaid_threat)
 ```
@@ -207,7 +207,7 @@ eez_raster_df <- as.data.frame(eez_raster_geoname, xy = TRUE)
 ```
 
 ```{r}
-# Try // - took ~40 seconds for 987 species
+# Try // - took ~50 seconds for 1323 species
 system.time({
   eez_pixels_threatened_10 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
                                             df = df_threatened,
@@ -265,6 +265,39 @@ eez_sum_threatened_100_df <- eez_count_threatened_100_df  %>%
   ungroup()
 ```
 
+# Identify pixels entering EEZs - 1 pixel threshold
+```{r}
+# Get counts of entry into new by EEZ for 1 pixel threshold
+eez_spp_entry_1 <- eez_spp_pxls_long_1 %>% 
+  filter(spp_change == "entry into new")
+```
+
+```{r}
+# Try // - took ~40 seconds for 987 species
+system.time({
+  eez_pixels_threatened_1 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            eez_spp_entry = eez_spp_entry_1,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_threatened_1_df <- bind_rows(eez_pixels_threatened_1)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_threatened_1_df <- eez_count_threatened_1_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_entry_spp = sum(binary, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050",
+         pxl_thresh = "1") %>% 
+  ungroup()
+```
+
 ## Plot species pixels
 
 ```{r}
@@ -294,8 +327,8 @@ ggplot() +
   geom_tile(data = eez_sum_threatened_10_df, aes(x = x, y = y,
                                                fill = n_entry_spp,
                                                color = n_entry_spp)) +
-  scale_fill_viridis_c(limits = c(1,9), direction = -1) +
-  scale_color_viridis_c(limits = c(1,9), direction = -1) +
+  scale_fill_viridis_c(limits = c(1,16), direction = -1) +
+  scale_color_viridis_c(limits = c(1,16), direction = -1) +
   scale_y_continuous(limits = c(-60, 90)) +
   theme_minimal() + 
   theme(legend.position = "left")
@@ -391,18 +424,6 @@ plot_entry_10_map + plot_entry_10_density +
 # Create combination plot for 1 pixel threshold
 
 ```{r}
-# Read in r data since 1 pixel threshold was calcualted in 01_iucn_aquax_eez_overlap.qmd
-spp_entry_1_pxls <- read_rds(here("data/iucn_threatened_entry_pxls_052126.rds"))
-spp_exit_1_pxls <- read_rds(here("data/iucn_threatened_exit_pxls_052126.rds"))
-```
-
-```{r}
-eez_sum_threatened_1_df <- spp_entry_1_pxls %>% 
-  filter(scenario == "RCP45_2050") %>% 
-  mutate(pxl_thresh = "1") 
-```
-
-```{r}
 # Plot EEZ entry pixels
 plot_entry_1_map <- ggplot() +
   geom_sf(data = eez) +
@@ -475,7 +496,7 @@ eez_sum_exit_10_df <- eez_count_exit_10_df  %>%
   ungroup()
 ```
 
-# Identify pixels entering EEZs - 100 pixel threshold
+# Identify pixels exiting EEZs - 100 pixel threshold
 ```{r}
 # Get counts of exit from historical by EEZ for 100 pixel threshold
 eez_spp_exit_100 <- eez_spp_pxls_long_100 %>% 
@@ -505,6 +526,39 @@ eez_sum_exit_100_df <- eez_count_exit_100_df  %>%
   summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
   mutate(scenario = "RCP45_2050",
          pxl_thresh = "100") %>% 
+  ungroup()
+```
+
+# Identify pixels exiting EEZs - 1 pixel threshold
+```{r}
+# Get counts of exit from historical by EEZ for 100 pixel threshold
+eez_spp_exit_1 <- eez_spp_pxls_long_1%>% 
+  filter(spp_change == "exit from historical")
+```
+
+```{r}
+# Try // - took ~40 seconds for 987 species
+system.time({
+  eez_pixels_exit_1 <- parallel::mclapply(aphiaid, FUN = extract_eez_exit_pixels_df, 
+                                            df = df_threatened,
+                                            s = "RCP45_2050",
+                                            eez_spp_exit = eez_spp_exit_1,
+                                            eez_raster_df = eez_raster_df,
+                                            mc.cores = 20)
+})
+```
+
+```{r}
+eez_count_exit_1_df <- bind_rows(eez_pixels_exit_1)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_exit_1_df <- eez_count_exit_1_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_exit_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP45_2050",
+         pxl_thresh = "1") %>% 
   ungroup()
 ```
 
