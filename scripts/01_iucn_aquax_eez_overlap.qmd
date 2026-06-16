@@ -22,11 +22,11 @@ library(arrow)
 This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). 
 
 ```{r}
-iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_worms_aphia_id_complete.csv")
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
 ```
 
 ```{r}
-iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_species_assessments.csv")
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_species_assessments.csv")
 ```
 
 ```{r}
@@ -81,9 +81,9 @@ iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
 ```
 
 ```{r}
-# Filter iucn categories for threatened species (CR, EN, VU)
+# Filter iucn categories for threatened species (CR, EN, VU) and near threatened (NT) species
 iucn_threatened <- iucn_new_cat %>% 
-  filter(redlist_category %in% c("CR","EN", "VU"))
+  filter(redlist_category %in% c("CR","EN", "VU", "NT"))
 ```
 
 ```{r}
@@ -100,12 +100,12 @@ aphiaid_threat <- unique(aphiaid_threatened$aphia_id)
 We'll be working with the 1,047 thretened aphiaids
 
 ```{r}
-# read in meta data on the aquax sample of redlist species
-load("/home/shares/data-aquax/iucn_request/meta.Rdata")
+# read in meta data on the aquax species
+load("/home/shares/data-aquax/META_02122025.Rdata")
 ```
 
 ```{r}
-meta_clean <- meta %>% 
+meta_clean <- META %>% 
   mutate(worms_name = tolower(ScientificName)) %>% 
   select(!ScientificName) %>% 
   # simplify for now for easier viewing
@@ -119,11 +119,11 @@ spp_fs <- list.files('/home/shares/data-aquax/SDM',
 df <- data.frame(f = spp_fs) %>%
     mutate(fsize = file.size(f),
            aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
-    left_join(meta, by = c('aphiaid' = 'AphiaID'))
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
 ```
 
 ```{r}
-# Filter for the AphiaID of the threatend species - get 987 species in AquaX data (even though the 1,047 species were in the iucn_lookup_sdm with AquaX SDMs)
+# Filter for the AphiaID of the threatend species - get 1,047 threatened species and 276 non-threatened species with SDMs
 df_threatened <- df %>% 
   filter(aphiaid %in% aphiaid_threat)
 ```
@@ -192,12 +192,12 @@ aphiaid <- df_threatened$aphiaid
 ```
 
 ```{r}
-# Try // - took 21 min for 987 species and 4 scenarios
+# Try // - took 20 min for 1323 species and 4 scenarios (21 min for 987 species and 4 scenarios and 20 cores)
 system.time({
   eez_list_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_zonal, 
                                             df = df_threatened,
                                             eez_raster = eez_raster_mrgid,
-                                            mc.cores = 20)
+                                            mc.cores = 40)
 })
 ```
 
@@ -207,12 +207,12 @@ eez_list_threatened_bind <- bind_rows(eez_list_threatened)
 
 ```{r}
 # Merge in EEZ ids
-eez_threatened_ids <- left_join(eez_list_threatened_bind, eez_ids)
+eez_threatened_ids <- left_join(eez_list_threatened_bind, (eez_simple %>% st_drop_geometry()))
 ```
 
 ```{r}
 # Save data
-write_csv(eez_threatened_ids, here("data/iucn_threatened_spp_eez_pxls_052126.csv"))
+write_csv(eez_threatened_ids, here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
 ```
 
 # Identify pixels entering/exiting EEZs
