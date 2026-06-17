@@ -85,17 +85,48 @@ extract_eez_exit_pixels_df <- function(id, df, s, eez_spp_exit, eez_raster_df) {
     mutate(aphiaid = id) %>% 
     dplyr::select(x, y, Current, all_of(s), cutoff)
   
-  # Filter the df of entry into for this species & scenario
+  # Filter the df of exits into for this species & scenario
   exit_spp_df <- eez_spp_exit %>% 
     filter(aphiaid == id) %>% 
     filter(scenario == s)
   
-  # Get the EEZs for which the species & scenario is entry
+  # Get the EEZs for which the species & scenario is exit
   spp_exit_eezs <- unique(exit_spp_df$GEONAME)
+  
+  # Join the eez dataframe and filter for the spp_exit_eezs
+  spp_eez <- inner_join(spp, eez_raster_df) %>% 
+    filter(GEONAME %in% spp_exit_eezs) %>% 
+    filter(Current >= cutoff) %>% 
+    mutate(binary_loss = 1) %>% 
+    bind_rows()
+  
+  return(spp_eez)
+}
+
+# Get continued presence pixels for a species by EEZ
+extract_eez_cp_pixels_df <- function(id, df, s, eez_spp_cp, eez_raster_df) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  spp <- read_parquet(spp_filter$f) %>%
+    mutate(aphiaid = id) %>% 
+    dplyr::select(x, y, Current, all_of(s), cutoff)
+  
+  # Filter the df of entry into for this species & scenario
+  cp_spp_df <- eez_spp_cp %>% 
+    filter(aphiaid == id) %>% 
+    filter(scenario == s)
+  
+  # Get the EEZs for which the species & scenario is continued presence
+  spp_cp_eezs <- unique(cp_spp_df$GEONAME)
   
   # Join the eez dataframe and filter for the spp_entry_eezs
   spp_eez <- inner_join(spp, eez_raster_df) %>% 
-    filter(GEONAME %in% spp_exit_eezs) %>% 
+    filter(GEONAME %in% spp_cp_eezs) %>% 
     filter(Current >= cutoff) %>% 
     mutate(binary_loss = 1) %>% 
     bind_rows()

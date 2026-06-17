@@ -537,3 +537,121 @@ eez_sum_exit_scenarios_mrgid <- left_join(eez_sum_exit_scenarios, eez_ids) %>%
 saveRDS(eez_sum_exit_scenarios_mrgid, here("data/iucn_threatened_10pxlthres_exit_pxls_061726.rds"))
 ```
 
+# Identify continued presence pixels
+
+```{r}
+eez_spp_cp <- eez_spp_pxls_long %>% 
+  filter(spp_change == "continued presence")
+```
+
+```{r}
+# Try // - took ~1 min for 1323 species
+system.time({
+  eez_pixels_cp_85_2050 <- parallel::mclapply(aphiaid, 
+                                                      FUN = extract_eez_cp_pixels_df, 
+                                                      df = df_threatened,
+                                                      s = "RCP85_2050",
+                                                      eez_spp_cp = eez_spp_cp,
+                                                      eez_raster_df = eez_raster_df,
+                                                      mc.cores = 20)
+})
+```
+
+```{r}
+eez_pixels_cp_85_2050_df <- bind_rows(eez_pixels_cp_85_2050)
+```
+
+```{r}
+# Sum by XY cell 
+eez_sum_cp_85_2050_df <- eez_pixels_cp_85_2050_df  %>% 
+  group_by(x, y, GEONAME) %>% 
+  summarize(n_cp_spp = sum(binary_loss, na.rm = TRUE)) %>% 
+  mutate(scenario = "RCP85_2050") %>% 
+  ungroup()
+```
+
+```{r}
+ ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_sum_cp_85_2050_df, aes(x = x, y = y,
+                                               fill = n_cp_spp,
+                                               color = n_cp_spp)) +
+  scale_fill_viridis_c(limits = c(1,300), direction = -1) +
+  scale_color_viridis_c(limits = c(1,300), direction = -1)  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species continued presence count",
+       color = "species continued presence count") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+# Merge in exit and entry species (RCP 85, 2050)
+
+```{r}
+eez_sum_cp_exit_85_2050 <- full_join(eez_sum_cp_85_2050_df, eez_sum_exit_85_2050_df)
+eez_sum_all_85_2050 <- full_join(eez_sum_cp_exit_85_2050, eez_sum_threatened_85_2050_df) %>% 
+  # Replace NA with 0
+  #replace_na(list(n_cp_spp = 0, n_exit_spp = 0, n_entry_spp = 0)) %>% 
+  mutate(n_current_spp = n_cp_spp + n_exit_spp,
+         n_future_spp = n_cp_spp + n_entry_spp,
+         # Dividing by entry, exit, and cp spp to get around having 0 future or current species in a pxl
+         perc_exit_spp = 100 * n_exit_spp/(n_cp_spp + n_exit_spp +n_entry_spp),
+         perc_entry_spp = 100 * n_entry_spp/(n_cp_spp + n_exit_spp +n_entry_spp))
+```
+
+```{r}
+ ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_sum_all_85_2050, aes(x = x, y = y,
+                                               fill = n_cp_spp,
+                                               color = n_cp_spp)) +
+  scale_fill_viridis_c(limits = c(1,300), direction = -1) +
+  scale_color_viridis_c(limits = c(1,300), direction = -1)  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species count",
+       color = "species count") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+# Need to take a closer look at these and what they're saying 
+ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_sum_all_85_2050, aes(x = x, y = y,
+                                               fill = perc_exit_spp,
+                                               color = perc_exit_spp)) +
+  scale_fill_viridis_c(limits = c(1,100), direction = -1) +
+  scale_color_viridis_c(limits = c(1,100), direction = -1)  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "percent species lost",
+       color = "percent species lost") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+ ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_sum_all_85_2050, aes(x = x, y = y,
+                                               fill = perc_entry_spp,
+                                               color = perc_entry_spp)) +
+  scale_fill_viridis_c(limits = c(1,100), direction = -1) +
+  scale_color_viridis_c(limits = c(1,100), direction = -1)  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "percent species gain",
+       color = "percent species gain") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
