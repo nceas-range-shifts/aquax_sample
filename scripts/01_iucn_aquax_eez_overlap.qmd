@@ -216,6 +216,7 @@ write_csv(eez_threatened_ids, here("data/iucn_threatened_spp_eez_pxls_061626.csv
 ```
 
 # Identify pixels entering/exiting EEZs
+
 ```{r}
 # Organize dataframe so that's it's easier to select a scenario and compare to current
 eez_spp_pxls_long <- eez_threatened_ids %>% 
@@ -223,9 +224,12 @@ eez_spp_pxls_long <- eez_threatened_ids %>%
                names_to = "scenario",
                values_to = "pxl_count") %>% 
   mutate(scenario = str_remove(scenario, "n_")) %>% 
-  mutate(spp_change = case_when(is.na(n_current) &  pxl_count > 0 ~ 'entry into new',
-                            n_current > 0  & is.na(pxl_count) ~ 'exit from historical',
-                            is.na(n_current)  & is.na(pxl_count) == 0 ~ 'no presence',
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
+  # Set 10 pixel threshold (at least ten pixels need in EEZ for species presence)
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
                             TRUE ~ 'continued presence'))
 ```
 
@@ -287,7 +291,7 @@ plot(eez_sum_raster_30$n_entry_spp)
 ```
 
 ```{r}
-# Try // - took ~1 min for 987 species
+# Try // - took ~1 min for 1,323 species
 system.time({
   eez_pixels_threatened <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
                                             df = df_threatened,
@@ -337,7 +341,7 @@ eez_sum_threatened_45_2100_df <- eez_count_threatened_45_2100_df  %>%
 ```
 
 ```{r}
-# Try // - took ~1 min for 987 species
+# Try // - took ~1 min for 1,323 species
 system.time({
   eez_pixels_threatened_85_2050 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
                                             df = df_threatened,
@@ -362,7 +366,7 @@ eez_sum_threatened_85_2050_df <- eez_count_threatened_85_2050_df  %>%
 ```
 
 ```{r}
-# Try // - took ~1 min for 987 species
+# Try // - took ~1 min for 1,323 species
 system.time({
   eez_pixels_threatened_85_2100 <- parallel::mclapply(aphiaid, FUN = extract_eez_entry_pixels_df, 
                                             df = df_threatened,
@@ -391,15 +395,17 @@ eez_sum_threatened_85_2100_df <- eez_count_threatened_85_2100_df  %>%
 eez_sum_threatened_scenarios <- rbind(eez_sum_threatened_df,
                                       eez_sum_threatened_45_2100_df,
                                       eez_sum_threatened_85_2050_df,
-                                      eez_sum_threatened_85_2100_df)
+                                      eez_sum_threatened_85_2100_df) %>% 
+  # Threshold for species presence is 10 pixels
+  mutate(pxl_thres = "10")
 
 eez_sum_threatened_scenarios_mrgid <- left_join(eez_sum_threatened_scenarios, eez_ids) %>% 
-  dplyr::select(x, y, GEONAME, MRGID, scenario, n_entry_spp)
+  dplyr::select(x, y, GEONAME, MRGID, pxl_thres, scenario, n_entry_spp)
 ```
 
 ```{r}
 # save data as rds
-saveRDS(eez_sum_threatened_scenarios_mrgid, here("data/iucn_threatened_entry_pxls_052126.rds"))
+saveRDS(eez_sum_threatened_scenarios_mrgid, here("data/iucn_threatened_10pxlthres_entry_pxls_061726.rds"))
 ```
 
 ## Extract exit pixels
@@ -410,7 +416,7 @@ eez_spp_exit <- eez_spp_pxls_long %>%
 ```
 
 ```{r}
-# Try // - took ~1 min for 906 species
+# Try // - took ~1 min for 1323 species
 system.time({
   eez_pixels_exit_45_2050 <- parallel::mclapply(aphiaid, 
                                                       FUN = extract_eez_exit_pixels_df, 
@@ -462,7 +468,7 @@ eez_sum_exit_45_2100_df <- eez_pixels_exit_45_2100_df  %>%
 ```
 
 ```{r}
-# Try // - took ~1 min for 906 species
+# Try // - took ~1 min for 1323 species
 system.time({
   eez_pixels_exit_85_2050 <- parallel::mclapply(aphiaid, 
                                                       FUN = extract_eez_exit_pixels_df, 
@@ -518,14 +524,16 @@ eez_sum_exit_85_2100_df <- eez_pixels_exit_85_2100_df  %>%
 eez_sum_exit_scenarios <- rbind(eez_sum_exit_45_2050_df,
                                       eez_sum_exit_45_2100_df,
                                       eez_sum_exit_85_2050_df,
-                                      eez_sum_exit_85_2100_df)
+                                      eez_sum_exit_85_2100_df) %>% 
+  # Threshold for species presence is 10 pixels
+  mutate(pxl_thres = "10")
 
 eez_sum_exit_scenarios_mrgid <- left_join(eez_sum_exit_scenarios, eez_ids) %>% 
-  dplyr::select(x, y, GEONAME, MRGID, scenario, n_exit_spp)
+  dplyr::select(x, y, GEONAME, MRGID, pxl_thres, scenario, n_exit_spp)
 ```
 
 ```{r}
 # save data as rds
-saveRDS(eez_sum_exit_scenarios_mrgid, here("data/iucn_threatened_exit_pxls_052126.rds"))
+saveRDS(eez_sum_exit_scenarios_mrgid, here("data/iucn_threatened_10pxlthres_exit_pxls_061726.rds"))
 ```
 
