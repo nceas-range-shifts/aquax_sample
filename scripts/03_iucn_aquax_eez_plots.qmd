@@ -25,17 +25,18 @@ This document creates plots for the data calculated in 01_iucn_aquax_eez_overlap
 
 ```{r}
 # Spp in EEZs
-spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_052126.csv"))
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
 ```
 
 ```{r}
 # Spp EEZ entry/exit pixels
-spp_entry_pxls <- read_rds(here("data/iucn_threatened_entry_pxls_052126.rds"))
-spp_exit_pxls <- read_rds(here("data/iucn_threatened_exit_pxls_052126.rds"))
+spp_entry_pxls <- read_rds(here("data/iucn_threatened_10pxlthres_entry_pxls_061726.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_threatened_10pxlthres_exit_pxls_061726.rds"))
 ```
+
 ```{r}
 # Species range area
-area_df <- read_csv(here("data/iucn_threatened_spp_range_area_052826.csv"))
+area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
 ```
 
 ## Read in EEZ shapefile
@@ -152,11 +153,11 @@ ggplot() +
 # How many EEZs are each spp present in for current and future?
 eez_spp_counts <- spp_eez_pxl_count %>%  
   group_by(aphiaid) %>% 
-  summarize(current_eez_count = sum(n_current > 0, na.rm = TRUE),
-            RCP45_2050_eez_count = sum(n_RCP45_2050 >0, na.rm = TRUE),
-            RCP45_2100_eez_count = sum(n_RCP45_2100 > 0, na.rm = TRUE),
-            RCP85_2050_eez_count = sum(n_RCP85_2050 > 0, na.rm = TRUE),
-            RCP85_2100_eez_count = sum(n_RCP85_2100 > 0, na.rm = TRUE)) %>% 
+  summarize(current_eez_count = sum(n_current >= 10, na.rm = TRUE),
+            RCP45_2050_eez_count = sum(n_RCP45_2050 >= 10, na.rm = TRUE),
+            RCP45_2100_eez_count = sum(n_RCP45_2100  >= 10, na.rm = TRUE),
+            RCP85_2050_eez_count = sum(n_RCP85_2050  >= 10, na.rm = TRUE),
+            RCP85_2100_eez_count = sum(n_RCP85_2100  >= 10, na.rm = TRUE)) %>% 
   ungroup() 
 ```
 
@@ -164,10 +165,10 @@ eez_spp_counts <- spp_eez_pxl_count %>%
 ggplot() +
   geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP85_2050_eez_count),
              alpha = 0.5, color = "maroon") +
-  geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP85_2100_eez_count),
-             alpha = 0.5, color = "forestgreen") +
+  #geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP85_2100_eez_count),
+             #alpha = 0.5, color = "forestgreen") +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
-  labs(title = "IUCN Threatened Species EEZ count (2050 in maroon, 2100 in green)",
+  labs(title = "IUCN Threatened Species EEZ count (RCP 8.5 2050)",
        y = "RCP 85 future EEZ count")
 ```
 
@@ -179,9 +180,11 @@ eez_spp_pxls_long <- spp_eez_pxl_count %>%
                names_to = "scenario",
                values_to = "pxl_count") %>% 
   mutate(scenario = str_remove(scenario, "n_")) %>% 
-  mutate(spp_change = case_when(is.na(n_current) &  pxl_count > 0 ~ 'entry into new',
-                            n_current > 0  & is.na(pxl_count) ~ 'exit from historical',
-                            is.na(n_current)  & is.na(pxl_count) == 0 ~ 'no presence',
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
                             TRUE ~ 'continued presence'))
 ```
 
@@ -201,17 +204,32 @@ eez_c_f <- eez_spp_change %>%
                   entry_into_new = 0, no_presence = 0)) %>% 
   mutate(current_spp = continued_presence + exit_from_historical,
          future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/future_spp,
          spp_change = future_spp - current_spp,
          ssi = (2 * continued_presence)/(current_spp + future_spp)) 
 ```
 
 ```{r}
-# Had a way to color by latitude (Y1) - need to add that in
+# EEZ centroids
+eez_simple_valid <- st_make_valid(eez_simple)
+eez_centroid <- st_centroid(eez_simple_valid)  %>%
+  cbind(st_coordinates(.)) %>%
+  st_drop_geometry()
+```
+
+```{r}
+# Merge in centroids
+eez_c_f_y <- left_join(eez_c_f, eez_centroid)
+```
+
+
+```{r}
 ggplot() +
-  geom_point(data = eez_c_f,
-   aes(color = "GEONAME", x = current_spp, y = future_spp), alpha = 0.75, 
+  geom_point(data = eez_c_f_y %>% filter(scenario == "RCP85_2050"),
+   aes(color = Y, x = current_spp, y = future_spp), alpha = 0.75, 
              position = position_jitterdodge()) +
-  #scale_color_viridis_c() +
+  scale_color_viridis_c() +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
   labs(color = "latitude",
        title = "Current and future spp by EEZ",
@@ -222,16 +240,33 @@ ggplot() +
 ```
 
 ```{r}
-# Had a way to color by latitude (Y1) - need to add that in
 ggplot() +
-  geom_point(data = eez_c_f, aes(color = "GEONAME", x = exit_from_historical, y = entry_into_new), alpha = 0.75, 
+  geom_point(data = eez_c_f_y %>% filter(scenario == "RCP85_2050"),
+             aes(color = Y, x = exit_from_historical, y = entry_into_new), alpha = 0.75, 
              position = position_jitterdodge()) +
-  #scale_color_viridis_c() +
+  scale_color_viridis_c() +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
   labs(#color = "latitude",
        title = "Threatened species loss and gain by EEZ",
        y = "species gain count",
        x = "species loss count") +
+  theme_bw() +
+  facet_wrap(~scenario)
+```
+
+```{r}
+ggplot() +
+  geom_point(data = left_join(eez_c_f, eez_centroid) %>% filter(scenario == "RCP85_2050"),
+             aes(color = Y, x = perc_exit, y = perc_enter), alpha = 0.6, 
+             position = position_jitterdodge()) +
+  scale_color_viridis_c() +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
+  labs(#color = "latitude",
+       title = "Threatened species loss and gain by EEZ",
+       y = "species gain %",
+       x = "species loss %") +
+  #scale_y_continuous(limits = c(1, 75)) +
+  #scale_x_continuous(limits = c(1, 75)) +
   theme_bw() +
   facet_wrap(~scenario)
 ```
@@ -247,6 +282,15 @@ ggplot() +
   geom_sf(data = eez_c_f_sf, aes(geometry = geom, fill = spp_change)) +
   scale_color_distiller(palette = "BrBG", direction = 1, limits = c(-75, 75)) + 
   scale_fill_distiller(palette = "BrBG", direction = 1, limits = c(-75, 75)) +
+  theme_bw() +
+  labs(title = "Threatened species change by EEZ") +
+  facet_wrap(~scenario)
+```
+
+```{r}
+# Threatened species percentage - need to drop overlapping claims
+ggplot() +
+  geom_sf(data = eez_c_f_sf, aes(geometry = geom, fill = perc_exit)) +
   theme_bw() +
   labs(title = "Threatened species change by EEZ") +
   facet_wrap(~scenario)
@@ -314,11 +358,11 @@ final_plot_85_2100
 ## Plots by taxonomic group
 
 ```{r}
-iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_worms_aphia_id_complete.csv")
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
 ```
 
 ```{r}
-iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_species_assessments.csv")
+iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_species_assessments.csv")
 ```
 
 ```{r}
@@ -337,11 +381,11 @@ spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
 # Get count of number of EEZ by group and count of IUCN cat by group (create figure similar to bar chart)
 group_eez_count <- spp_eez_pxl_count_group %>% 
   group_by(group, aphiaid, redlist_category) %>% 
-  summarize(current_eez_count = sum(n_current > 0, na.rm = TRUE),
-            RCP45_2050_eez_count = sum(n_RCP45_2050 >0, na.rm = TRUE),
-            RCP45_2100_eez_count = sum(n_RCP45_2100 > 0, na.rm = TRUE),
-            RCP85_2050_eez_count = sum(n_RCP85_2050 > 0, na.rm = TRUE),
-            RCP85_2100_eez_count = sum(n_RCP85_2100 > 0, na.rm = TRUE)) %>% 
+  summarize(current_eez_count = sum(n_current >= 10, na.rm = TRUE),
+            RCP45_2050_eez_count = sum(n_RCP45_2050 >= 10, na.rm = TRUE),
+            RCP45_2100_eez_count = sum(n_RCP45_2100 >= 10, na.rm = TRUE),
+            RCP85_2050_eez_count = sum(n_RCP85_2050 >= 10, na.rm = TRUE),
+            RCP85_2100_eez_count = sum(n_RCP85_2100 >= 10, na.rm = TRUE)) %>% 
   ungroup()
 
 group_iucncat_count <- group_eez_count %>% 
@@ -387,8 +431,9 @@ group_eez_count_threshold <- group_eez_count %>%
                                            RCP85_2050_eez_count > 25 & RCP85_2050_eez_count <= 100 ~ "26-100",
                                            RCP85_2050_eez_count > 100 ~ ">100")) %>% 
 
-  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes")~ "pelagic_fishes",
-                                   group %in% c("angelfishes", "blennies", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
                                    TRUE ~ group))
 ```
 
