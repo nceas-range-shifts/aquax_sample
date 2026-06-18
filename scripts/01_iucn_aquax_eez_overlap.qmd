@@ -566,10 +566,22 @@ eez_pixels_cp_85_2050_df <- bind_rows(eez_pixels_cp_85_2050)
 eez_sum_cp_85_2050_df <- eez_pixels_cp_85_2050_df  %>% 
   group_by(x, y, GEONAME) %>% 
   summarize(n_cp_spp = sum(binary_loss, na.rm = TRUE)) %>% 
-  mutate(scenario = "RCP85_2050") %>% 
+  mutate(scenario = "RCP85_2050",
+         pxl_thres = "10") %>% 
   ungroup()
 ```
 
+```{r}
+eez_sum_cp_rcp85_2050_mrgid <- left_join(eez_sum_cp_85_2050_df, eez_ids) %>% 
+  dplyr::select(x, y, GEONAME, MRGID, pxl_thres, scenario, n_cp_spp)
+```
+
+```{r}
+# Save RDS for RCP 85 2050 for continued presence pixels
+saveRDS(eez_sum_cp_rcp85_2050_mrgid, here("data/iucn_threatened_10pxlthres_rcp85_2050_cp_pxls_061826.rds"))
+```
+
+## Test out cp graphs 
 ```{r}
  ggplot() +
   geom_sf(data = eez) +
@@ -594,11 +606,12 @@ eez_sum_cp_exit_85_2050 <- full_join(eez_sum_cp_85_2050_df, eez_sum_exit_85_2050
 eez_sum_all_85_2050 <- full_join(eez_sum_cp_exit_85_2050, eez_sum_threatened_85_2050_df) %>% 
   # Replace NA with 0
   #replace_na(list(n_cp_spp = 0, n_exit_spp = 0, n_entry_spp = 0)) %>% 
-  mutate(n_current_spp = n_cp_spp + n_exit_spp,
-         n_future_spp = n_cp_spp + n_entry_spp,
-         # Dividing by entry, exit, and cp spp to get around having 0 future or current species in a pxl
-         perc_exit_spp = 100 * n_exit_spp/(n_cp_spp + n_exit_spp +n_entry_spp),
-         perc_entry_spp = 100 * n_entry_spp/(n_cp_spp + n_exit_spp +n_entry_spp))
+  mutate(n_current_spp = sum(n_cp_spp, n_exit_spp, na.rm = TRUE),
+         n_future_spp = sum(n_cp_spp, n_entry_spp, na.rm = TRUE),
+         # percent of current species that exit
+         perc_exit_spp = 100 * n_exit_spp/(n_cp_spp + n_exit_spp),
+         # percent of future species that entered
+         perc_entry_spp = 100 * n_entry_spp/(n_cp_spp + n_entry_spp))
 ```
 
 ```{r}
@@ -624,7 +637,7 @@ eez_sum_all_85_2050 <- full_join(eez_sum_cp_exit_85_2050, eez_sum_threatened_85_
 ggplot() +
   geom_sf(data = eez) +
   coord_sf(expand = FALSE) +
-  geom_tile(data = eez_sum_all_85_2050, aes(x = x, y = y,
+  geom_tile(data = (eez_sum_all_85_2050 %>% filter(!is.na(perc_exit_spp))), aes(x = x, y = y,
                                                fill = perc_exit_spp,
                                                color = perc_exit_spp)) +
   scale_fill_viridis_c(limits = c(1,100), direction = -1) +
@@ -642,7 +655,7 @@ ggplot() +
  ggplot() +
   geom_sf(data = eez) +
   coord_sf(expand = FALSE) +
-  geom_tile(data = eez_sum_all_85_2050, aes(x = x, y = y,
+  geom_tile(data = (eez_sum_all_85_2050 %>% filter(!is.na(perc_entry_spp))), aes(x = x, y = y,
                                                fill = perc_entry_spp,
                                                color = perc_entry_spp)) +
   scale_fill_viridis_c(limits = c(1,100), direction = -1) +
