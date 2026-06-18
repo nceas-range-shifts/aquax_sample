@@ -26,11 +26,11 @@ I'll also test out using duckdb to only read in the scenario of interest.
 ## Prep data
 
 ```{r}
-iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_worms_aphia_id_complete.csv")
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
 ```
 
 ```{r}
-iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/data/iucn_redlist/iucn_species_assessments.csv")
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_species_assessments.csv")
 ```
 
 ```{r}
@@ -46,9 +46,9 @@ iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
 ```
 
 ```{r}
-# Filter iucn categories for threatened species (CR, EN, VU)
+# Filter iucn categories for threatened species (CR, EN, VU) and near-threatened (NT)
 iucn_threatened <- iucn_new_cat %>% 
-  filter(redlist_category %in% c("CR","EN", "VU"))
+  filter(redlist_category %in% c("CR","EN", "VU", "NT"))
 ```
 
 ```{r}
@@ -66,11 +66,11 @@ aphiaid_threat <- unique(aphiaid_threatened$aphia_id)
 
 ```{r}
 # read in meta data on the aquax sample of redlist species
-load("/home/shares/data-aquax/iucn_request/meta.Rdata")
+load("/home/shares/data-aquax/META_02122025.Rdata")
 ```
 
 ```{r}
-meta_clean <- meta %>% 
+meta_clean <- META %>% 
   mutate(worms_name = tolower(ScientificName)) %>% 
   select(!ScientificName) %>% 
   # simplify for now for easier viewing
@@ -84,11 +84,11 @@ spp_fs <- list.files('/home/shares/data-aquax/SDM',
 df <- data.frame(f = spp_fs) %>%
     mutate(fsize = file.size(f),
            aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
-    left_join(meta, by = c('aphiaid' = 'AphiaID'))
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
 ```
 
 ```{r}
-# Filter for the AphiaID of the threatend species - get 987 species in AquaX data (even though the 1,047 species were in the iucn_lookup_sdm with AquaX SDMs)
+# Filter for the AphiaID of the threatend species 
 df_threatened <- df %>% 
   filter(aphiaid %in% aphiaid_threat)
 ```
@@ -142,7 +142,7 @@ aphiaid <- df_threatened$aphiaid
 ```
 
 ```{r}
-# 30 seconds
+# 45 seconds
 system.time({
   area_current <- parallel::mclapply(aphiaid, FUN = calculate_area, 
                                        df = df_threatened, 
@@ -267,7 +267,7 @@ area_all_df <- left_join(area_current_df, area_scenarios_df) %>%
 
 ```{r}
 # Save data
-write_csv(area_all_df, here("data/iucn_threatened_spp_range_area_052826.csv"))
+write_csv(area_all_df, here("data/iucn_threatened_spp_range_area_061826.csv"))
 ```
 
 ## Summary table
@@ -285,7 +285,7 @@ area_summary <- area_all_df %>%
 ggplot(area_summary, aes(x = scenario, y = perc_spp, fill = area_change)) +
   geom_col(position = "stack") +
   labs(x = "Scenario", y = "Percentage of species", fill = "Change",
-  title = "Threatened species range area change (n = 987)") +
+  title = "Threatened species range area change (n = 1,323)") +
   scale_fill_viridis_d() + 
   theme_minimal()
 ```
