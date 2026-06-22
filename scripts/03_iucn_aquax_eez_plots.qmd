@@ -229,7 +229,9 @@ ggplot() +
   geom_point(data = eez_c_f_y %>% filter(scenario == "RCP85_2050"),
    aes(color = Y, x = current_spp, y = future_spp), alpha = 0.75, 
              position = position_jitterdodge()) +
-  scale_color_viridis_c() +
+  #scale_color_viridis_c() +
+  scale_color_distiller(palette = "PRGn", direction = 1, limits = c(-80, 80)) + 
+  scale_fill_distiller(palette = "PRGn", direction = 1, limits = c(-80, 80)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
   labs(color = "latitude",
        title = "Current and future spp by EEZ",
@@ -242,9 +244,11 @@ ggplot() +
 ```{r}
 ggplot() +
   geom_point(data = eez_c_f_y %>% filter(scenario == "RCP85_2050"),
-             aes(color = Y, x = exit_from_historical, y = entry_into_new), alpha = 0.75, 
+             aes(color = Y, x = exit_from_historical, y = entry_into_new), alpha = 0.8, 
              position = position_jitterdodge()) +
-  scale_color_viridis_c() +
+  #scale_color_viridis_c() +
+  scale_color_distiller(palette = "PRGn", direction = 1, limits = c(-80, 80)) + 
+  scale_fill_distiller(palette = "PRGn", direction = 1, limits = c(-80, 80)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
   labs(#color = "latitude",
        title = "Threatened species loss and gain by EEZ",
@@ -257,9 +261,11 @@ ggplot() +
 ```{r}
 ggplot() +
   geom_point(data = left_join(eez_c_f, eez_centroid) %>% filter(scenario == "RCP85_2050"),
-             aes(color = Y, x = perc_exit, y = perc_enter), alpha = 0.6, 
+             aes(color = Y, x = perc_exit, y = perc_enter), alpha = 0.8, 
              position = position_jitterdodge()) +
-  scale_color_viridis_c() +
+  #scale_color_viridis_c() +
+  scale_color_distiller(palette = "PRGn", direction = 1, limits = c(-80, 80)) + 
+  scale_fill_distiller(palette = "PRGn", direction = 1, limits = c(-80, 80)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray30") +
   labs(#color = "latitude",
        title = "Threatened species loss and gain by EEZ",
