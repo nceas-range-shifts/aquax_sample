@@ -17,6 +17,7 @@ library(janitor)
 library(sf)
 library(terra)
 library(arrow)
+library(patchwork)
 ```
 
 This document creates plots for the data calculated in 01_iucn_aquax_eez_overlap.qmd and 02_iucn_aquax_rangearea.qmd.
@@ -60,59 +61,109 @@ eez_raster_blank <- rast(xmin = -180,
 eez_raster_geoname <- rasterize(eez, eez_raster_blank, field = "GEONAME")
 ```
 
+## Identify overlapping claim EEZs
+
+```{r}
+overlap_claim <- eez %>% 
+  filter(stringr::str_detect(GEONAME, "Overlapping"))
+
+overlap_claim_list <- unique(overlap_claim$MRGID)
+```
+
+```{r}
+# eez no overlapping claim
+eez_no_overlap <- eez %>% 
+  filter(!MRGID %in% overlap_claim_list)
+```
+
 ## Plot species pixels
 
 ```{r}
-# Convert to equal area projection for plotting
-eez_eq <- st_transform(eez, crs = "EPSG:8857")
-```
+spp_entry_pxls_85_2050 <- spp_entry_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(!MRGID %in% overlap_claim_list)
 
-```{r}
-spp_entry_85_2050 <- spp_entry_pxls %>% 
-    filter(scenario == "RCP85_2050")
-
-spp_exit_85_2050 <- spp_exit_pxls %>% 
-    filter(scenario == "RCP85_2050")
-```
-
-```{r}
-# Convert to equal area projection for plotting
-spp_entry_85_2050_r <- rast(spp_entry_85_2050, crs = "EPSG:4326") %>% 
-  project("EPSG:8857", method = "near")
-
-spp_exit_85_2050_r <- rast(spp_exit_85_2050, crs = "EPSG:4326") %>% 
-  project("EPSG:8857", method = "near")
-```
-
-```{r}
-# Back to df for ggplot
-spp_entry_85_2050df_eq <- as.data.frame(spp_entry_85_2050_r , xy = TRUE) 
-spp_exit_85_2050df_eq <- as.data.frame(spp_exit_85_2050_r , xy = TRUE) 
+spp_exit_pxls_85_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(!MRGID %in% overlap_claim_list)
 ```
 
 ```{r}
 # Plot EEZ entry pixels
-ggplot() +
-  geom_sf(data = eez_eq) +
-  geom_tile(data = spp_entry_85_2050df_eq, aes(x = x, y = y,
+plot_entry_10_map <- ggplot() +
+  geom_sf(data = eez_no_overlap) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_pxls_85_2050, aes(x = x, y = y,
                                                fill = n_entry_spp,
                                                color = n_entry_spp)) +
-  scale_fill_viridis_c(limits = c(1,21), direction = -1) +
-  scale_color_viridis_c(limits = c(1,21), direction = -1) +
-  theme_minimal()
+  scale_fill_viridis_c(limits = c(1,32), direction = -1) +
+  scale_color_viridis_c(limits = c(1,32), direction = -1)  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species entry count",
+       color = "species entry count") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
 ```
 
+```{r}
+plot_entry_10_density <- ggplot(spp_entry_pxls_85_2050, aes(x = y)) +
+  geom_density(fill = "forestgreen", alpha = 0.5) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "") +
+  theme(plot.margin = margin(0, 0, 0, 0),
+        axis.text.x = element_blank())
+```
+
+```{r}
+plot_entry_10_map + plot_entry_10_density + 
+  plot_annotation(title = "Species entry, 10 pxl threshold, RCP 8.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom") 
+```
 
 ```{r}
 # Plot EEZ exit pixels
-ggplot() +
-  geom_sf(data = eez_eq) +
-  geom_tile(data = spp_exit_85_2050df_eq, aes(x = x, y = y,
-                                               fill = n_exit_spp,
-                                               color = n_exit_spp)) +
-  scale_fill_viridis_c(limits = c(1,21), direction = -1) +
-  scale_color_viridis_c(limits = c(1,21), direction = -1) +
-  theme_minimal()
+plot_exit_10_map <- ggplot() +
+  geom_sf(data = eez_no_overlap) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_exit_pxls_85_2050, aes(x = x, y = y,
+                                              fill = n_exit_spp,
+                                              color = n_exit_spp)) +
+  scale_fill_viridis_c(limits = c(1,32), direction = -1) +
+  scale_color_viridis_c(limits = c(1,32), direction = -1)  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species exit count",
+       color = "species exit count") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+plot_exit_10_density <- ggplot(spp_exit_pxls_85_2050, aes(x = y)) +
+  geom_density(fill = "darkmagenta", alpha = 0.5) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "") +
+  theme(plot.margin = margin(0, 0, 0, 0),
+        axis.text.x = element_blank())
+```
+
+```{r}
+plot_exit_10_map + plot_exit_10_density + 
+  plot_annotation(title = "Species exit, 10 pxl threshold, RCP 8.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom") 
 ```
 
 ## Plot some areas with high numbers of entries/exits
@@ -152,6 +203,8 @@ ggplot() +
 ```{r}
 # How many EEZs are each spp present in for current and future?
 eez_spp_counts <- spp_eez_pxl_count %>%  
+  # Drop overlapping claim EEZs
+  filter(!MRGID %in% overlap_claim_list) %>%
   group_by(aphiaid) %>% 
   summarize(current_eez_count = sum(n_current >= 10, na.rm = TRUE),
             RCP45_2050_eez_count = sum(n_RCP45_2050 >= 10, na.rm = TRUE),
@@ -176,6 +229,8 @@ ggplot() +
 ```{r}
 # Organize dataframe so that's it's easier to select a scenario and compare to current
 eez_spp_pxls_long <- spp_eez_pxl_count %>% 
+  # Drop overlapping claim EEZs
+  filter(!MRGID %in% overlap_claim_list) %>%
   pivot_longer(cols = starts_with("n_RCP"),
                names_to = "scenario",
                values_to = "pxl_count") %>% 
@@ -294,7 +349,7 @@ ggplot() +
 ```
 
 ```{r}
-# Threatened species percentage - need to drop overlapping claims
+# Threatened species percentage
 ggplot() +
   geom_sf(data = eez_c_f_sf, aes(geometry = geom, fill = perc_exit)) +
   theme_bw() +
@@ -386,6 +441,8 @@ spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
 ```{r}
 # Get count of number of EEZ by group and count of IUCN cat by group (create figure similar to bar chart)
 group_eez_count <- spp_eez_pxl_count_group %>% 
+  # Drop overlapping claim EEZs
+  filter(!MRGID %in% overlap_claim_list) %>%
   group_by(group, aphiaid, redlist_category) %>% 
   summarize(current_eez_count = sum(n_current >= 10, na.rm = TRUE),
             RCP45_2050_eez_count = sum(n_RCP45_2050 >= 10, na.rm = TRUE),
