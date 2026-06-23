@@ -96,15 +96,27 @@ plot_entry_10_map <- ggplot() +
   geom_tile(data = spp_entry_pxls_85_2050, aes(x = x, y = y,
                                                fill = n_entry_spp,
                                                color = n_entry_spp)) +
-  scale_fill_viridis_c(limits = c(1,32), direction = -1) +
-  scale_color_viridis_c(limits = c(1,32), direction = -1)  +
+  scale_fill_viridis_c(limits = c(1,32), 
+                      breaks = c(1, 8, 16, 24, 32),
+                      direction = -1,
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1,32), 
+                        breaks = c(1, 8, 16, 24, 32),
+                        direction = -1,
+                        guide = "none")  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species entry count",
        color = "species entry count") +
   theme(legend.position = "bottom",
         plot.margin = margin(0, 0, 0, 0),
-        panel.spacing = unit(0, "pt"))
+        panel.spacing = unit(0, "pt")) 
 ```
 
 ```{r}
@@ -113,14 +125,15 @@ plot_entry_10_density <- ggplot(spp_entry_pxls_85_2050, aes(x = y)) +
   coord_flip() +
   scale_x_continuous(limits = c(-90, 90)) +
   theme_minimal() +
-  labs(x = "") +
+  labs(x = "",
+       y = "") +
   theme(plot.margin = margin(0, 0, 0, 0),
         axis.text.x = element_blank())
 ```
 
 ```{r}
-plot_entry_10_map + plot_entry_10_density + 
-  plot_annotation(title = "Species entry, 10 pxl threshold, RCP 8.5 2050") +
+entry_combined_plot <- plot_entry_10_map + plot_entry_10_density + 
+  plot_annotation(title = "Species entry, RCP 8.5 2050") +
   plot_layout(widths = c(4, 1),
               axis_titles = "collect",
               guides = "collect") &
@@ -135,8 +148,19 @@ plot_exit_10_map <- ggplot() +
   geom_tile(data = spp_exit_pxls_85_2050, aes(x = x, y = y,
                                               fill = n_exit_spp,
                                               color = n_exit_spp)) +
-  scale_fill_viridis_c(limits = c(1,32), direction = -1) +
-  scale_color_viridis_c(limits = c(1,32), direction = -1)  +
+  scale_fill_viridis_c(limits = c(1,32), 
+                       breaks = c(1, 8, 16, 24, 32),
+                       direction = -1,
+                       guide = guide_colorbar(
+                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                       barheight = unit(0.4, "cm"),
+                       ticks = TRUE,
+                       ticks.colour = "white",
+                       ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,32), 
+                        breaks = c(1, 8, 16, 24, 32), 
+                        direction = -1,
+                        guide = "none")  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species exit count",
@@ -152,18 +176,25 @@ plot_exit_10_density <- ggplot(spp_exit_pxls_85_2050, aes(x = y)) +
   coord_flip() +
   scale_x_continuous(limits = c(-90, 90)) +
   theme_minimal() +
-  labs(x = "") +
+  labs(x = "",
+       y = "") +
   theme(plot.margin = margin(0, 0, 0, 0),
         axis.text.x = element_blank())
 ```
 
 ```{r}
-plot_exit_10_map + plot_exit_10_density + 
-  plot_annotation(title = "Species exit, 10 pxl threshold, RCP 8.5 2050") +
+exit_combined_plot <- plot_exit_10_map + plot_exit_10_density + 
+  plot_annotation(title = "Species exit, RCP 8.5 2050") +
   plot_layout(widths = c(4, 1),
               axis_titles = "collect",
               guides = "collect") &
   theme(legend.position = "bottom") 
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/iucn_threatened_spp_entry_10pxl_map_062326.png"), entry_combined_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_spp_exit_10pxl_map_062326.png"), exit_combined_plot, width = 10, height = 5, dpi = 300)
 ```
 
 ## Plot some areas with high numbers of entries/exits
