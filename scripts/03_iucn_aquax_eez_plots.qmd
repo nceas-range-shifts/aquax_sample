@@ -229,6 +229,59 @@ ggplot() +
        subtitle = "Top 2 EEZs: Singapore / Malaysia, Singapore")
 ```
 
+## Spatial percent change in threatened species by pixel
+```{r}
+# Read in RDS for RCP 85 2050 for continued presence pixels
+spp_cp_pxls <- readRDS(here("data/iucn_threatened_10pxlthres_rcp85_2050_cp_pxls_061826.rds"))
+```
+
+```{r}
+eez_sum_cp_exit_85_2050 <- full_join(spp_cp_pxls, (spp_exit_pxls %>% filter(scenario == "RCP85_2050")))
+eez_sum_all_85_2050 <- full_join(eez_sum_cp_exit_85_2050, (spp_entry_pxls %>% filter(scenario == "RCP85_2050"))) %>% 
+  # Replace NA with 0
+  #replace_na(list(n_cp_spp = 0, n_exit_spp = 0, n_entry_spp = 0)) %>% 
+  # Drop overlapping claim EEZs
+  filter(!MRGID %in% overlap_claim_list) %>%
+  mutate(n_current_spp = sum(n_cp_spp, n_exit_spp, na.rm = TRUE),
+         n_future_spp = sum(n_cp_spp, n_entry_spp, na.rm = TRUE),
+         # percent of current species that exit
+         perc_exit_spp = 100 * n_exit_spp/(n_cp_spp + n_exit_spp),
+         # percent of future species that entered
+         perc_entry_spp = 100 * n_entry_spp/(n_cp_spp + n_entry_spp))
+```
+
+```{r}
+plot_exit_percent <- ggplot() +
+  geom_sf(data = eez_no_overlap) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = (eez_sum_all_85_2050 %>% filter(!is.na(perc_exit_spp))), aes(x = x, y = y,
+                                               fill = perc_exit_spp,
+                                               color = perc_exit_spp)) +
+  scale_fill_viridis_c(limits = c(1,100), 
+                       breaks = c(1, 25, 50, 75, 100),
+                       direction = -1,
+                       guide = guide_colorbar(
+                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                       barheight = unit(0.4, "cm"),
+                       ticks = TRUE,
+                       ticks.colour = "white",
+                       ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,100), direction = -1,
+                        breaks = c(1, 25, 50, 75, 100),
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "percent species lost",
+       color = "percent species lost",
+       title = "Species exits by percent, RCP 8.5 2050") +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Save plot
+ggsave(here("figures/iucn_threatened_spp_exit_perc_10pxl_map_062326.png"), plot_exit_percent, width = 7, height = 5, dpi = 300)
+```
+
 ## Other plots 
 
 ```{r}
@@ -526,16 +579,22 @@ group_eez_count_threshold <- group_eez_count %>%
   filter(group != "not comprehensively assessed") %>%
   mutate(current_eez_count_cat = case_when(current_eez_count == 1 ~ "1",
                                           current_eez_count == 2 ~ "2",
-                                           current_eez_count > 2 & current_eez_count <= 10 ~ "3-10",
-                                           current_eez_count > 10 & current_eez_count <= 25 ~ "11-25",
-                                           current_eez_count > 25 & current_eez_count <= 100 ~ "26-100",
-                                           current_eez_count > 100 ~ ">100"),
+                                           current_eez_count > 2 & current_eez_count <= 5 ~ "3-5",
+                                           current_eez_count > 5 & current_eez_count <= 15 ~ "6-15",
+                                           current_eez_count > 15 & current_eez_count <= 25 ~ "16-25",
+                                           current_eez_count > 25 & current_eez_count <= 50 ~ "26-50",
+                                           current_eez_count > 50 & current_eez_count <= 100 ~ "51-100",
+                                           current_eez_count > 100 ~ ">100",
+                                           TRUE ~ "0"),
          RCP85_2050_eez_count_cat = case_when(RCP85_2050_eez_count == 1 ~ "1",
                                             RCP85_2050_eez_count == 2 ~ "2",
-                                           RCP85_2050_eez_count > 2 & RCP85_2050_eez_count <= 10 ~ "3-10",
-                                           RCP85_2050_eez_count > 10 & RCP85_2050_eez_count <= 25 ~ "11-25",
-                                           RCP85_2050_eez_count > 25 & RCP85_2050_eez_count <= 100 ~ "26-100",
-                                           RCP85_2050_eez_count > 100 ~ ">100")) %>% 
+                                           RCP85_2050_eez_count > 2 & RCP85_2050_eez_count <= 5 ~ "3-5",
+                                           RCP85_2050_eez_count > 5 & RCP85_2050_eez_count <= 15 ~ "6-15",
+                                           RCP85_2050_eez_count > 15 & RCP85_2050_eez_count <= 25 ~ "16-25",
+                                           RCP85_2050_eez_count > 25 & RCP85_2050_eez_count <= 50 ~ "26-50",
+                                           RCP85_2050_eez_count > 50 & RCP85_2050_eez_count <= 100 ~ "51-100",
+                                           RCP85_2050_eez_count > 100 ~ ">100",
+                                           TRUE ~ "0")) %>%
 
   mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
                                    group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
@@ -562,10 +621,10 @@ cat_summary_perc <- left_join(cat_summary, group_count) %>%
 
 ```{r}
 group_eez_count_threshold$current_eez_count_cat <- factor(group_eez_count_threshold$current_eez_count_cat, 
-levels = c("1", "2", "3-10", "11-25", "26-100", ">100"))
+levels = c("0", "1", "2", "3-5", "6-15", "16-25", "26-50", "51-100", ">100"))
 
 group_eez_count_threshold$RCP85_2050_eez_count_cat <- factor(group_eez_count_threshold$RCP85_2050_eez_count_cat, 
-levels = c("1", "2", "3-10", "11-25", "26-100", ">100"))
+levels = c("0", "1", "2", "3-5", "6-15", "16-25", "26-50", "51-100", ">100"))
 ```
 
 ```{r}
@@ -604,10 +663,10 @@ eez_count_group_simple <- group_eez_count_threshold %>%
 
 ```{r}
 # Plot a bar graph by group with fill as the EEZ count category
-ggplot() +
+taxon_bar_plot <- ggplot() +
   geom_bar(data = eez_count_group_simple, aes(y = fct_rev(general_group), fill = fct_rev(eez_count_cat)), position = "fill") +
-  scale_fill_viridis_d() +
-  labs(title = "Threatened species EEZ count by IUCN comprehensive group",
+  scale_fill_viridis_d(option = "turbo") +
+  labs(title = "",
        y = "",
        x = "proportion",
        fill = "EEZ count") +
@@ -625,14 +684,28 @@ group_eez_count_diff <- group_eez_count_threshold %>%
 ```
 
 ```{r}
-ggplot() +
-  geom_jitter(data = group_eez_count_diff, aes(x = eez_count_diff, y = fct_rev(general_group), color = general_group),
-   alpha = 0.6, position = position_jitterdodge(dodge.width = 1, jitter.width = .25),) +
-  labs(title = "EEZ counts change by IUCN comprehensive group",
-       x = "EEZ count change (RCP85 2050 - current)",
+taxon_jitter_plot <- ggplot() +
+  geom_jitter(data = group_eez_count_diff, aes(x = eez_count_diff, y = fct_rev(general_group), alpha = 0.6),
+   color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .75),) +
+  scale_color_viridis_d(option = "viridis", direction = -1) +
+  labs(title = "",
+       x = "EEZ count change\n(RCP85 2050 - current)",
        y = "") +
   theme_bw() +
-  theme(legend.position = "none") 
+  theme(legend.position = "none",
+        plot.margin = margin(0, 0, 0, 0),
+        axis.text.y = element_blank())
+```
+
+```{r}
+taxon_combined <- taxon_bar_plot + taxon_jitter_plot + 
+  plot_annotation(title = "EEZ counts by IUCN comprehensive group") +
+  plot_layout(widths = c(6, 3))  
+```
+
+```{r}
+# Save plots
+ggsave(here("figures/iucn_threatened_taxon_plot_062326.png"), taxon_combined, width = 10, height = 5, dpi = 300)
 ```
 
 ## IUCN threats
