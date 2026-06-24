@@ -453,6 +453,112 @@ ggplot() +
   facet_wrap(~scenario)
 ```
 
+## Biplot
+Code created with assistance from Claude to categorize the raster entry and exit pixels into a bivariate color scheme using the following categories to create a 3x3 grid:
+* 0 species entry and 0 species exit
+* 0 species entry and 1 species exit
+* 1 species entry and 0 species exit
+* 1 species entry and 1 species exit
+* 2+ species entry and 2+ species exit
+
+```{r}
+# Merge the entry and exit dataframes so that there are the same number of pixels in each raster
+spp_entry_exit_85_2050 <- full_join(spp_entry_pxls_85_2050, spp_exit_pxls_85_2050) %>% 
+  # Replace NA with 0
+  replace_na(list(n_entry_spp = 0, n_exit_spp = 0))
+```
+
+```{r}
+# Create a new column that categorizes the number of species entry and exit into 3 categories: 0, 1, and 2+
+spp_entry_exit_cat_85_2050 <- spp_entry_exit_85_2050 %>% 
+  # Assign numeric_category
+  mutate(entry_cat = case_when(n_entry_spp == 0 ~ 1,
+                               n_entry_spp == 1 ~ 2,
+                               n_entry_spp >= 2 ~ 3),
+         exit_cat = case_when(n_exit_spp == 0 ~ 1,
+                              n_exit_spp == 1 ~ 2,
+                              n_exit_spp >= 2 ~ 3)) %>% 
+  # Create a new column that combines the entry and exit categories into a single category
+  mutate(entry_exit_cat = (exit_cat - 1) * 3 + entry_cat)
+```
+
+```{r}
+# Define numeric categories for the bivariate color scheme
+bivar_levels <- data.frame(
+  entry_exit_cat    = 1:9,
+  label = c(
+    "En0_Ex0", "En1_Ex0", "En2_Ex0",   # exits = 0
+    "En0_Ex1", "En1_Ex1", "En2_Ex1",   # exits = 1
+    "En0_Ex2", "En1_Ex2", "En2_Ex2"    # exits = 2+
+  )
+)
+spp_entry_exit_cat_85_2050 <- left_join(spp_entry_exit_cat_85_2050, bivar_levels)
+```
+
+```{r}
+# Color palette
+# Entries increase left → right (blue axis)
+# Exits increase bottom → top (pink/purple axis)
+bivar_colors <- c(
+  "En0_Ex0" = "#e8e8e8",  # entries=0,   exits=0
+  "En1_Ex0" = "#ace4e4",  # entries=1, exits=0
+  "En2_Ex0" = "#5ac8c8",  # entries=2+,  exits=0
+  "En0_Ex1" = "#dfb0d6",  # entries=0,   exits=1
+  "En1_Ex1" = "#a5add3",  # entries=1, exits=1
+  "En2_Ex1" = "#5698b9",  # entries=2+,  exits=1
+  "En0_Ex2" = "#be64ac",  # entries=0,   exits=2+
+  "En1_Ex2" = "#8c62aa",  # entries=1, exits=2+
+  "En2_Ex2" = "#3b4994"   # entries=2+,  exits=2+
+)
+```
+
+```{r}
+biplot <- ggplot() +
+  geom_sf(data = eez_no_overlap, fill = "#e8e8e8") +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_exit_cat_85_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(title = "Species exits vs entries, RCP 8.5 2050",
+       x = "",
+       y = "")
+```
+
+```{r}
+# Create legend for bivariate color scheme
+legend_df <- expand.grid(entries = 1:3, exits = 1:3)
+legend_df$label <- paste0("En", legend_df$entries - 1, "_Ex", legend_df$exits - 1)
+
+legend_biplot <- ggplot(legend_df, aes(x = entries, y = exits, fill = label)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  scale_fill_manual(values = bivar_colors) +
+  scale_x_continuous(breaks = 1:3, labels = c("0", "1", "2+")) +
+  scale_y_continuous(breaks = 1:3, labels = c("0", "1", "2+")) +
+  labs(x = "Entries →", y = "Exits →") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text       = element_text(size = 8),
+    axis.title      = element_text(size = 9)
+  )
+```
+
+```{r}
+# Combine plot
+bivariate_map <- ggdraw() +
+  draw_plot(biplot,    0,    0,    1,    1) +
+  draw_plot(legend_biplot, 0.75, 0.75, 0.2, 0.25)
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/iucn_threatened_spp_entry_exit_10pxl_map_062426.png"), bivariate_map, width = 7, height = 5, dpi = 300)
+```
+
 ## Test biplot
 
 ```{r}
