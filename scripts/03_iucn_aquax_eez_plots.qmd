@@ -559,6 +559,59 @@ bivariate_map <- ggdraw() +
 ggsave(here("figures/iucn_threatened_spp_entry_exit_10pxl_map_062426.png"), bivariate_map, width = 7, height = 5, dpi = 300)
 ```
 
+# Add density plot to bivariate map
+
+```{r}
+biplot_density <-ggplot() +
+  geom_density(data = spp_exit_pxls_85_2050, aes(x = y),fill = "#be64ac", color = "#be64ac", alpha = 0.5, size = 1) +
+  geom_density(data = spp_entry_pxls_85_2050, aes(x = y),fill = "#5698b9", color = "#5698b9", alpha = 0.5, size = 1) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "",
+       y = "") +
+  theme(plot.margin = margin(0, 0, 0, 0))
+```
+
+```{r}
+biplot_2 <- ggplot() +
+  geom_sf(data = eez_no_overlap, fill = "#e8e8e8") +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_exit_cat_85_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) +
+  labs(title = "",
+       x = "",
+       y = "") 
+```
+
+```{r}
+biplot_and_density <- biplot_2 + biplot_density + 
+  plot_annotation(title = "Species exit vs entry, RCP 8.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "none") 
+```
+
+```{r}
+biplot_all <- ggdraw() +
+  draw_plot(biplot_and_density,    0,    0,    1,    1) +
+  draw_plot(legend_biplot, 0.6, 0.8, 0.2, 0.2)
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/iucn_threatened_spp_entry_exit_density_10pxl_map_062426.png"), biplot_all, width = 10, height = 5, dpi = 300)
+```
+
 ## Test biplot
 
 ```{r}
