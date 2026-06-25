@@ -97,8 +97,9 @@ plot_entry_10_map <- ggplot() +
                                                fill = n_entry_spp,
                                                color = n_entry_spp)) +
   scale_fill_viridis_c(limits = c(1,32), 
-                      breaks = c(1, 8, 16, 24, 32),
+                      breaks = c(1, 2, 4, 8, 16, 32),
                       direction = -1,
+                      trans = "log", # visually stretches the lower value data
                       guide = guide_colorbar(
                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
                       barheight = unit(0.4, "cm"),
@@ -107,13 +108,16 @@ plot_entry_10_map <- ggplot() +
                       ticks.linewidth = 0.8
   )) +
   scale_color_viridis_c(limits = c(1,32), 
-                        breaks = c(1, 8, 16, 24, 32),
+                        breaks = c(1, 2, 4, 8, 16, 32),
                         direction = -1,
+                        trans = "log", # visually stretches the lower value data
                         guide = "none")  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species entry count",
-       color = "species entry count") +
+       color = "species entry count",
+       x = "",
+       y = "") +
   theme(legend.position = "bottom",
         plot.margin = margin(0, 0, 0, 0),
         panel.spacing = unit(0, "pt")) 
@@ -127,8 +131,7 @@ plot_entry_10_density <- ggplot(spp_entry_pxls_85_2050, aes(x = y)) +
   theme_minimal() +
   labs(x = "",
        y = "") +
-  theme(plot.margin = margin(0, 0, 0, 0),
-        axis.text.x = element_blank())
+  theme(plot.margin = margin(0, 0, 0, 0))
 ```
 
 ```{r}
@@ -149,8 +152,9 @@ plot_exit_10_map <- ggplot() +
                                               fill = n_exit_spp,
                                               color = n_exit_spp)) +
   scale_fill_viridis_c(limits = c(1,32), 
-                       breaks = c(1, 8, 16, 24, 32),
-                       direction = -1,
+                       breaks = c(1, 2, 4, 8, 16, 32),
+                       direction = -1, 
+                       trans = "log", # visually stretches the lower value data
                        guide = guide_colorbar(
                        barwidth  = unit(5, "cm"),   # wide bar for bottom placement
                        barheight = unit(0.4, "cm"),
@@ -158,13 +162,16 @@ plot_exit_10_map <- ggplot() +
                        ticks.colour = "white",
                        ticks.linewidth = 0.8)) +
   scale_color_viridis_c(limits = c(1,32), 
-                        breaks = c(1, 8, 16, 24, 32), 
+                        breaks = c(1, 2, 4, 8, 16, 32), 
                         direction = -1,
+                        trans = "log", # visually stretches the lower value data
                         guide = "none")  +
   scale_y_continuous(limits = c(-90, 90)) +
   theme_minimal() + 
   labs(fill = "species exit count",
-       color = "species exit count") +
+       color = "species exit count",
+       x = "",
+       y = "") +
   theme(legend.position = "bottom",
         plot.margin = margin(0, 0, 0, 0),
         panel.spacing = unit(0, "pt"))
@@ -178,8 +185,7 @@ plot_exit_10_density <- ggplot(spp_exit_pxls_85_2050, aes(x = y)) +
   theme_minimal() +
   labs(x = "",
        y = "") +
-  theme(plot.margin = margin(0, 0, 0, 0),
-        axis.text.x = element_blank())
+  theme(plot.margin = margin(0, 0, 0, 0))
 ```
 
 ```{r}
@@ -193,8 +199,8 @@ exit_combined_plot <- plot_exit_10_map + plot_exit_10_density +
 
 ```{r}
 # Save entry and exit maps
-ggsave(here("figures/iucn_threatened_spp_entry_10pxl_map_062326.png"), entry_combined_plot, width = 10, height = 5, dpi = 300)
-ggsave(here("figures/iucn_threatened_spp_exit_10pxl_map_062326.png"), exit_combined_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_spp_entry_10pxl_map_062526.png"), entry_combined_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_spp_exit_10pxl_map_062526.png"), exit_combined_plot, width = 10, height = 5, dpi = 300)
 ```
 
 ## Plot some areas with high numbers of entries/exits
