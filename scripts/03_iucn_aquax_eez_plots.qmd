@@ -74,6 +74,9 @@ overlap_claim_list <- unique(overlap_claim$MRGID)
 # eez no overlapping claim
 eez_no_overlap <- eez %>% 
   filter(!MRGID %in% overlap_claim_list)
+
+eez_no_overlap_df <- eez_no_overlap %>% 
+  st_drop_geometry()
 ```
 
 ## Plot species pixels
@@ -206,33 +209,92 @@ ggsave(here("figures/iucn_threatened_spp_exit_10pxl_map_062526.png"), exit_combi
 ## Plot some areas with high numbers of entries/exits
 ```{r}
 ggplot() +
-  geom_sf(data = eez_eq %>% filter(MRGID %in% c("8328", "48955", "48950"))) +
-  geom_tile(data = spp_entry_85_2050df_eq %>% 
-            filter(MRGID %in% c("8328", "48955", "48950")), 
+  geom_sf(data = eez_no_overlap %>% filter(MRGID %in% c("8328"))) +
+  geom_tile(data = spp_entry_pxls_85_2050 %>% 
+            filter(MRGID %in% c("8328")), 
             aes(x = x, y = y,
             fill = n_entry_spp,
             color = n_entry_spp)) +
-  scale_fill_viridis_c(limits = c(1,21), direction = -1) +
-  scale_color_viridis_c(limits = c(1,21), direction = -1) +
+  scale_fill_viridis_c(limits = c(1,32), 
+                       breaks = c(1, 2, 4, 8, 16, 32),
+                       direction = -1, 
+                       trans = "log", # visually stretches the lower value data
+                       guide = guide_colorbar(
+                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                       barheight = unit(0.4, "cm"),
+                       ticks = TRUE,
+                       ticks.colour = "white",
+                       ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,32), 
+                        breaks = c(1, 2, 4, 8, 16, 32),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none") +
   theme_minimal() +
   labs(title = "EEZs with most threatened species entries under RCP8.5 2050",
-       subtitle = "Top 3 EEZs: North Korea, Lincourt Rocks, and Kuril Islands")
+       subtitle = "Top EEZs: North Korea") +
+  theme(legend.position = "bottom")
 ```
 
 
 ```{r}
 ggplot() +
-  geom_sf(data = eez_eq %>% filter(MRGID %in% c("64440", "8485"))) +
-  geom_tile(data = spp_exit_85_2050df_eq %>% 
-            filter(MRGID %in% c("64440", "8485")), 
+  geom_sf(data = eez_no_overlap %>% 
+  filter(stringr::str_detect(GEONAME, "Australia"))) +
+  geom_tile(data = spp_exit_pxls_85_2050 %>% 
+            filter(stringr::str_detect(GEONAME, "Australia")), 
             aes(x = x, y = y,
             fill = n_exit_spp,
             color = n_exit_spp)) +
-  scale_fill_viridis_c(limits = c(1,21), direction = -1) +
-  scale_color_viridis_c(limits = c(1,21), direction = -1) +
+  scale_fill_viridis_c(limits = c(1,32), 
+                       breaks = c(1, 2, 4, 8, 16, 32),
+                       direction = -1, 
+                       trans = "log", # visually stretches the lower value data
+                       guide = guide_colorbar(
+                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                       barheight = unit(0.4, "cm"),
+                       ticks = TRUE,
+                       ticks.colour = "white",
+                       ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,32), 
+                        breaks = c(1, 2, 4, 8, 16, 32),
+                        direction = -1,
+                        trans = "log",
+                        guide = "none") +
   theme_minimal() +
+  theme(legend.position = "bottom")+
   labs(title = "EEZs with most threatened species exits under RCP8.5 2050",
-       subtitle = "Top 2 EEZs: Singapore / Malaysia, Singapore")
+       subtitle = "Austrailian EEZ and Joint Regime Area")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_no_overlap %>% 
+  filter(stringr::str_detect(GEONAME, "United States"))) +
+  geom_tile(data = spp_entry_pxls_85_2050 %>% 
+            filter(stringr::str_detect(GEONAME, "United States")), 
+            aes(x = x, y = y,
+            fill = n_entry_spp,
+            color = n_entry_spp)) +
+  scale_fill_viridis_c(limits = c(1,32), 
+                       breaks = c(1, 2, 4, 8, 16, 32),
+                       direction = -1, 
+                       trans = "log", # visually stretches the lower value data
+                       guide = guide_colorbar(
+                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                       barheight = unit(0.4, "cm"),
+                       ticks = TRUE,
+                       ticks.colour = "white",
+                       ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,32), 
+                        breaks = c(1, 2, 4, 8, 16, 32),
+                        direction = -1,
+                        trans = "log",
+                        guide = "none") +
+  theme_minimal() +
+  theme(legend.position = "bottom")+
+  labs(title = "EEZs with most threatened species entries under RCP8.5 2050",
+       subtitle = "United States EEZ and Joint Regime Area")
 ```
 
 ## Spatial percent change in threatened species by pixel
@@ -1028,3 +1090,83 @@ spp_exit_eez_severe_threats_summary <- spp_exit_eez_severe_threats %>%
 # IDs for severe threat species that are leaving EEZS under RCP8.5 2050
 iucn_ids_exit_eez_severe_threats <- unique(spp_exit_eez_severe_threats$aphiaid)
 ```
+
+## Plots with combined Sovereign EEZs
+
+```{r}
+# Organize species EEZ count data so that EEZs sections are combined
+# This will count up the species that are entering and exiting sovereign EEZs - alternatively we could still count species entries into subparts of EEZs
+spp_sov_eez_pxl_count <- left_join(spp_eez_pxl_count, eez_no_overlap_df) %>% 
+  # Filter for only EEZs (no joint regime)
+  filter(POL_TYPE == "200NM") %>%
+  # Group by sovereign EEZ and aphiaid
+  group_by(SOVEREIGN1, MRGID_SOV1, aphiaid) %>% 
+  summarize(n_current = sum(n_current, na.rm = TRUE),
+            n_RCP45_2050 = sum(n_RCP45_2050, na.rm = TRUE),
+            n_RCP45_2100 = sum(n_RCP45_2100, na.rm = TRUE),
+            n_RCP85_2050 = sum(n_RCP85_2050, na.rm = TRUE),
+            n_RCP85_2100 = sum(n_RCP85_2100, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+spp_sov_eez_spp_count <- spp_sov_eez_pxl_count %>% 
+  group_by(aphiaid) %>% 
+  summarize(n_current = sum(n_current > 0, na.rm = TRUE),
+            n_RCP45_2050 = sum(n_RCP45_2050 > 0, na.rm = TRUE),
+            n_RCP45_2100 = sum(n_RCP45_2100 > 0, na.rm = TRUE),
+            n_RCP85_2050 = sum(n_RCP85_2050 > 0, na.rm = TRUE),
+            n_RCP85_2100 = sum(n_RCP85_2100 > 0, na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+ggplot() +
+  geom_point(data = spp_sov_eez_spp_count, aes(x = n_current, y = n_RCP85_2050),
+             alpha = 0.5, color = "maroon") +
+  #geom_point(data = eez_spp_counts, aes(x = current_eez_count, y = RCP85_2100_eez_count),
+             #alpha = 0.5, color = "forestgreen") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
+  labs(title = "IUCN Threatened Species Sovereign EEZ count (RCP 8.5 2050)",
+       y = "RCP 85 future EEZ count",
+       x = "Current EEZ count") 
+```
+
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+sov_eez_spp_pxls_long <- spp_sov_eez_pxl_count %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+sov_eez_spp_change <- sov_eez_spp_pxls_long %>% 
+  group_by(SOVEREIGN1, MRGID_SOV1, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+Setting up the counts of species entries and exits by sovereign EEZ loses the nuance of species entering/exiting sub-parts of sovereign EEZs. For example, the US only has 10 species exits when you account for all components of the EEZ. However, when you treat the components of the US EEZ, separately, there are 46 species exits for the Howard & Baker Islands subpart. Interestingly, when the data is done this way, Singapore is in the top three for species exits and entries.
+
+Instead, use the original species entry/exit data but then get species entries and exits by sovereign EEZ. This will count species that are entering/exiting sub-parts of sovereign EEZs as entries/exits for the sovereign EEZ.
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_change_sov_counts <- left_join(eez_spp_pxls_long, eez_no_overlap_df) %>% 
+  filter(POL_TYPE == "200NM") %>%
+  group_by(SOVEREIGN1, MRGID_SOV1, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+Now, France, North Korea, United Kingdom, Russia, and United Kingdom are the top five for species entry. France is also at the top of the list for species exits with 227 species exits (for France, across their EEZ subparts there are 227 instances of species entirely leaving EEZ regions - pretty interesting). In comparision, there are 11 species exits for France if you dissolve the subparts of their EEZ. 
