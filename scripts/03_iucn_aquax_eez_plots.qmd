@@ -946,8 +946,8 @@ taxon_jitter_plot_only <- ggplot() +
   geom_jitter(data = group_eez_count_diff, aes(x = eez_count_diff, y = fct_rev(general_group), alpha = 0.6),
    color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
   scale_y_discrete() + 
-  labs(title = "EEZ counts by IUCN comprehensive group",
-       x = "EEZ count change\n(RCP8.5 2050 - current)",
+  labs(title = "EEZ subregion counts by IUCN comprehensive group",
+       x = "EEZ subregion count change\n(RCP8.5 2050 - current)",
        y = "") +
   theme_bw() +
   theme(legend.position = "none",
@@ -976,7 +976,7 @@ taxon_combined <- taxon_bar_plot + taxon_jitter_plot +
 
 ```{r}
 # Save only the jitter plot
-ggsave(here("figures/iucn_threatened_taxon_jitterplot_062526.png"), taxon_jitter_plot_only, width = 7, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_subregion_taxon_jitterplot_070126.png"), taxon_jitter_plot_only, width = 7, height = 5, dpi = 300)
 ```
 
 ```{r}
