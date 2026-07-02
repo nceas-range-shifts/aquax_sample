@@ -1299,3 +1299,18 @@ eez_spp_change_sov_counts <- left_join(eez_spp_pxls_long, eez_no_overlap_df) %>%
 ```
 
 Now, France, North Korea, United Kingdom, Russia, and United Kingdom are the top five for species entry. France is also at the top of the list for species exits with 227 species exits (for France, across their EEZ subparts there are 227 instances of species entirely leaving EEZ regions - pretty interesting). In comparision, there are 11 species exits for France if you dissolve the subparts of their EEZ. 
+
+
+```{r}
+sov_eez_c_f <- eez_spp_change_sov_counts %>% 
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
+  replace_na(list(continued_presence = 0, exit_from_historical = 0,
+                  entry_into_new = 0, no_presence = 0)) %>% 
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/future_spp,
+         spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
