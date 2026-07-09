@@ -765,23 +765,23 @@ ggplot() +
 ```{r}
 # 2 minutes for first stripe (-180 to -90)
 system.time({
- lc_list_count_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+ lc_list_count_neg90_zero_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
                                        df = df_least_concern, 
                                        scenario = "RCP85_2050",
-                                       xmin = -180,
-                                       xmax = -90,
+                                       xmin = -90,
+                                       xmax = 0,
                                        mc.cores = 40)
 })
 ```
 
 ```{r}
-lc_count_df <- bind_rows(lc_list_count_df)
+lc_count_neg90_zero_df <- bind_rows(lc_list_count_neg90_zero_df)
 ```
 
 ```{r}
 # Sum by XY cell, using collapse (20 seconds)
 system.time({
-lc_sum_df <- lc_count_df %>% 
+lc_sum_neg90_zero_df <- lc_count_neg90_zero_df %>% 
   fgroup_by(x, y) %>% 
   fcount()
 })
@@ -791,7 +791,7 @@ lc_sum_df <- lc_count_df %>%
 ggplot() +
   geom_sf(data = eez) +
   coord_sf(expand = FALSE) +
-  geom_tile(data = lc_sum_df, aes(x = x, y = y,
+  geom_tile(data = lc_sum_neg90_zero_df, aes(x = x, y = y,
                                                fill = N,
                                                color = N)) +
   #scale_fill_viridis_c(limits = c(1,300), direction = -1) +
@@ -808,5 +808,21 @@ ggplot() +
 ```{r}
 # Save first stripe of data (-90 to -180, RCP85_2050)
 saveRDS(lc_sum_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg180_to_neg90_070926.rds"))
+```
+
+```{r}
+# Split next stripe into 2 b/c rds file is too large
+lc_sum_neg90_neg45_df <- lc_sum_neg90_zero_df %>% 
+  filter(x < -45)
+
+lc_sum_neg45_zero_df <- lc_sum_neg90_zero_df %>% 
+  filter(x >= -45)
+```
+
+
+```{r}
+# Save next stripe of data (-90 to -45 and -45 to 0, RCP85_2050)
+saveRDS(lc_sum_neg90_neg45_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg90_to_neg45_070926.rds"))
+saveRDS(lc_sum_neg45_zero_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg45_to_0_070926.rds"))
 ```
 
