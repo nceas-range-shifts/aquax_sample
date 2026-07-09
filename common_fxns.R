@@ -178,7 +178,7 @@ calculate_area <- function(id, df, scenario, unit) {
   return(r_spp_df)
 }
 
-least_concern_count <- function(id, df, scenario) {
+least_concern_count <- function(id, df, scenario, xmin, xmax) {
     spp_filter <- df %>% filter(aphiaid == id)
   
   if (nrow(spp_filter) == 0) {
@@ -191,7 +191,8 @@ least_concern_count <- function(id, df, scenario) {
 
   query_str <- paste0("SELECT x, y, cutoff, ", paste(scenario, collapse = ", "), 
     " FROM read_parquet('", spp_filter$f, "')",
-    " WHERE ", paste(scenario, collapse = ", "), " >= cutoff")
+    " WHERE ", paste(paste(scenario, ">= cutoff"), collapse = " AND "),
+    " AND x >= ", xmin, " AND x < ", xmax)
 
  # Run query and filter for scenario pixels above cutoff threshold
 
@@ -205,8 +206,6 @@ least_concern_count <- function(id, df, scenario) {
         warning("No pixels above cutoff threshold for aphiaid: ", id)
         # Still need to shut connection in this case
         duckdb::dbDisconnect(con, shutdown = TRUE)
-        # Return 0 to track loss species
-        return(data.frame(aphiaid = id, area = 0, s = scenario))
     }
   
   # Return the pixels above the cutoff to be summarized into LC count  

@@ -17,6 +17,7 @@ library(janitor)
 library(sf)
 library(terra)
 library(arrow)
+library(collapse)
 ```
 
 This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). 
@@ -700,17 +701,20 @@ test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_101738
 # Test subsample for least concern pixels
 ```{r}
 set.seed(123)
-test_spp_30 <- slice_sample(df_least_concern, n = 30)
+test_spp_30 <- slice_sample(df_least_concern, n = 1000)
 files_30 <- test_spp_30$f
 aphiaid_30 <- test_spp_30$aphiaid
 ```
+
 
 ```{r}
 system.time({
  least_concern_list_count_df <- parallel::mclapply(aphiaid_30, FUN = least_concern_count, 
                                        df = test_spp_30, 
                                        scenario = "RCP85_2050",
-                                       mc.cores = 10)
+                                       xmin = -180,
+                                       xmax = -90,
+                                       mc.cores = 40)
 })
 ```
 
@@ -719,20 +723,32 @@ least_concern_count_df <- bind_rows(least_concern_list_count_df)
 ```
 
 ```{r}
-# Sum by XY cell, create raster
+# Sum by XY cell, using collapse
+system.time({
 lc_sum_df <- least_concern_count_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+# dplyr 100x slower
+system.time({
+lc_sum_df_dplyr <- least_concern_count_df %>% 
   group_by(x, y) %>% 
   summarize(n_lc_spp = n()) %>% 
   ungroup()
+})
 ```
+
 
 ```{r}
 ggplot() +
   geom_sf(data = eez) +
   coord_sf(expand = FALSE) +
   geom_tile(data = lc_sum_df, aes(x = x, y = y,
-                                               fill = n_lc_spp,
-                                               color = n_lc_spp)) +
+                                               fill = N,
+                                               color = N)) +
   #scale_fill_viridis_c(limits = c(1,300), direction = -1) +
   #scale_color_viridis_c(limits = c(1,300), direction = -1)  +
   scale_y_continuous(limits = c(-90, 90)) +
@@ -751,6 +767,8 @@ system.time({
  lc_list_count_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
                                        df = df_least_concern, 
                                        scenario = "RCP85_2050",
+                                       xmin = -180,
+                                       xmax = -90,
                                        mc.cores = 40)
 })
 ```
