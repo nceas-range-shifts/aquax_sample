@@ -765,23 +765,23 @@ ggplot() +
 ```{r}
 # 2 minutes for first stripe (-180 to -90)
 system.time({
- lc_list_count_zero_90_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+ lc_list_count_90_180_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
                                        df = df_least_concern, 
                                        scenario = "RCP85_2050",
-                                       xmin = 0,
-                                       xmax = 90,
+                                       xmin = 90,
+                                       xmax = 180,
                                        mc.cores = 40)
 })
 ```
 
 ```{r}
-lc_count_zero_90_df <- bind_rows(lc_list_count_zero_90_df)
+lc_count_90_180_df <- bind_rows(lc_list_count_90_180_df)
 ```
 
 ```{r}
 # Sum by XY cell, using collapse (20 seconds)
 system.time({
-lc_sum_zero_90_df <- lc_count_zero_90_df %>% 
+lc_sum_90_180_df <- lc_count_90_180_df %>% 
   fgroup_by(x, y) %>% 
   fcount()
 })
@@ -829,4 +829,24 @@ saveRDS(lc_sum_neg45_zero_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_n
 ```{r}
 # Save next stripe of data (0 to 90, RCP85_2050)
 saveRDS(lc_sum_zero_90_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_zero_to_90_070926.rds"))
+```
+
+```{r}
+# Split next stripe into 3 b/c rds file is too large
+lc_sum_90_120_df <- lc_sum_90_180_df %>% 
+  filter(x < 120)
+
+lc_sum_120_150_df <- lc_sum_90_180_df %>% 
+  filter(x >= 120 & x < 150)
+
+lc_sum_150_180_df <- lc_sum_90_180_df %>% 
+  filter(x >= 150)
+
+```
+
+```{r}
+# Save next stripe of data (-90 to -45 and -45 to 0, RCP85_2050)
+saveRDS(lc_sum_90_120_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_90_to_120_070926.rds"))
+saveRDS(lc_sum_120_150_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_120_to_150_070926.rds"))
+saveRDS(lc_sum_150_180_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_150_to_180_070926.rds"))
 ```
