@@ -953,6 +953,22 @@ threat_sum_df <- threat_sum_df %>%
 ```
 
 ```{r}
+# # Split next stripe into 3 b/c rds file is too large
+threat_sum_neg180_zero_df <- threat_sum_df %>% 
+  filter(x < 0)
+
+threat_sum_zero_180_df <- threat_sum_df%>% 
+  filter(x >= 0)
+```
+
+
+```{r}
+# Save at risk data
+saveRDS(threat_sum_neg180_zero_df, here("data/iucn_atrisk_count_rcp85_2050_neg180_0_071326.rds"))
+saveRDS(threat_sum_zero_180_df, here("data/iucn_atrisk_count_rcp85_2050_0_180_071326.rds"))
+```
+
+```{r}
 lc_threat_sum_df <- left_join(rbind(lc_sum_df,
                                     lc_sum_neg90_zero_df,
                                     lc_sum_zero_90_df,
@@ -1003,3 +1019,84 @@ plot_threat_perc <- ggplot() +
 # Save plot of least concern species
 ggsave(here("figures/iucn_atrisk_perc_spp_rcp85_2050_071026.png"), plot_threat_perc, width = 10, height = 5, dpi = 300)
 ```
+
+## Plot percent threatened species entries of total RCP 8.5 2050 species 
+
+```{r}
+# Spp EEZ entry pixels
+spp_entry_pxls <- read_rds(here("data/iucn_threatened_10pxlthres_entry_pxls_061726.rds"))
+```
+
+```{r}
+# Merge at-risk species entries with total species counts
+lc_threat_sum_df <- left_join(rbind(lc_sum_df,
+                                    lc_sum_neg90_neg45_df,
+                                    lc_sum_neg45_zero_df,
+                                    lc_sum_zero_90_df,
+                                    lc_sum_90_120_df,
+                                    lc_sum_120_150_df,
+                                    lc_sum_150_180_df),
+                              threat_sum_df)
+```
+
+```{r}
+# Join with species entries
+lc_threat_count_entries <- left_join(spp_entry_pxls %>% filter(scenario == "RCP85_2050"), lc_threat_sum_df)
+```
+
+```{r}
+n_entry_perc_allspp <- lc_threat_count_entries %>% 
+  mutate(n_entry_perc = 100 * n_entry_spp/(N + N_atrisk))
+```
+
+```{r}
+# There are a few pixels where there are new species entry but no least concern or at-risk species
+n_entry_na <- n_entry_perc_allspp %>% 
+  filter(is.na(n_entry_perc))
+```
+
+
+```{r}
+# Plot percent entry pixels
+perc_entry_plot <- ggplot() +
+  geom_sf(data = eez %>% filter(POL_TYPE == "200NM")) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = n_entry_perc_allspp, aes(x = x, y = y,
+                                               fill = n_entry_perc,
+                                               color = n_entry_perc)) +
+  scale_fill_viridis_c(limits = c(0.04,50),
+                      trans = "sqrt",
+                      breaks = c(0.04, 1, 5, 10, 20, 30, 40, 50),
+                      labels = c(0.04, 1, 5, 10, 20, 30, 40, 50),
+                      direction = -1,
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(0.04,50), 
+                        trans = "sqrt",
+                        breaks = c(0.04, 1, 5, 10, 20, 30, 40, 50),
+                        labels = c(0.04, 1, 5, 10, 20, 30, 40, 50),
+                        direction = -1,
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species entry perc",
+       color = "species entry perc",
+       title = "Percent of IUCN species that are new at-risk species",
+       subtitle = "RCP 8.5 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+# Save plot of percent new entries
+ggsave(here("figures/iucn_atrisk_perc_spp_rcp85_2050_071326.png"), perc_entry_plot, width = 10, height = 5, dpi = 300)
+```
+
