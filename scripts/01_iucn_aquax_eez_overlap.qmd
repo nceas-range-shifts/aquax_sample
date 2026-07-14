@@ -1107,23 +1107,23 @@ ggsave(here("figures/iucn_atrisk_perc_spp_rcp85_2050_071326.png"), perc_entry_pl
 ```{r}
 # 2 minutes for first stripe (-180 to -90)
 system.time({
- lc_list_count_current_0_90_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+ lc_list_count_current_neg90_0_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
                                        df = df_least_concern, 
                                        scenario = "Current",
-                                       xmin = 0,
-                                       xmax = 90,
+                                       xmin = -90,
+                                       xmax = 0,
                                        mc.cores = 40)
 })
 ```
 
 ```{r}
-lc_count_current_0_90_df <- bind_rows(lc_list_count_current_0_90_df)
+lc_count_current_neg90_0_df <- bind_rows(lc_list_count_current_neg90_0_df)
 ```
 
 ```{r}
 # Sum by XY cell, using collapse (90 seconds)
 system.time({
-lc_sum_current_0_90_df <- lc_count_current_0_90_df %>% 
+lc_sum_current_neg90_0_df <- lc_count_current_neg90_0_df %>% 
   fgroup_by(x, y) %>% 
   fcount()
 })
@@ -1145,6 +1145,22 @@ lc_sum_current_0_45_df <- lc_sum_current_0_90_df  %>%
 
 lc_sum_current_45_90_df <- lc_sum_current_0_90_df %>% 
   filter(x >= 45)
+```
+
+```{r}
+# Break -90 to 0 into two
+lc_sum_current_neg90_neg45_df <- lc_sum_current_neg90_0_df  %>% 
+  filter(x < -45)
+
+lc_sum_current_neg45_0_df <- lc_sum_current_neg90_0_df %>% 
+  filter(x >= -45)
+```
+
+```{r}
+# Save data (neg 90 to 0, current)
+saveRDS(lc_sum_current_neg90_neg45_df, here("data/iucn_least_concern/iucn_lc_current_2050_neg90_to_neg45_071426.rds"))
+
+saveRDS(lc_sum_current_neg45_0_df, here("data/iucn_least_concern/iucn_lc_current_2050_neg45_to_0_071426.rds"))
 ```
 
 
