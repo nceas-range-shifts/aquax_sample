@@ -1100,3 +1100,47 @@ perc_entry_plot <- ggplot() +
 ggsave(here("figures/iucn_atrisk_perc_spp_rcp85_2050_071326.png"), perc_entry_plot, width = 10, height = 5, dpi = 300)
 ```
 
+## Run counts of species in Current scenario
+
+# Run full lc set
+
+```{r}
+# 2 minutes for first stripe (-180 to -90)
+system.time({
+ lc_list_count_current_90_180_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+                                       df = df_least_concern, 
+                                       scenario = "Current",
+                                       xmin = 90,
+                                       xmax = 180,
+                                       mc.cores = 40)
+})
+```
+
+```{r}
+lc_count_current_90_180_df <- bind_rows(lc_list_count_current_90_180_df)
+```
+
+```{r}
+# Sum by XY cell, using collapse (90 seconds)
+system.time({
+lc_sum_current_90_180_df <- lc_count_current_90_180_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+# Break 90 to 180 into two
+lc_sum_current_90_135_df <- lc_sum_current_90_180_df  %>% 
+  filter(x < 135)
+
+lc_sum_current_135_180_df <- lc_sum_current_90_180_df  %>% 
+  filter(x >= 135)
+```
+
+
+```{r}
+# Save data (90 to 180, current)
+saveRDS(lc_sum_current_90_135_df, here("data/iucn_least_concern/iucn_lc_current_2050_90_to_135_071426.rds"))
+saveRDS(lc_sum_current_135_180_df, here("data/iucn_least_concern/iucn_lc_current_2050_135_to_180_071426.rds"))
+```
