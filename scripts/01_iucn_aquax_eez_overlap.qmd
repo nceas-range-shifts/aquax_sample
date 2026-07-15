@@ -1176,3 +1176,89 @@ saveRDS(lc_sum_current_45_90_df, here("data/iucn_least_concern/iucn_lc_current_2
 saveRDS(lc_sum_current_neg180_neg90_df, here("data/iucn_least_concern/iucn_lc_current_2050_neg180_to_neg90_071426.rds"))
 
 ```
+
+# Run at-risk species for current
+
+```{r}
+# Fewer species so run full globe
+system.time({
+ threat_current_list_count_df <- parallel::mclapply(aphiaid_threat, FUN = least_concern_count, 
+                                       df = df_threatened, 
+                                       scenario = "Current",
+                                       xmin = -180,
+                                       xmax = 180,
+                                       mc.cores = 40)
+})
+```
+
+```{r}
+threat_current_count_df <- bind_rows(threat_current_list_count_df)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+threat_current_sum_df <- threat_current_count_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+current_threat_plot <- ggplot() +
+  geom_tile(data = threat_current_sum_df, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_fill_viridis_c(limits = c(1,302), 
+                      breaks = c(1, 10, 25, 50, 150, 302),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(6, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1,302), 
+                        breaks = c(1, 10, 20, 50, 150, 302),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "at-risk species count",
+       color = "at-risk species count",
+       title = "At-risk species count - Current") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+# Save plot of least concern species
+ggsave(here("figures/iucn_atrisk_spp_current_071526.png"), current_threat_plot, width = 10, height = 5, dpi = 300)
+```
+
+```{r}
+# Rename N in atrisk dataframe
+threat_current_sum_df <- threat_current_sum_df %>% 
+  rename(N_atrisk = N)
+```
+
+```{r}
+# # Split next stripe into 3 b/c rds file is too large
+threat_current_sum_neg180_zero_df <- threat_current_sum_df %>% 
+  filter(x < 0)
+
+threat_current_sum_zero_180_df <- threat_current_sum_df%>% 
+  filter(x >= 0)
+```
+
+
+```{r}
+# Save at risk data
+saveRDS(threat_current_sum_neg180_zero_df, here("data/iucn_atrisk_count_current_neg180_0_071526.rds"))
+saveRDS(threat_current_sum_zero_180_df, here("data/iucn_atrisk_count_current_0_180_071526.rds"))
+```
+
