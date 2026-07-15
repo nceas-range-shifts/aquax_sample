@@ -74,6 +74,15 @@ eez_raster_geoname <- rasterize(eez_simple, eez_raster_blank, field = "GEONAME")
 eez_raster_mrgid <- rasterize(eez_simple, eez_raster_blank, field = "MRGID")
 ```
 
+```{r}
+# Get GEONAMES of non-contested regions
+eez_200nm <-eez %>% 
+  filter(POL_TYPE == "200NM")
+
+eez_200nm_list <- eez_200nm$GEONAME
+```
+
+
 # IUCN threatened species
 
 ```{r}
@@ -1348,7 +1357,9 @@ spp_exit_pxls <- read_rds(here("data/iucn_threatened_10pxlthres_exit_pxls_061726
 
 ```{r}
 # Join with species exits
-current_lc_threat_count_exits <- left_join(spp_exit_pxls %>% filter(scenario == "RCP85_2050"), current_lc_threat_perc_df)
+current_lc_threat_count_exits <- left_join(spp_exit_pxls %>% filter(scenario == "RCP85_2050",
+                                                                    GEONAME %in% eez_200nm_list),
+                                           current_lc_threat_perc_df)
 ```
 
 ```{r}
