@@ -1294,21 +1294,34 @@ lc_sum_current_135_180_df <- readRDS(here("data/iucn_least_concern/iucn_lc_curre
 ```
 
 ```{r}
-current_lc_threat_sum_df <- left_join(rbind(lc_sum_current_neg180_neg90_df,
+# Save at risk data
+threat_current_sum_neg180_zero_df <- readRDS(here("data/iucn_atrisk_count_current_neg180_0_071526.rds"))
+threat_current_sum_zero_180_df <- readRDS(here("data/iucn_atrisk_count_current_0_180_071526.rds"))
+```
+
+```{r}
+current_lc_threat_sum_df <- full_join(rbind(lc_sum_current_neg180_neg90_df,
                                     lc_sum_current_neg90_neg45_df,
                                     lc_sum_current_neg45_0_df,
                                     lc_sum_current_0_45_df,
                                     lc_sum_current_45_90_df,
                                     lc_sum_current_90_135_df,
                                     lc_sum_current_135_180_df),
-                              threat_current_sum_df)
+                              rbind(threat_current_sum_neg180_zero_df,
+                              threat_current_sum_zero_180_df))
 ```
 
 ```{r}
+# With full join, should get areas with NA least concern species
+lc_na <- current_lc_threat_sum_df %>% 
+  filter(is.na(N))
+```
+
+
+```{r}
 current_lc_threat_perc_df <- current_lc_threat_sum_df %>% 
-  # Drop rows with NA at risk species 
+  # Replace NAs with 0 
   replace_na(0) %>% 
-  #drop_na(N_atrisk) %>% 
   mutate(perc_threat = round(100 * N_atrisk/(N + N_atrisk), 2))
 ```
 
@@ -1369,23 +1382,24 @@ n_exit_perc_allspp <- current_lc_threat_count_exits %>%
 
 ```{r}
 # There are a few pixels where there are new species entry but no least concern or at-risk species
+# Full join fixed this
 n_exit_na <- n_exit_perc_allspp %>% 
   filter(is.na(n_exit_perc))
 ```
 
 
 ```{r}
-# Plot percent entry pixels
+# Plot percent exit pixels
 plot_perc_exit <- ggplot() +
   geom_sf(data = eez %>% filter(POL_TYPE == "200NM")) +
   coord_sf(expand = FALSE) +
   geom_tile(data = n_exit_perc_allspp, aes(x = x, y = y,
                                                fill = n_exit_perc,
                                                color = n_exit_perc)) +
-  scale_fill_viridis_c(limits = c(0.04,67),
+  scale_fill_viridis_c(limits = c(0.04,100),
                       trans = "sqrt",
-                      breaks = c(0.04, 1, 5, 10, 20, 30, 40, 50, 67),
-                      labels = c(0.04, 1, 5, 10, 20, 30, 40, 50, 67),
+                      breaks = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
+                      labels = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
                       direction = -1,
                       guide = guide_colorbar(
                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
@@ -1394,10 +1408,10 @@ plot_perc_exit <- ggplot() +
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  scale_color_viridis_c(limits = c(0.04,67), 
+  scale_color_viridis_c(limits = c(0.04,100), 
                         trans = "sqrt",
-                        breaks = c(0.04, 1, 5, 10, 20, 30, 40, 50, 67),
-                        labels = c(0.04, 1, 5, 10, 20, 30, 40, 50, 67),
+                        breaks = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
+                        labels = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
                         direction = -1,
                         guide = "none")  +
   scale_y_continuous(limits = c(-90, 90)) +
@@ -1414,6 +1428,72 @@ plot_perc_exit <- ggplot() +
 ```
 
 ```{r}
-# Save plot of percent new entries
+# Save plot of percent exits
 ggsave(here("figures/iucn_atrisk_perc_exit_spp_rcp85_2050_071526.png"), plot_perc_exit, width = 10, height = 5, dpi = 300)
 ```
+
+## Plot of species entries as a percentage of current species 
+
+```{r}
+# Join with species entries
+current_lc_threat_count_entry <- left_join(spp_entry_pxls %>% filter(scenario == "RCP85_2050",
+                                                                    GEONAME %in% eez_200nm_list),
+                                           current_lc_threat_perc_df)
+```
+
+```{r}
+n_entry_perc_allspp <- current_lc_threat_count_entry %>% 
+  mutate(n_entry_perc = 100 * n_entry_spp/(N + N_atrisk))
+```
+
+```{r}
+# There are a few pixels where there are new species entry but no least concern or at-risk species
+# Full join fixed this (just four pixels in N Korea)
+n_entry_na <- n_entry_perc_allspp %>% 
+  filter(is.na(n_entry_perc))
+```
+
+```{r}
+# Plot percent entry pixels as percentage of current species present
+plot_perc_entry_current <- ggplot() +
+  geom_sf(data = eez %>% filter(POL_TYPE == "200NM")) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = n_entry_perc_allspp, aes(x = x, y = y,
+                                               fill = n_entry_perc,
+                                               color = n_entry_perc)) +
+  scale_fill_viridis_c(limits = c(0.04,100),
+                      trans = "sqrt",
+                      breaks = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
+                      labels = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
+                      direction = -1,
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(0.04,100), 
+                        trans = "sqrt",
+                        breaks = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
+                        labels = c(0.04, 1, 5, 10, 20, 30, 50, 75, 100),
+                        direction = -1,
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species entry perc",
+       color = "species entry perc",
+       title = "Percent of current IUCN species that are new at-risk species by EEZ region",
+       subtitle = "RCP 8.5 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+# Save plot of percent entries
+ggsave(here("figures/iucn_atrisk_perc_entry_spp_current_071626.png"), plot_perc_entry_current, width = 10, height = 5, dpi = 300)
+```
+
