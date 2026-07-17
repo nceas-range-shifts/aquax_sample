@@ -1294,9 +1294,11 @@ lc_sum_current_135_180_df <- readRDS(here("data/iucn_least_concern/iucn_lc_curre
 ```
 
 ```{r}
-# Save at risk data
+# Read at risk data
 threat_current_sum_neg180_zero_df <- readRDS(here("data/iucn_atrisk_count_current_neg180_0_071526.rds"))
 threat_current_sum_zero_180_df <- readRDS(here("data/iucn_atrisk_count_current_0_180_071526.rds"))
+threat_rcp85_sum_neg180_zero_df <- readRDS(here("data/iucn_atrisk_count_rcp85_2050_neg180_0_071326.rds"))
+threat_rcp85_sum_zero_180_df <- readRDS(here("data/iucn_atrisk_count_rcp85_2050_0_180_071326.rds"))
 ```
 
 ```{r}
@@ -1322,7 +1324,7 @@ lc_na <- current_lc_threat_sum_df %>%
 current_lc_threat_perc_df <- current_lc_threat_sum_df %>% 
   # Replace NAs with 0 
   replace_na(0) %>% 
-  mutate(perc_threat = round(100 * N_atrisk/(N + N_atrisk), 2))
+  mutate(perc_threat =100 * N_atrisk/(N + N_atrisk))
 ```
 
 ```{r}
@@ -1333,6 +1335,7 @@ current_plot_threat_perc <- ggplot() +
   scale_fill_viridis_c(limits = c(0,100), 
                       #breaks = c(1, 10, 25, 50, 150, 302),
                       direction = -1,
+                      option = "plasma",
                       #trans = "log", # visually stretches the lower value data
                       guide = guide_colorbar(
                       barwidth  = unit(6, "cm"),   # wide bar for bottom placement
@@ -1344,6 +1347,7 @@ current_plot_threat_perc <- ggplot() +
   scale_color_viridis_c(limits = c(0, 100), 
                         #breaks = c(1, 10, 20, 50, 150, 302),
                         direction = -1,
+                        option = "plasma",
                         #trans = "log", # visually stretches the lower value data
                         guide = "none")  +
   scale_y_continuous(limits = c(-90, 90)) +
