@@ -1501,3 +1501,94 @@ plot_perc_entry_current <- ggplot() +
 ggsave(here("figures/iucn_atrisk_perc_entry_spp_current_071626.png"), plot_perc_entry_current, width = 10, height = 5, dpi = 300)
 ```
 
+## Create percent at-risk species loss map for future RCP 8.5 2050
+
+```{r}
+# Read in data from above
+lc_sum_rcp85_neg180_neg90_df <- readRDS(here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg180_to_neg90_070926.rds"))
+
+lc_sum_rcp85_neg90_neg45_df <- readRDS(here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg90_to_neg45_070926.rds"))
+
+lc_sum_rcp85_neg45_0_df <- readRDS(here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg45_to_0_070926.rds"))
+```
+
+```{r}
+# Read in data from above
+lc_sum_rcp85_0_90_df <- readRDS(here("data/iucn_least_concern/iucn_lc_rcp85_2050_zero_to_90_070926.rds"))
+
+lc_sum_rcp85_90_120_df <- readRDS(here("data/iucn_least_concern/iucn_lc_rcp85_2050_90_to_120_070926.rds"))
+
+lc_sum_rcp85_120_150_df <- readRDS(here("data/iucn_least_concern/iucn_lc_rcp85_2050_120_to_150_070926.rds"))
+
+lc_sum_rcp85_150_180_df <- readRDS(here("data/iucn_least_concern/iucn_lc_rcp85_2050_150_to_180_070926.rds"))
+```
+
+```{r}
+# Read at risk data
+threat_rcp85_sum_neg180_zero_df <- readRDS(here("data/iucn_atrisk_count_rcp85_2050_neg180_0_071326.rds"))
+threat_rcp85_sum_zero_180_df <- readRDS(here("data/iucn_atrisk_count_rcp85_2050_0_180_071326.rds"))
+```
+
+```{r}
+rcp85_lc_threat_sum_df <- full_join(rbind(lc_sum_rcp85_neg180_neg90_df,
+                                    lc_sum_rcp85_neg90_neg45_df,
+                                    lc_sum_rcp85_neg45_0_df,
+                                    lc_sum_rcp85_0_90_df,
+                                    lc_sum_rcp85_90_120_df,
+                                    lc_sum_rcp85_120_150_df,
+                                    lc_sum_rcp85_150_180_df),
+                              rbind(threat_rcp85_sum_neg180_zero_df,
+                              threat_rcp85_sum_zero_180_df))
+```
+
+```{r}
+# With full join, should get areas with NA least concern species
+rcp85_lc_na <- rcp85_lc_threat_sum_df %>% 
+  filter(is.na(N))
+```
+
+
+```{r}
+rcp85_lc_threat_perc_df <- rcp85_lc_threat_sum_df %>% 
+  # Replace NAs with 0 
+  replace_na(0) %>% 
+  mutate(perc_threat =100 * N_atrisk/(N + N_atrisk))
+```
+
+```{r}
+rcp85_plot_threat_perc <- ggplot() +
+  geom_tile(data = rcp85_lc_threat_perc_df, aes(x = x, y = y,
+                                               fill = perc_threat,
+                                               color = perc_threat)) +
+  scale_fill_viridis_c(limits = c(0,100), 
+                      #breaks = c(1, 10, 25, 50, 150, 302),
+                      direction = -1,
+                      option = "plasma",
+                      #trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(6, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(0, 100), 
+                        #breaks = c(1, 10, 20, 50, 150, 302),
+                        direction = -1,
+                        option = "plasma",
+                        #trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "percent at-risk species",
+       color = "percent at-risk species",
+       title = "At-risk species percent - RCP 8.5 2050") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+# Save plot of least concern species
+ggsave(here("figures/iucn_atrisk_perc_spp_rcp85_071726.png"), rcp85_plot_threat_perc, width = 10, height = 5, dpi = 300)
+```
