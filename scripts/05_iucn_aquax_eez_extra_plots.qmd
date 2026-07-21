@@ -277,8 +277,8 @@ taxon_jitter_plot_only <- ggplot() +
    color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
   scale_y_discrete() + 
   scale_x_continuous(limits = c(-25, 10)) +
-  labs(title = "EEZ subregion counts by IUCN comprehensive group",
-       x = "EEZ subregion count change\n(RCP8.5 2050 - current)",
+  labs(title = "EEZ region counts by IUCN comprehensive group",
+       x = "EEZ region count change\n(RCP8.5 2050 - current)",
        y = "") +
   theme_bw() +
   theme(legend.position = "none")
@@ -290,11 +290,25 @@ iucn_jitter_plot_only <- ggplot() +
    color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
   scale_y_discrete() + 
   scale_x_continuous(limits = c(-25, 10)) +
-  labs(title = "EEZ subregion counts by IUCN redlst category",
-       x = "EEZ subregion count change\n(RCP8.5 2050 - current)",
+  labs(title = "EEZ region counts by IUCN redlst category",
+       x = "EEZ region count change\n(RCP8.5 2050 - current)",
        y = "") +
   theme_bw() +
   theme(legend.position = "none")
+```
+
+```{r}
+# Save only the jitter plot
+ggsave(here("figures/iucn_threatened_200nmonly_taxon_jitterplot_072126.png"), taxon_jitter_plot_only, width = 7, height = 5, dpi = 300)
+
+ggsave(here("figures/iucn_threatened_200nmonly_iucncat_jitterplot_072126.png"), iucn_jitter_plot_only, width = 7, height = 5, dpi = 300)
+```
+
+```{r}
+# Save only the bar plot
+ggsave(here("figures/iucn_threatened_200nmonly_taxon_barplot_072126.png"), taxon_bar_plot, width = 7, height = 5, dpi = 300)
+
+ggsave(here("figures/iucn_threatened_200nmonly_iucncat_barplot_072126.png"), iucn_bar_plot, width = 7, height = 5, dpi = 300)
 ```
 
 ## Get list of species entries by EEZ
