@@ -60,6 +60,37 @@ eez_simple <- eez %>%
   dplyr::select(MRGID, GEONAME) %>% 
   st_drop_geometry() %>% 
   filter(MRGID %in% overlap_claim_list)
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% overlap_claim_list)
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez_simple_sf, eez_raster_blank, field = "MRGID")
+```
+
+```{r}
+eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_raster_df, aes(x = x, y = y,
+                              fill = MRGID,
+                              color = MRGID)) 
 ```
 
 ## Try out rainbow plot by IUCN status
@@ -266,6 +297,24 @@ iucn_jitter_plot_only <- ggplot() +
   theme(legend.position = "none")
 ```
 
+## Get list of species entries by EEZ
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- spp_eez_pxl_count %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
+  # Set 10 pixel threshold (at least ten pixels need in EEZ for species presence)
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
 
 ## Plot North Korea Species Entries
 ```{r}
@@ -368,6 +417,135 @@ ggplot() +
   geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
   labs(title = "Izu stingray range (RCP8.5 2050)",
        subtitle = "Suitability threshold is 444",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+## Thrasher shark (cutoff is 560)
+
+```{r}
+ts <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_220019.parquet")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = ts %>% 
+  filter(RCP85_2050 >= 560), aes(x = x, y = y,
+                              fill = RCP85_2050,
+                              color = RCP85_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  scale_y_continuous(limits = c(37, 43)) +
+  scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Thrasher shark range (RCP8.5 2050)",
+       subtitle = "Suitability threshold is 560",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+## Test out function with NK data to see what's causing horizontal lines in the plot
+```{r}
+# From common_fxns.R
+# Join the eez dataframe and filter for the spp_entry_eezs
+  spp_eez <- inner_join(spp, eez_raster_df) %>% 
+    filter(GEONAME %in% spp_entry_eezs) %>% 
+    filter(.data[[s]] >= cutoff) %>% 
+    mutate(binary = 1) %>% 
+    bind_rows()
+```
+
+
+```{r}
+# Join eez_raster_df and thrasher shark data, filter for NK EEZ and RCP8.5 2050
+nk_ts <- inner_join(ts, eez_raster_df) %>%
+  filter(MRGID == 8328) %>%
+  filter(RCP85_2050 >= cutoff) %>% 
+  mutate(binary = 1) 
+```
+
+```{r}
+ts_filtered <- ts %>% 
+  filter(RCP85_2050 >= cutoff) %>% 
+  filter(x >= 122 & x <= 134) %>%
+  filter(y >= 37 & y <= 43)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_ts, aes(x = x, y = y,
+                              fill = RCP85_2050,
+                              color = RCP85_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Thrasher shark range (RCP8.5 2050)",
+       subtitle = "Suitability threshold is 560",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_raster_df %>% filter(MRGID == 8328), aes(x = x, y = y)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  theme_minimal()
+```
+
+
+```{r}
+# Check alignment
+# Check if origins match (ts_test_raster is e-15 off from 0, 0 center, so rounding X and Y should fix stripes)
+origin(eez_raster_blank)
+ts_test_raster <- rast(ts, type = "xyz", crs = "EPSG:4326")  # if ts has a regular grid
+origin(ts_test_raster)
+res(ts_test_raster)
+```
+
+```{r}
+# See if rounding fixes problem
+eez_raster_df_round <- eez_raster_df %>% 
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+
+ts_round <- ts %>% 
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
+```{r}
+nk_ts_round <- inner_join(ts_round, eez_raster_df_round, by = c("x", "y")) %>%
+  filter(MRGID == 8328) %>%
+  filter(RCP85_2050 >= cutoff) %>% 
+  mutate(binary = 1)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_ts_round, aes(x = x, y = y,
+                              fill = RCP85_2050,
+                              color = RCP85_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Thrasher shark range (RCP8.5 2050) - rounded",
+       subtitle = "Suitability threshold is 560",
        fill = "Suitability value",
        color = "Suitability value") +
   theme_minimal()
