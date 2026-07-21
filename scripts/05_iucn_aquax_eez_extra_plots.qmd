@@ -236,6 +236,21 @@ eez_count_group_simple <- group_eez_count_threshold %>%
 ```
 
 ```{r}
+eez_count_summary_taxon <- eez_count_group_simple %>%
+  filter(general_group != "not comprehensively assessed") %>%
+  count(scenario, general_group, eez_count_cat, name = "n") %>%
+  group_by(scenario, general_group) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+eez_count_summary_iucn <- eez_count_group_simple %>%
+  count(scenario, redlist_category, eez_count_cat, name = "n") %>%
+  group_by(scenario, redlist_category) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+```
+
+```{r}
 # Plot a bar graph by group with fill as the EEZ count category
 taxon_bar_plot <- ggplot() +
   geom_bar(data = eez_count_group_simple %>% 
