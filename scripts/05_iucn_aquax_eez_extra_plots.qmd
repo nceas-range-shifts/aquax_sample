@@ -45,9 +45,6 @@ area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
 
 ```{r}
 eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
-
-eez_simple <- eez %>% 
-  dplyr::select(MRGID, GEONAME)
 ```
 
 
@@ -56,6 +53,13 @@ eez_simple <- eez %>%
 overlap_claim_list <- eez %>% 
   filter(POL_TYPE == "200NM") %>% 
   pull(MRGID)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% overlap_claim_list)
 ```
 
 ## Try out rainbow plot by IUCN status
@@ -115,22 +119,27 @@ ggplot() +
 # Assign EEZ count thresholds based on plotted density (drop not comprehensively assessed)
 group_eez_count_threshold <- group_eez_count %>% 
   #filter(group != "not comprehensively assessed") %>%
+  # Drop those with current and RCP85_2050 EEZ counts of 0 (i.e., not in any EEZ)
+  filter(current_eez_count != 0 | RCP85_2050_eez_count != 0) %>% 
   mutate(current_eez_count_cat = case_when(current_eez_count == 1 ~ "1",
                                           current_eez_count == 2 ~ "2",
                                            current_eez_count > 2 & current_eez_count <= 5 ~ "3-5",
                                            current_eez_count > 5 & current_eez_count <= 10 ~ "6-10",
                                            current_eez_count > 10 & current_eez_count <= 15 ~ "11-15",
-                                           current_eez_count > 15 & current_eez_count <= 20 ~ "16-20",
-                                           current_eez_count > 20 & current_eez_count <= 30 ~ "21-30",
+                                           current_eez_count > 15 & current_eez_count <= 30 ~ "16-30",
                                            TRUE ~ "0"),
          RCP85_2050_eez_count_cat = case_when(RCP85_2050_eez_count == 1 ~ "1",
                                             RCP85_2050_eez_count == 2 ~ "2",
                                            RCP85_2050_eez_count > 2 & RCP85_2050_eez_count <= 5 ~ "3-5",
                                            RCP85_2050_eez_count > 5 & RCP85_2050_eez_count <= 10 ~ "6-10",
                                            RCP85_2050_eez_count > 10 & RCP85_2050_eez_count <= 15 ~ "11-15",
-                                           RCP85_2050_eez_count > 15 & RCP85_2050_eez_count <= 20 ~ "16-20",
-                                           RCP85_2050_eez_count > 20 & RCP85_2050_eez_count <= 30 ~ "21-30",
-                                           TRUE ~ "0")) 
+                                           RCP85_2050_eez_count > 15 & RCP85_2050_eez_count <= 30 ~ "16-30",
+                                           TRUE ~ "0")) %>%
+
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   TRUE ~ group))
 ```
 
 ```{r}
@@ -152,10 +161,10 @@ cat_summary_perc <- left_join(cat_summary, group_count) %>%
 
 ```{r}
 group_eez_count_threshold$current_eez_count_cat <- factor(group_eez_count_threshold$current_eez_count_cat, 
-levels = c("0", "1", "2", "3-5", "6-10", "11-15", "16-20", "21-30"))
+levels = c("0", "1", "2", "3-5", "6-10", "11-15", "16-30"))
 
 group_eez_count_threshold$RCP85_2050_eez_count_cat <- factor(group_eez_count_threshold$RCP85_2050_eez_count_cat, 
-levels = c("0", "1", "2", "3-5", "6-10", "11-15", "16-20", "21-30"))
+levels = c("0", "1", "2", "3-5", "6-10", "11-15", "16-30"))
 
 group_eez_count_threshold$redlist_category <- factor(group_eez_count_threshold$redlist_category,
 levels = c("CR", "EN", "VU", "NT"))
@@ -189,7 +198,7 @@ ggplot() +
 ## Set up dataframe so that it's easier to plot current vs future side by side for each group 
 ```{r}
 eez_count_group_simple <- group_eez_count_threshold %>% 
-  dplyr::select(redlist_category, current_eez_count_cat, RCP85_2050_eez_count_cat) %>% 
+  dplyr::select(redlist_category, general_group, current_eez_count_cat, RCP85_2050_eez_count_cat) %>% 
   pivot_longer(cols = c(current_eez_count_cat, RCP85_2050_eez_count_cat), names_to = "scenario", values_to = "eez_count_cat") %>% 
   mutate(scenario = str_replace(scenario, "current_eez_count_cat", "current"),
          scenario = str_replace(scenario, "RCP85_2050_eez_count_cat", "RCP85_2050"))
@@ -198,6 +207,21 @@ eez_count_group_simple <- group_eez_count_threshold %>%
 ```{r}
 # Plot a bar graph by group with fill as the EEZ count category
 taxon_bar_plot <- ggplot() +
+  geom_bar(data = eez_count_group_simple %>% 
+  filter(general_group != "not comprehensively assessed"), aes(y = fct_rev(general_group), fill = fct_rev(eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d(option = "turbo") +
+  labs(title = "",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
+
+```{r}
+# Plot a bar graph by group with fill as the EEZ count category
+iucn_bar_plot <- ggplot() +
   geom_bar(data = eez_count_group_simple, aes(y = fct_rev(redlist_category), fill = fct_rev(eez_count_cat)), position = "fill") +
   scale_fill_viridis_d(option = "turbo") +
   labs(title = "",
@@ -211,18 +235,140 @@ taxon_bar_plot <- ggplot() +
 
 ```{r}
 group_eez_count_diff <- group_eez_count_threshold %>% 
-  mutate(eez_count_diff = RCP85_2050_eez_count - current_eez_count) %>% 
-  dplyr::select(redlist_category, aphiaid, current_eez_count,RCP85_2050_eez_count, eez_count_diff)
+  mutate(eez_count_diff = RCP85_2050_eez_count - current_eez_count) #%>% 
+  #dplyr::select(redlist_category, aphiaid, current_eez_count,RCP85_2050_eez_count, eez_count_diff)
 ```
 
 ```{r}
 taxon_jitter_plot_only <- ggplot() +
+  geom_jitter(data = group_eez_count_diff %>% filter(general_group != "not comprehensively assessed"),
+   aes(x = eez_count_diff, y = fct_rev(general_group), alpha = 0.6),
+   color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
+  scale_y_discrete() + 
+  scale_x_continuous(limits = c(-25, 10)) +
+  labs(title = "EEZ subregion counts by IUCN comprehensive group",
+       x = "EEZ subregion count change\n(RCP8.5 2050 - current)",
+       y = "") +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+```{r}
+iucn_jitter_plot_only <- ggplot() +
   geom_jitter(data = group_eez_count_diff, aes(x = eez_count_diff, y = fct_rev(redlist_category), alpha = 0.6),
    color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
   scale_y_discrete() + 
+  scale_x_continuous(limits = c(-25, 10)) +
   labs(title = "EEZ subregion counts by IUCN redlst category",
        x = "EEZ subregion count change\n(RCP8.5 2050 - current)",
        y = "") +
   theme_bw() +
   theme(legend.position = "none")
+```
+
+
+## Plot North Korea Species Entries
+```{r}
+library(rnaturalearth)
+north_korea <- ne_countries(country = "North Korea", scale = "large", returnclass = "sf")
+south_korea <- ne_countries(country = "South Korea", scale = "large", returnclass = "sf")
+japan <- ne_countries(country = "Japan", scale = "large", returnclass = "sf")
+```
+
+```{r}
+nk_entry_pixels <- spp_entry_pxls %>% 
+  filter(MRGID == 8328) 
+
+nk_entry_rcp85_2050 <- nk_entry_pixels %>% 
+  filter(scenario == "RCP85_2050")
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_entry_rcp85_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,20), 
+                        breaks = c(1, 5, 10, 15, 20)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,20), 
+                        breaks = c(1, 5, 10, 15, 20)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "North Korea EEZ species entries (RCP8.5 2050)",
+       fill = "Number of species entries",
+       color = "Number of species entries") +
+  theme_minimal()
+```
+
+
+```{r}
+# Which species has less than 10 pixels in current and the largest number of pixels in NK in RCP 8.5 2050?
+nk_spp_future <- spp_eez_pxl_count_group %>% 
+  filter(MRGID == 8328) %>% 
+  filter(n_current < 10) %>% 
+  arrange(desc(n_RCP85_2050)) 
+```
+
+
+```{r}
+# Let's look at the range of the Izu stingrayy (Hemitrygon izuensis)
+izu <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1042848.parquet")
+```
+
+
+```{r}
+# Izu cutoff is 444 so filter RCP 8.5 2050 to only include pixels with values greater than 444
+izu_rcp85_2050 <- izu %>% 
+  mutate(RCP85_2050_suitable = ifelse(RCP85_2050 >= 444, "suitable", "not suitable")) 
+```
+
+```{r}
+izu_rcp85_2050_suitable <- rbind(izu %>%  mutate(RCP85_2050_suitable = "all"), (izu_rcp85_2050 %>% 
+  filter(RCP85_2050_suitable == "suitable")))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = izu_rcp85_2050_suitable, aes(x = x, y = y,
+                              fill = RCP85_2050,
+                              color = RCP85_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  geom_sf(data = south_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  geom_sf(data = japan, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Izu stingray range (RCP8.5 2050)",
+       subtitle = "Suitability threshold is 444",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  facet_wrap(~RCP85_2050_suitable) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = izu_rcp85_2050_suitable %>% 
+  filter(RCP85_2050_suitable == "suitable"), aes(x = x, y = y,
+                              fill = RCP85_2050,
+                              color = RCP85_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  scale_y_continuous(limits = c(37, 43)) +
+  scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Izu stingray range (RCP8.5 2050)",
+       subtitle = "Suitability threshold is 444",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
 ```
