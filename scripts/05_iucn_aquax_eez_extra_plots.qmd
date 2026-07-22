@@ -50,7 +50,7 @@ eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025
 
 ```{r}
 # Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
-overlap_claim_list <- eez %>% 
+eez_200nm_list <- eez %>% 
   filter(POL_TYPE == "200NM") %>% 
   pull(MRGID)
 ```
@@ -59,11 +59,11 @@ overlap_claim_list <- eez %>%
 eez_simple <- eez %>% 
   dplyr::select(MRGID, GEONAME) %>% 
   st_drop_geometry() %>% 
-  filter(MRGID %in% overlap_claim_list)
+  filter(MRGID %in% eez_200nm_list)
 
 eez_simple_sf <- eez %>% 
   dplyr::select(MRGID, GEONAME) %>% 
-  filter(MRGID %in% overlap_claim_list)
+  filter(MRGID %in% eez_200nm_list)
 ```
 
 ```{r}
@@ -119,13 +119,17 @@ spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
 # Get count of number of EEZ by group and count of IUCN cat by group (create figure similar to bar chart)
 group_eez_count <- spp_eez_pxl_count_group %>% 
   # Filter for 
-  filter(!MRGID %in% overlap_claim_list) %>%
+  filter(MRGID %in% eez_200nm_list) %>%
   group_by(group, aphiaid, redlist_category) %>% 
-  summarize(current_eez_count = sum(n_current >= 10, na.rm = TRUE),
-            RCP45_2050_eez_count = sum(n_RCP45_2050 >= 10, na.rm = TRUE),
-            RCP45_2100_eez_count = sum(n_RCP45_2100 >= 10, na.rm = TRUE),
-            RCP85_2050_eez_count = sum(n_RCP85_2050 >= 10, na.rm = TRUE),
-            RCP85_2100_eez_count = sum(n_RCP85_2100 >= 10, na.rm = TRUE)) %>% 
+  summarize(current_eez_count == 1 ~ "1",
+                                          current_eez_count == 2 ~ "2",
+                                           current_eez_count > 2 & current_eez_count <= 5 ~ "3-5",
+                                           current_eez_count > 5 & current_eez_count <= 15 ~ "6-15",
+                                           current_eez_count > 15 & current_eez_count <= 25 ~ "16-25",
+                                           current_eez_count > 25 & current_eez_count <= 50 ~ "26-50",
+                                           current_eez_count > 50 & current_eez_count <= 100 ~ "51-100",
+                                           current_eez_count > 100 ~ ">100",
+                                           TRUE ~ "0") %>% 
   ungroup()
 
 group_iucncat_count <- group_eez_count %>% 
@@ -155,16 +159,20 @@ group_eez_count_threshold <- group_eez_count %>%
   mutate(current_eez_count_cat = case_when(current_eez_count == 1 ~ "1",
                                           current_eez_count == 2 ~ "2",
                                            current_eez_count > 2 & current_eez_count <= 5 ~ "3-5",
-                                           current_eez_count > 5 & current_eez_count <= 10 ~ "6-10",
-                                           current_eez_count > 10 & current_eez_count <= 15 ~ "11-15",
-                                           current_eez_count > 15 & current_eez_count <= 30 ~ "16-30",
+                                           current_eez_count > 5 & current_eez_count <= 15 ~ "6-15",
+                                           current_eez_count > 15 & current_eez_count <= 25 ~ "16-25",
+                                           current_eez_count > 25 & current_eez_count <= 50 ~ "26-50",
+                                           current_eez_count > 50 & current_eez_count <= 100 ~ "51-100",
+                                           current_eez_count > 100 ~ ">100",
                                            TRUE ~ "0"),
          RCP85_2050_eez_count_cat = case_when(RCP85_2050_eez_count == 1 ~ "1",
                                             RCP85_2050_eez_count == 2 ~ "2",
                                            RCP85_2050_eez_count > 2 & RCP85_2050_eez_count <= 5 ~ "3-5",
-                                           RCP85_2050_eez_count > 5 & RCP85_2050_eez_count <= 10 ~ "6-10",
-                                           RCP85_2050_eez_count > 10 & RCP85_2050_eez_count <= 15 ~ "11-15",
-                                           RCP85_2050_eez_count > 15 & RCP85_2050_eez_count <= 30 ~ "16-30",
+                                           RCP85_2050_eez_count > 5 & RCP85_2050_eez_count <= 15 ~ "6-15",
+                                           RCP85_2050_eez_count > 15 & RCP85_2050_eez_count <= 25 ~ "16-25",
+                                           RCP85_2050_eez_count > 25 & RCP85_2050_eez_count <= 50 ~ "26-50",
+                                           RCP85_2050_eez_count > 50 & RCP85_2050_eez_count <= 100 ~ "51-100",
+                                           RCP85_2050_eez_count > 100 ~ ">100",
                                            TRUE ~ "0")) %>%
 
   mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
@@ -192,10 +200,10 @@ cat_summary_perc <- left_join(cat_summary, group_count) %>%
 
 ```{r}
 group_eez_count_threshold$current_eez_count_cat <- factor(group_eez_count_threshold$current_eez_count_cat, 
-levels = c("0", "1", "2", "3-5", "6-10", "11-15", "16-30"))
+levels = c("0", "1", "2", "3-5", "6-15", "16-25", "26-50", "51-100", ">100"))
 
 group_eez_count_threshold$RCP85_2050_eez_count_cat <- factor(group_eez_count_threshold$RCP85_2050_eez_count_cat, 
-levels = c("0", "1", "2", "3-5", "6-10", "11-15", "16-30"))
+levels = c("0", "1", "2", "3-5", "6-15", "16-25", "26-50", "51-100", ">100"))
 
 group_eez_count_threshold$redlist_category <- factor(group_eez_count_threshold$redlist_category,
 levels = c("CR", "EN", "VU", "NT"))
@@ -291,7 +299,7 @@ taxon_jitter_plot_only <- ggplot() +
    aes(x = eez_count_diff, y = fct_rev(general_group), alpha = 0.6),
    color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
   scale_y_discrete() + 
-  scale_x_continuous(limits = c(-25, 10)) +
+  #scale_x_continuous(limits = c(-25, 10)) +
   labs(title = "EEZ region counts by IUCN comprehensive group",
        x = "EEZ region count change\n(RCP8.5 2050 - current)",
        y = "") +
@@ -304,7 +312,7 @@ iucn_jitter_plot_only <- ggplot() +
   geom_jitter(data = group_eez_count_diff, aes(x = eez_count_diff, y = fct_rev(redlist_category), alpha = 0.6),
    color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
   scale_y_discrete() + 
-  scale_x_continuous(limits = c(-25, 10)) +
+  #scale_x_continuous(limits = c(-25, 10)) +
   labs(title = "EEZ region counts by IUCN redlst category",
        x = "EEZ region count change\n(RCP8.5 2050 - current)",
        y = "") +
@@ -344,6 +352,45 @@ eez_spp_pxls_long <- spp_eez_pxl_count %>%
                             TRUE ~ 'continued presence'))
 ```
 
+```{r}
+# Which species have the most EEZ region entries?
+spp_eez_entry_count <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  filter(spp_change == "entry into new") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_eez_entry = n()) %>% 
+  ungroup()
+
+# Which species have the most EEZ region exits?
+spp_eez_exit_count <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  filter(spp_change == "exit from historical") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_eez_exit = n()) %>% 
+  ungroup()
+```
+
+```{r}
+# Merge in IUCN info
+spp_eez_entry_count_iucn <- left_join(spp_eez_entry_count, iucn_cat_aphiaid) %>% 
+  filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   TRUE ~ group)) %>% 
+  group_by(general_group, scenario, n_eez_entry) %>% 
+  summarize(n_spp = n())
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_entry_count_iucn %>% filter(scenario == "RCP85_2050"),
+            aes(x = n_eez_entry, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_sqrt(breaks = c(1, 5,10, 20, 30, 40, 50)) +
+  #scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 10, 20, 30, 40, 50)) +
+  theme_bw()
+```
 
 ## Plot North Korea Species Entries
 ```{r}
