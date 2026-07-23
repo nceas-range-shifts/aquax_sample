@@ -47,6 +47,9 @@ area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
 eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
 ```
 
+```{r}
+eez <- st_read('/Users/abowd/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
 
 ```{r}
 # Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
@@ -121,15 +124,11 @@ group_eez_count <- spp_eez_pxl_count_group %>%
   # Filter for 
   filter(MRGID %in% eez_200nm_list) %>%
   group_by(group, aphiaid, redlist_category) %>% 
-  summarize(current_eez_count == 1 ~ "1",
-                                          current_eez_count == 2 ~ "2",
-                                           current_eez_count > 2 & current_eez_count <= 5 ~ "3-5",
-                                           current_eez_count > 5 & current_eez_count <= 15 ~ "6-15",
-                                           current_eez_count > 15 & current_eez_count <= 25 ~ "16-25",
-                                           current_eez_count > 25 & current_eez_count <= 50 ~ "26-50",
-                                           current_eez_count > 50 & current_eez_count <= 100 ~ "51-100",
-                                           current_eez_count > 100 ~ ">100",
-                                           TRUE ~ "0") %>% 
+  summarize(current_eez_count = sum(n_current >= 10, na.rm = TRUE),
+            RCP45_2050_eez_count = sum(n_RCP45_2050 >= 10, na.rm = TRUE),
+            RCP45_2100_eez_count = sum(n_RCP45_2100 >= 10, na.rm = TRUE),
+            RCP85_2050_eez_count = sum(n_RCP85_2050 >= 10, na.rm = TRUE),
+            RCP85_2100_eez_count = sum(n_RCP85_2100 >= 10, na.rm = TRUE)) %>% 
   ungroup()
 
 group_iucncat_count <- group_eez_count %>% 
@@ -388,6 +387,28 @@ ggplot() +
             aes(x = n_eez_entry, y = n_spp, fill = general_group), stat = "identity") +
   scale_fill_viridis_d(option = "turbo", direction = -1) +
   scale_x_sqrt(breaks = c(1, 5,10, 20, 30, 40, 50)) +
+  #scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 10, 20, 30, 40, 50)) +
+  theme_bw()
+```
+
+```{r}
+# Merge in IUCN info
+spp_eez_exit_count_iucn <- left_join(spp_eez_exit_count, iucn_cat_aphiaid) %>% 
+  filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   TRUE ~ group)) %>% 
+  group_by(general_group, scenario, n_eez_exit) %>% 
+  summarize(n_spp = n())
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_exit_count_iucn %>% filter(scenario == "RCP85_2050"),
+            aes(x = n_eez_exit, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_sqrt() +
   #scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 10, 20, 30, 40, 50)) +
   theme_bw()
 ```
