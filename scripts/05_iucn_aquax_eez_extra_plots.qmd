@@ -119,6 +119,18 @@ spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
 ```
 
 ```{r}
+# What's the count of each group 
+spp_eez_group_count <- spp_eez_pxl_count_group %>% 
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   #group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   TRUE ~ group)) %>% 
+  group_by(general_group) %>% 
+  summarise(n_spp = length(unique(aphiaid))) %>% 
+  ungroup()
+```
+
+```{r}
 # Get count of number of EEZ by group and count of IUCN cat by group (create figure similar to bar chart)
 group_eez_count <- spp_eez_pxl_count_group %>% 
   # Filter for 
@@ -176,7 +188,7 @@ group_eez_count_threshold <- group_eez_count %>%
 
   mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
                                    group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
-                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   #group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
                                    TRUE ~ group))
 ```
 
@@ -367,6 +379,21 @@ spp_eez_exit_count <- eez_spp_pxls_long %>%
   group_by(aphiaid, scenario) %>% 
   summarise(n_eez_exit = n()) %>% 
   ungroup()
+
+# Get list of EEZ exits 100 and over
+spp_exit_100 <- spp_eez_exit_count %>% 
+  filter(n_eez_exit >= 100,
+         scenario == "RCP85_2050")
+
+spp_exit_100_list <- spp_exit_100$aphiaid
+```
+
+```{r}
+# Area of 100 + species
+area_df_100 <- area_df %>% 
+  filter(aphiaid %in% spp_exit_100_list) %>% 
+  filter(scenario == "RCP85_2050") %>%
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
 ```
 
 ```{r}
@@ -375,10 +402,16 @@ spp_eez_entry_count_iucn <- left_join(spp_eez_entry_count, iucn_cat_aphiaid) %>%
   filter(group != "not comprehensively assessed") %>%
   mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
                                    group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
-                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                  group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
                                    TRUE ~ group)) %>% 
   group_by(general_group, scenario, n_eez_entry) %>% 
-  summarize(n_spp = n())
+  summarize(n_spp = n()) 
+```
+
+```{r}
+spp_entry_summary <- spp_eez_entry_count_iucn %>% 
+  group_by(scenario, n_eez_entry) %>% 
+  summarize(n_spp = sum(n_spp))
 ```
 
 ```{r}
@@ -388,7 +421,12 @@ ggplot() +
   scale_fill_viridis_d(option = "turbo", direction = -1) +
   scale_x_sqrt(breaks = c(1, 5,10, 20, 30, 40, 50)) +
   #scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 10, 20, 30, 40, 50)) +
-  theme_bw()
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(title = "Number EEZs entered by IUCN comprehensive group",
+       x = "Total number of EEZs entered",
+       y = "Species count",
+       fill = "")
 ```
 
 ```{r}
@@ -397,10 +435,16 @@ spp_eez_exit_count_iucn <- left_join(spp_eez_exit_count, iucn_cat_aphiaid) %>%
   filter(group != "not comprehensively assessed") %>%
   mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
                                    group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
-                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
                                    TRUE ~ group)) %>% 
   group_by(general_group, scenario, n_eez_exit) %>% 
   summarize(n_spp = n())
+```
+
+```{r}
+spp_exit_summary <- spp_eez_exit_count_iucn %>% 
+  group_by(scenario, n_eez_exit) %>% 
+  summarize(n_spp = sum(n_spp))
 ```
 
 ```{r}
@@ -408,9 +452,14 @@ ggplot() +
   geom_bar(data = spp_eez_exit_count_iucn %>% filter(scenario == "RCP85_2050"),
             aes(x = n_eez_exit, y = n_spp, fill = general_group), stat = "identity") +
   scale_fill_viridis_d(option = "turbo", direction = -1) +
-  scale_x_sqrt() +
-  #scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 10, 20, 30, 40, 50)) +
-  theme_bw()
+  scale_x_sqrt(breaks = c(1, 10, 20, 40, 80, 120, 160)) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(title = "Number of EEZs left by IUCN comprehensive group",
+       x = "Total number of EEZs exited",
+       y = "Species count",
+       fill = "")
+  
 ```
 
 ## Plot North Korea Species Entries
@@ -453,12 +502,73 @@ ggplot() +
 
 ```{r}
 # Which species has less than 10 pixels in current and the largest number of pixels in NK in RCP 8.5 2050?
-nk_spp_future <- spp_eez_pxl_count_group %>% 
+nk_spp_future <- eez_spp_pxls_long %>% 
   filter(MRGID == 8328) %>% 
-  filter(n_current < 10) %>% 
-  arrange(desc(n_RCP85_2050)) 
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "entry into new") 
+
+# Merge in IUCN info
+nk_spp_future_iucn <- left_join(nk_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
 ```
 
+```{r}
+# Which species has less than 10 pixels in current and the largest number of pixels in Russia in RCP 8.5 2050?
+russia_spp_future <- eez_spp_pxls_long %>% 
+  filter(MRGID == 5690) %>% 
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "entry into new") 
+
+# Merge in IUCN info
+russia_spp_future_iucn <- left_join(russia_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
+```
+
+```{r}
+# Are any russia species entries also in North Korea? (i.e., same aphiaid)
+russia_nk_spp_overlap <- inner_join(russia_spp_future_iucn, nk_spp_future_iucn, by = "aphiaid")
+```
+
+```{r}
+# Are any of russia species in the spp_exit_100_list? 
+russia_exit_100 <- russia_spp_future_iucn %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+
+#NK
+nk_exit_100 <- nk_spp_future_iucn %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+# What about the Singapore EEZ? (MRGID = 8485)
+singapore_spp_future <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8485) %>%
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "entry into new")
+
+singapore_spp_future_iucn <- left_join(singapore_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
+```
+
+```{r}
+singapore_exit_100 <- singapore_spp_future_iucn %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
 
 ```{r}
 # Let's look at the range of the Izu stingrayy (Hemitrygon izuensis)
@@ -646,4 +756,13 @@ ggplot() +
        fill = "Suitability value",
        color = "Suitability value") +
   theme_minimal()
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_change <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  group_by(GEONAME, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
 ```
