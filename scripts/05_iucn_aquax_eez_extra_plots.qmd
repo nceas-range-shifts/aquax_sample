@@ -570,6 +570,66 @@ singapore_exit_100 <- singapore_spp_future_iucn %>%
   filter(aphiaid %in% spp_exit_100_list)
 ```
 
+## Top species exits 
+
+```{r}
+# Christmas Island
+christmas_island_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8309) %>%
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "exit from historical")
+
+ci_spp_exit_cat <- left_join(christmas_island_spp, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(n_current))
+
+ci_exit_100 <- ci_spp_exit_cat %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+# Howland & Baker Islands - US
+hb_island_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8451) %>%
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "exit from historical")
+
+hb_spp_exit_cat <- left_join(hb_island_spp, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(n_current))
+
+hb_exit_100 <- hb_spp_exit_cat %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+# Bassas da India - France
+bdi_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8340) %>%
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "exit from historical")
+
+bdi_spp_exit_cat <- left_join(bdi_spp, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(n_current))
+
+bdi_exit_100 <- bdi_spp_exit_cat %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+## Izu stingray (Hemitrygon izuensis) range
 ```{r}
 # Let's look at the range of the Izu stingrayy (Hemitrygon izuensis)
 izu <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1042848.parquet")
