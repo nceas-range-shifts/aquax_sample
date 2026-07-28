@@ -8,7 +8,10 @@ extract_eez_zonal <- function(id, df, eez_raster) {
   }
   
   spp <- read_parquet(spp_filter$f) %>%
-    mutate(aphiaid = id)
+    mutate(aphiaid = id) %>% 
+    # round xy data
+    mutate(x = round(x, 3),
+           y = round(y, 3))
   
   r_spp <- rast(spp, crs = "EPSG:4326") %>%
     extend(ext(eez_raster))
@@ -39,6 +42,55 @@ extract_eez_zonal <- function(id, df, eez_raster) {
     mutate(aphiaid = id) %>% 
     filter(!if_all(c(n_current, n_RCP45_2050, n_RCP45_2100,
                      n_RCP85_2050, n_RCP85_2100), is.na))
+}
+
+# Get species pixel counts by EEZ using duckdb to filter first
+extract_eez_zonal_db <- function(id, df, eez_raster, s) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+  
+  query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(s, collapse = ", "), 
+                      " FROM read_parquet('", spp_filter$f, "')",
+                      " WHERE ", paste(s, collapse = ", "), " >= cutoff")
+  
+  # Run query and filter for scenario pixels above cutoff threshold
+  
+  spp_df <- DBI::dbGetQuery(con, query_str) 
+  
+  # Close connection
+  duckdb::dbDisconnect(con, shutdown = TRUE)
+  
+  # Set option for if there are no pixels above the cutoff threshold
+  if (nrow(spp_df) == 0) {
+    warning("No pixels above cutoff threshold for aphiaid: ", id)
+    # Still need to shut connection in this case
+    duckdb::dbDisconnect(con, shutdown = TRUE)
+    # Return NA to track loss species
+    return(data.frame(MRGID = NA, n_pixel = NA, aphiaid = id, scenario = s))
+  } else {
+    # Create raster
+    r_spp <- rast(spp_df, crs = "EPSG:4326") %>% 
+      extend(ext(eez_raster))
+    
+    # zonal() counts the notNA pixels within each EEZ zone (don't need binary)
+    result <- zonal(r_spp, eez_raster, fun = "notNA", na.rm = TRUE)
+    
+    # eez_raster zones are numeric IDs — join back to EEZ names
+    result %>%
+      #left_join(eez_zone_lookup, by = "GEONAME") %>%
+      # add aphiaid to track each species
+      mutate(aphiaid = id,
+             scenario = s) %>% 
+      rename(n_pixel = .data[[s]]) %>% 
+      # Drop rows where there are 0  notNA pixels
+      filter(n_pixel != 0)}
 }
 
 # Get entry pixels for a species by EEZ
