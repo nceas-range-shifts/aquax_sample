@@ -39,6 +39,31 @@ source(here( "common_fxns.R"))
 
 We'll use the functions to process the AquaX data for the count of threatened species entering and exiting EEZs.
 
+## Species count in EEZs
+Rounding issue doesn't impact the count of species in each eez so use iucn_threatened_spp_eez_pxls_061626.csv. This file was created using the 01_iucn_aquax_eez_overlap.qmd script and contains the count of pixels for each species in each EEZ for current and future scenarios.
+
+```{r}
+# Spp in EEZs
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
+```
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- spp_eez_pxl_count %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>%
+  # Set 10 pixel threshold (at least ten pixels need in EEZ for species presence)
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
 ## EEZ 
 
 ```{r}
@@ -48,6 +73,12 @@ eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025
 ```{r}
 eez_simple <- eez |>
   select(MRGID, GEONAME, geom)
+```
+
+```{r}
+eez_ids <- eez %>% 
+  st_drop_geometry() %>% 
+  dplyr::select(MRGID, GEONAME)
 ```
 
 ```{r}
@@ -136,125 +167,298 @@ df_threatened <- df %>%
 test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1017389.parquet")
 ```
 
+## Get the pixels of entry and exit 
+Update function to fix XY rounding error that created stripes in maps and also update function to only read in necessary data in duckdb for efficiency.
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>% 
+  # Round so that the X and Y match the AquaX data (which is rounded to 3 decimal places)
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
+```{r}
+extract_eez_entry_pixels_df_db <- function(id, df, s, eez_spp_entry, eez_raster_df) {
+    spp_filter <- df %>% filter(aphiaid == id)
+  
+    if (nrow(spp_filter) == 0) {
+      warning("No rows found for aphiaid: ", id)
+      return(NULL)
+  }
+
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+  # Ensure connection is closed 
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  # Write query to round x and y to 3 decimal places and filter for scenario pixels at or above cutoff threshold
+   query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(s, collapse = ", "), 
+                      " FROM read_parquet('", spp_filter$f, "')",
+                      " WHERE ", paste(s, collapse = ", "), " >= cutoff")
+
+ # Run query and filter for scenario pixels above cutoff threshold
+    spp <- DBI::dbGetQuery(con, query_str) 
+
+  # Set option for if there are no pixels above the cutoff threshold
+    if (nrow(spp) == 0) {
+        warning("No pixels above cutoff threshold for aphiaid: ", id)
+        # Return NA to track no pixels above threshold
+      return(data.frame(x = NA, y = NA, MRGID = NA, binary = 0))
+    } else {
+  
+  # Filter the df of entry into for this species & scenario
+    entry_spp_df <- eez_spp_entry %>% 
+      filter(aphiaid == id) %>% 
+      filter(scenario == s)
+  
+  # Get the EEZs for which the species & scenario is entry
+    spp_entry_eezs <- unique(entry_spp_df$MRGID)
+  
+  # Join the eez dataframe and filter for the spp_entry_eezs
+    spp_eez <- inner_join(spp, eez_raster_df, by = c("x", "y")) %>% 
+      filter(MRGID %in% spp_entry_eezs) %>% 
+      mutate(binary = 1) %>%  
+      dplyr::select(x, y, MRGID, binary)
+  
+  return(spp_eez)
+  }
+}
+```
+
+# Test sample
+
 ```{r}
 set.seed(123)
-test_spp_30 <- slice_sample(df_threatened, n = 30)
+test_spp_30 <- slice_sample(df_threatened, n = 100)
 files_30 <- test_spp_30$f
 aphiaid_30 <- test_spp_30$aphiaid
 ```
 
 ```{r}
-# Have to use the EEZ raster with the numeric IDs (MRGID) for zonal stats
-# Try // - took 2 min
 system.time({
-  eez_list_zonal_db <- parallel::mclapply(aphiaid_30, FUN = extract_eez_zonal_db, 
+  eez_list_count_df <- parallel::mclapply(aphiaid_30, FUN = extract_eez_entry_pixels_df_db, 
                                        df = test_spp_30, 
-                                       s = "Current",
-                                       eez_raster = eez_raster_mrgid, 
+                                       s = "RCP85_2050",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
                                        mc.cores = 10)
 })
 ```
 
 ```{r}
-eez_list_all_zonal_db <- bind_rows(eez_list_zonal_db) 
-```
-
-## Test out full threatened sample
-
-```{r}
-files <- df_threatened$f
-aphiaid <- df_threatened$aphiaid
+eez_count_df <- bind_rows(eez_list_count_df)
 ```
 
 ```{r}
-# Try // - took 1 min for 1323 species and 1 scenario
+# Sum by XY cell, using collapse
 system.time({
-  eez_list_threatened_current <- parallel::mclapply(aphiaid, FUN = extract_eez_zonal_db, 
-                                            df = df_threatened,
-                                            s = "Current",
-                                            eez_raster = eez_raster_mrgid,
-                                            mc.cores = 40)
+eez_sum_df <- eez_count_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount()
+})
+```
+
+
+```{r}
+# Plot to see if stripes are gone
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_sum_df %>% filter(MRGID == 8328), aes(x = x, y = y, fill = N, color = N)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  theme_minimal()
+```
+
+```{r}
+# Plot to see if stripes are gone
+ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  theme_minimal()
+```
+
+# Run full set - species entries
+
+```{r}
+# Took 34 seconds over 30 cores
+system.time({
+  entry_rcp85_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP85_2050",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
 })
 ```
 
 ```{r}
-eez_list_threatened_current_bind <- bind_rows(eez_list_threatened_current) 
+entry_rcp85_df <- bind_rows(entry_rcp85_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
 ```
 
 ```{r}
-# Get species pixel counts by EEZ using duckdb to filter first
-extract_eez_zonal_db_test <- function(id, df, eez_raster, s) {
-  spp_filter <- df %>% filter(aphiaid == id)
-  
-  if (nrow(spp_filter) == 0) {
-    warning("No rows found for aphiaid: ", id)
-    return(NULL)
-  }
-  
-  # Create database connection
-  con <- DBI::dbConnect(duckdb::duckdb())
-  
-  query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(s, collapse = ", "), 
-                      " FROM read_parquet('", spp_filter$f, "')",
-                      " WHERE ", paste(s, collapse = ", "), " >= cutoff")
-  
-  # Run query and filter for scenario pixels above cutoff threshold
-  
-  spp_df <- DBI::dbGetQuery(con, query_str) 
-  
-  # Close connection
-  duckdb::dbDisconnect(con, shutdown = TRUE)
-  
-  # Set option for if there are no pixels above the cutoff threshold
-  if (nrow(spp_df) == 0) {
-    warning("No pixels above cutoff threshold for aphiaid: ", id)
-    # Still need to shut connection in this case
-    duckdb::dbDisconnect(con, shutdown = TRUE)
-    # Return NA to track loss species
-    return(data.frame(MRGID = NA, n_pixel = NA, aphiaid = id, scenario = s))
-  } else {
-  # Create raster
-  r_spp <- rast(spp_df, crs = "EPSG:4326") %>% 
-    extend(ext(eez_raster))
-  
-  # zonal() counts the notNA pixels within each EEZ zone (don't need binary)
-  result <- zonal(r_spp, eez_raster, fun = "notNA", na.rm = TRUE)
-  
-  # eez_raster zones are numeric IDs — join back to EEZ names
-  result %>%
-    #left_join(eez_zone_lookup, by = "GEONAME") %>%
-    # add aphiaid to track each species
-    mutate(aphiaid = id,
-           scenario = s) %>% 
-    rename(n_pixel = .data[[s]]) %>% 
-    # Drop rows where there are 0  notNA pixels
-    filter(n_pixel != 0)}
-}
-```
-
-
-
-```{r}
-# Try // - took 1 min for 1323 species and 1 scenario
+# Sum by XY cell, using collapse
 system.time({
-  eez_list_threatened_rcp85_2050 <- parallel::mclapply(aphiaid, FUN = extract_eez_zonal_db_test, 
-                                            df = df_threatened,
-                                            s = "RCP85_2050",
-                                            eez_raster = eez_raster_mrgid,
-                                            mc.cores = 40)
+entry_rcp85_sum_df <- entry_rcp85_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP85_2050")
 })
 ```
+
 ```{r}
-# 1523828 created error for RCP85_2050 (250 in list)
-test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1523828.parquet")
+# Plot to see if stripes are gone
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = entry_rcp85_sum_df  %>% filter(MRGID == 8328), aes(x = x, y = y, fill = N, color = N)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  scale_fill_viridis_c(direction = -1) +
+  scale_color_viridis_c(direction = -1) + 
+  theme_minimal()
 ```
 
 ```{r}
-eez_list_threatened_rcp85_2050_bind <- bind_rows(eez_list_threatened_rcp85_2050) 
+# Plot to see if stripes are gone (all EEZ regions; including joint regime and contested regions)
+ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = entry_rcp85_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_fill_viridis_c(limits = c(1,32), 
+                      breaks = c(1, 2, 4, 8, 16, 32),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1,32), 
+                        breaks = c(1, 2, 4, 8, 16, 32),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
 ```
 
 ```{r}
-eez_rcp58_2050_na <- eez_list_threatened_rcp85_2050_bind %>% 
-  filter(is.na(n_pixel))
+# Took 34 seconds over 30 cores
+system.time({
+  entry_rcp45_2050_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2050",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
 ```
 
+```{r}
+entry_rcp45_2050_df <- bind_rows(entry_rcp45_2050_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+entry_rcp45_2050_sum_df <- entry_rcp45_2050_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050")
+})
+```
+
+```{r}
+# Took 34 seconds over 30 cores
+system.time({
+  entry_rcp45_2100_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2100",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+entry_rcp45_2100_df <- bind_rows(entry_rcp45_2100_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+entry_rcp45_2100_sum_df <- entry_rcp45_2100_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2100")
+})
+```
+
+```{r}
+# Took 34 seconds over 30 cores (if doesn't work, helps to clear memory)
+system.time({
+  entry_rcp85_2100_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP85_2100",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+entry_rcp85_2100_df <- bind_rows(entry_rcp85_2100_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+entry_rcp85_2100_sum_df <- entry_rcp85_2100_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP85_2100")
+})
+```
+
+```{r}
+# Bind the entry cells together, add in GEONAME for EEZs
+eez_sum_threatened_scenarios <- rbind(entry_rcp45_2050_sum_df,
+                                      entry_rcp45_2100_sum_df,
+                                      entry_rcp85_sum_df,
+                                      entry_rcp85_2100_sum_df) %>% 
+  # Threshold for species presence is 10 pixels
+  mutate(pxl_thres = "10") %>% 
+  rename(n_entry_spp = N)
+
+eez_sum_threatened_scenarios_mrgid <- left_join(eez_sum_threatened_scenarios, eez_ids) %>% 
+  dplyr::select(x, y, GEONAME, MRGID, pxl_thres, scenario, n_entry_spp)
+```
+
+```{r}
+# save data as rds
+saveRDS(eez_sum_threatened_scenarios_mrgid, here("data/iucn_atrisk_10pxlthres_entry_pxls_072826.rds"))
+```
