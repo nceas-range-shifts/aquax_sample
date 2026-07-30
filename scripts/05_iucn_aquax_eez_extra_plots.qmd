@@ -577,25 +577,54 @@ nk_entry_rcp85_2050 <- nk_entry_pixels %>%
   filter(scenario == "RCP85_2050")
 ```
 
+```{r}
+sk_entry_rcp85_2050 <- spp_entry_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(MRGID == 8327) 
+```
 
 ```{r}
 ggplot() +
-  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  geom_sf(data = eez %>% filter(MRGID == 8328 )) +
   coord_sf(expand = FALSE) +
   geom_tile(data = nk_entry_rcp85_2050, aes(x = x, y = y,
                                                fill = n_entry_spp,
                                                color = n_entry_spp)) +
   scale_fill_viridis_c(option = "turbo",
-                        limits = c(1,20), 
-                        breaks = c(1, 5, 10, 15, 20)) +
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
   scale_color_viridis_c(option = "turbo",
-                        limits = c(1,20), 
-                        breaks = c(1, 5, 10, 15, 20)) +
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
   geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
   labs(title = "North Korea EEZ species entries (RCP8.5 2050)",
-       fill = "Number of species entries",
-       color = "Number of species entries") +
-  theme_minimal()
+       fill = "Species entry count",
+       color = "Species entry count") +
+  theme_minimal() 
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID %in% c(8328, 8327))) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_entry_rcp85_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+    geom_tile(data = sk_entry_rcp85_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  geom_sf(data = south_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "North & South Korea EEZ species entries (RCP8.5 2050)",
+       fill = "Species entry count",
+       color = "Species entry count") +
+  theme_minimal() 
 ```
 
 
@@ -727,6 +756,108 @@ bdi_spp_exit_cat <- left_join(bdi_spp, iucn_cat_aphiaid) %>%
 bdi_exit_100 <- bdi_spp_exit_cat %>% 
   filter(aphiaid %in% spp_exit_100_list)
 ```
+
+```{r}
+hbi_exit_rcp85_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(MRGID == 8451) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8451 )) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = hbi_exit_rcp85_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Howland & Baker EEZ region species exits (RCP8.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+```{r}
+ci_exit_rcp85_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(MRGID == 8309) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8309)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = ci_exit_rcp85_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Christmas Island EEZ region species exits (RCP8.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+```{r}
+ci_exit_rcp85_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(MRGID == 8309) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8309)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = ci_exit_rcp85_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Christmas Island EEZ region species exits (RCP8.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+```{r}
+bdi_exit_rcp85_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(MRGID == 8340) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8340)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = bdi_exit_rcp85_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Bassas da India EEZ region species exits (RCP8.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+
 
 ## Izu stingray (Hemitrygon izuensis) range
 ```{r}
