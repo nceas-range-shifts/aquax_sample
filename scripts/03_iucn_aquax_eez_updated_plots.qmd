@@ -1,0 +1,194 @@
+---
+title: "Plots of Threatened Species Ranges & EEZs"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(patchwork)
+library(cowplot)
+```
+
+This document creates updated plots useing the updated entry and exit data from 01_iucn_aquax_eez_overlap_db.qmd
+
+## Read in at-risk species data
+
+```{r}
+# Spp in EEZs
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels
+spp_entry_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_entry_pxls_072826.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_exit_pxls_072926.rds"))
+```
+
+```{r}
+# Species range area
+area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
+```
+
+## Read in EEZs
+
+```{r}
+eez <- st_read('/Users/abowd/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
+eez_200nm_list <- eez %>% 
+  filter(POL_TYPE == "200NM") %>% 
+  pull(MRGID)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list)
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+## Plot species pixels
+Only include 200 nm EEZs (no overlapping claims or joint regimes)
+
+```{r}
+spp_entry_pxls_85_2050 <- spp_entry_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(MRGID %in% eez_200nm_list)
+
+spp_exit_pxls_85_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+# Plot EEZ entry pixels
+plot_entry_10_map <- ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_pxls_85_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(limits = c(1, 40), 
+                      breaks = c(1, 2, 4, 8, 16, 28, 40),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1,40), 
+                        breaks = c(1, 2, 4, 8, 16, 28, 40),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+plot_entry_10_density <- ggplot(spp_entry_pxls_85_2050, aes(x = y)) +
+  geom_density(fill = "forestgreen", alpha = 0.5) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "",
+       y = "") +
+  theme(plot.margin = margin(0, 0, 0, 0))
+```
+
+```{r}
+entry_combined_plot <- plot_entry_10_map + plot_entry_10_density + 
+  plot_annotation(title = "Species entry, RCP 8.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom") 
+```
+
+```{r}
+# Plot EEZ exit pixels
+plot_exit_10_map <- ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_exit_pxls_85_2050, aes(x = x, y = y,
+                                              fill = n_exit_spp,
+                                              color = n_exit_spp)) +
+  scale_fill_viridis_c(limits = c(1,40), 
+                       breaks = c(1, 2, 4, 8, 16, 28, 40),
+                       direction = -1, 
+                       trans = "log", # visually stretches the lower value data
+                       guide = guide_colorbar(
+                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                       barheight = unit(0.4, "cm"),
+                       ticks = TRUE,
+                       ticks.colour = "white",
+                       ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,40), 
+                        breaks = c(1, 2, 4, 8, 16, 32, 40), 
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species exit count",
+       color = "species exit count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+plot_exit_10_density <- ggplot(spp_exit_pxls_85_2050, aes(x = y)) +
+  geom_density(fill = "darkmagenta", alpha = 0.5) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "",
+       y = "") +
+  theme(plot.margin = margin(0, 0, 0, 0))
+```
+
+```{r}
+exit_combined_plot <- plot_exit_10_map + plot_exit_10_density + 
+  plot_annotation(title = "Species exit, RCP 8.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom") 
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/iucn_atrisk_spp_entry_10pxl_map_072926.png"), entry_combined_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/iucn_atrisk_spp_exit_10pxl_map_072926.png"), exit_combined_plot, width = 10, height = 5, dpi = 300)
+```
