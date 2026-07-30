@@ -21,7 +21,7 @@ library(patchwork)
 library(cowplot)
 ```
 
-This document creates some more focused plots for the data calculated in 01_iucn_aquax_eez_overlap.qmd and 02_iucn_aquax_rangearea.qmd.
+This document creates some more focused plots for the data calculated in 01_iucn_aquax_eez_overlap_db.qmd and 02_iucn_aquax_rangearea.qmd.
 
 ## Read in threatened species data
 
@@ -32,8 +32,8 @@ spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv
 
 ```{r}
 # Spp EEZ entry/exit pixels
-spp_entry_pxls <- read_rds(here("data/iucn_threatened_10pxlthres_entry_pxls_061726.rds"))
-spp_exit_pxls <- read_rds(here("data/iucn_threatened_10pxlthres_exit_pxls_061726.rds"))
+spp_entry_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_entry_pxls_072826.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_exit_pxls_072926.rds"))
 ```
 
 ```{r}
@@ -460,6 +460,105 @@ ggplot() +
        y = "Species count",
        fill = "")
   
+```
+
+```{r}
+spp_eez_entry_clean <- spp_eez_entry_count_iucn %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  mutate(n_eez_entry_group = ifelse(n_eez_entry >= 10, "10+", as.character(n_eez_entry)))
+```
+
+```{r}
+spp_eez_entry_clean$n_eez_entry_group <- factor(spp_eez_entry_clean$n_eez_entry_group, 
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"))
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_entry_clean,
+            aes(x = n_eez_entry_group, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+")) +
+  theme_minimal() +
+  theme(legend.position = "right") +
+  labs(title = "Number EEZs entered by IUCN comprehensive group",
+       x = "Total number of EEZs entered",
+       y = "Species count",
+       fill = "")
+  
+```
+
+
+# For species exit bar graph, lump 20+ into one bar
+```{r}
+spp_eez_exit_clean <- spp_eez_exit_count_iucn %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  mutate(n_eez_exit_group = ifelse(n_eez_exit >= 10, "10+", as.character(n_eez_exit)))
+```
+
+```{r}
+spp_eez_exit_clean$n_eez_exit_group <- factor(spp_eez_exit_clean$n_eez_exit_group, 
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20+"))
+```
+
+```{r}
+spp_eez_exit_clean$n_eez_exit_group <- factor(spp_eez_exit_clean$n_eez_exit_group, 
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"))
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_exit_clean,
+            aes(x = n_eez_exit_group, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+")) +
+  theme_minimal() +
+  theme(legend.position = "right") +
+  labs(title = "Number of EEZs left by IUCN comprehensive group",
+       x = "Total number of EEZs exited",
+       y = "Species count",
+       fill = "")
+  
+```
+
+## Both species entries and exits on faceted plot
+
+```{r}
+spp_eez_exit_entry_clean <- rbind(spp_eez_exit_clean %>% 
+                                  dplyr::select(general_group, scenario, n_eez_exit_group, n_spp) %>% 
+                                  mutate(change = "Exits") %>% 
+                                  rename(n_eez_group = n_eez_exit_group),
+                                  spp_eez_entry_clean %>% 
+                                  dplyr::select(general_group, scenario, n_eez_entry_group, n_spp) %>% 
+                                  mutate(change = "Entries") %>% 
+                                  rename(n_eez_group = n_eez_entry_group))
+```
+
+```{r}
+spp_eez_exit_entry_clean$n_eez_group <- factor(spp_eez_exit_entry_clean$n_eez_group, 
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+"))
+```
+
+```{r}
+entry_exit_barplot <- ggplot() +
+  geom_bar(data = spp_eez_exit_entry_clean,
+            aes(x = n_eez_group, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+")) +
+  theme_minimal() +
+  facet_wrap(~change) + 
+  theme(legend.position = "bottom") +
+  labs(title = "EEZ entries and exits by IUCN comprehensive group",
+       x = "EEZ count",
+       y = "Species count",
+       fill = "")
+  
+```
+
+```{r}
+# Save only the bar plot
+ggsave(here("figures/iucn_atrisk_taxon_entry_exit_073026.png"), entry_exit_barplot, width = 7, height = 5, dpi = 300)
+
 ```
 
 ## Plot North Korea Species Entries
