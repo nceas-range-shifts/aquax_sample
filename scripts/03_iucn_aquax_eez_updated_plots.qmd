@@ -348,3 +348,67 @@ biplot_all <- ggdraw() +
 ggsave(here("figures/iucn_atrisk_spp_entry_exit_density_10pxl_map_073026.png"), biplot_all, width = 10, height = 5, dpi = 300)
 ```
 
+# Top species entry / exit by EEZ
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- spp_eez_pxl_count %>% 
+  # Drop overlapping claim EEZs
+  filter(MRGID %in% eez_200nm_list) %>%
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by sovereign EEZ
+eez_spp_change_sov_counts <- left_join(eez_spp_pxls_long, eez %>% filter(MRGID %in% eez_200nm_list)) %>% 
+  group_by(SOVEREIGN1, MRGID_SOV1, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+Now, France, North Korea, United Kingdom, Russia, and United Kingdom are the top five for species entry. France is also at the top of the list for species exits with 227 species exits (for France, across their EEZ subparts there are 227 instances of species entirely leaving EEZ regions - pretty interesting). In comparision, there are 11 species exits for France if you dissolve the subparts of their EEZ. 
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by  EEZ region
+eez_spp_change_counts <- left_join(eez_spp_pxls_long, eez %>% filter(MRGID %in% eez_200nm_list)) %>% 
+  group_by(MRGID, GEONAME, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+eez_c_f <- eez_spp_change_counts  %>% 
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
+  replace_na(list(continued_presence = 0, exit_from_historical = 0,
+                  entry_into_new = 0, no_presence = 0)) %>% 
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/current_spp,
+         spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
+
+```{r}
+eez_sov_c_f <- eez_spp_change_sov_counts  %>% 
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
+  replace_na(list(continued_presence = 0, exit_from_historical = 0,
+                  entry_into_new = 0, no_presence = 0)) %>% 
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/current_spp,
+         spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
