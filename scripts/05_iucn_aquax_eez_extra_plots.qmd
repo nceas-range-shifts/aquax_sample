@@ -19,6 +19,7 @@ library(terra)
 library(arrow)
 library(patchwork)
 library(cowplot)
+library(collapse)
 ```
 
 This document creates some more focused plots for the data calculated in 01_iucn_aquax_eez_overlap_db.qmd and 02_iucn_aquax_rangearea.qmd.
@@ -84,7 +85,11 @@ eez_raster_mrgid <- rasterize(eez_simple_sf, eez_raster_blank, field = "MRGID")
 ```
 
 ```{r}
-eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE)
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>% 
+  # Round so that the X and Y match the AquaX data (which is rounded to 3 decimal places)
+  mutate(x = round(x, 3),
+         y = round(y, 3))
 ```
 
 ```{r}
@@ -857,7 +862,173 @@ ggplot() +
   theme_minimal() 
 ```
 
+## Mapping specific taxons in specific EEZs
+Both NK and Howland & Baker Islands have a lot of reef-builing coral entries and exits, respectively. Let's take a closer look. I suspect that the hotspots here are small area concentrations of corals. 
 
+```{r}
+# Run species entry pixels but just for corals
+source(here( "common_fxns.R"))
+```
+
+# Read in AquaX files 
+
+```{r}
+# read in meta data on the aquax species
+load("/home/shares/data-aquax/META_02122025.Rdata")
+```
+
+```{r}
+meta_clean <- META %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+# NK
+```{r}
+# Get aphiaids for the reef building corals entering NK
+nk_coral <- nk_spp_future_iucn %>% 
+  filter(general_group == "reef_building_corals")
+
+nk_coral_aphiaid <- nk_coral$aphiaid
+```
+
+```{r}
+# Only include NK in species in entry df
+nk_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new") %>% 
+  filter(MRGID == 8328)
+```
+
+```{r}
+df_nk_corals <- df %>% 
+  filter(aphiaid %in% nk_coral_aphiaid)
+```
+
+```{r}
+# Run NK coral species (don't need parallel)
+system.time({
+  coral_nk_entry_rcp85_list <- lapply(nk_coral_aphiaid, FUN = extract_eez_entry_pixels_df_db, 
+                                       df = df_nk_corals, 
+                                       s = "RCP85_2050",
+                                       eez_spp_entry = nk_spp_entry,
+                                       eez_raster_df = eez_raster_df)
+})
+```
+
+```{r}
+coral_nk_entry_rcp85_df  <- bind_rows(coral_nk_entry_rcp85_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+coral_nk_entry_rcp85_sum_df  <- coral_nk_entry_rcp85_df  %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP85_2050")
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328 )) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_nk_entry_rcp85_sum_df, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_fill_viridis_c(option = "turbo",
+                        breaks = c(1, 3, 6, 9, 12)) +
+  scale_color_viridis_c(option = "turbo",
+                        breaks = c(1, 3, 6, 9, 12)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "North Korea EEZ coral species entries (RCP8.5 2050)",
+       fill = "Species entry count",
+       color = "Species entry count") +
+  theme_minimal() 
+```
+
+# HBI
+
+```{r}
+# Get aphiaids for the reef building corals exiting Howland and Baker Islands
+hbi_coral <- hb_spp_exit_cat%>% 
+  filter(general_group == "reef_building_corals")
+
+hbi_coral_aphiaid <- hbi_coral$aphiaid
+```
+
+```{r}
+# Only include HBI in species in exit df
+hbi_spp_exit <- eez_spp_pxls_long %>% 
+  filter(spp_change == "exit from historical") %>% 
+  filter(MRGID == 8451)
+```
+
+```{r}
+df_hbi_corals <- df %>% 
+  filter(aphiaid %in% hbi_coral_aphiaid)
+```
+
+```{r}
+# Run HBI coral species (don't need parallel)
+system.time({
+  coral_hbi_exit_rcp85_list <- lapply(hbi_coral_aphiaid, FUN = extract_eez_exit_pixels_df_db, 
+                                       df = df_hbi_corals, 
+                                       s = "RCP85_2050",
+                                       eez_spp_exit = hbi_spp_exit,
+                                       eez_raster_df = eez_raster_df)
+})
+```
+
+```{r}
+coral_hbi_exit_rcp85_df  <- bind_rows(coral_hbi_exit_rcp85_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+coral_hbi_exit_rcp85_sum_df  <- coral_hbi_exit_rcp85_df  %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP85_2050")
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8451 )) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_hbi_exit_rcp85_sum_df, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,26),
+                        breaks = c(1, 5, 10, 15, 20, 26)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,26),
+                        breaks = c(1, 5, 10, 15, 20, 26)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Howland & Baker EEZ region coral species exits (RCP8.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
 
 ## Izu stingray (Hemitrygon izuensis) range
 ```{r}
