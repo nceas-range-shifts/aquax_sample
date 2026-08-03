@@ -104,11 +104,11 @@ ggplot() +
 ## Try out rainbow plot by IUCN status
 
 ```{r}
-iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/ab9cd09931a4ce5c12d0bcd2984595d6522ed158/_data/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
 ```
 
 ```{r}
-iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_species_assessments.csv")
+iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data/iucn_redlist_2026/iucn_species_assessments.csv")
 ```
 
 ```{r}
@@ -193,6 +193,7 @@ group_eez_count_threshold <- group_eez_count %>%
 
   mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
                                    group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
                                    #group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
                                    TRUE ~ group))
 ```
@@ -338,16 +339,16 @@ iucn_jitter_plot_only <- ggplot() +
 
 ```{r}
 # Save only the jitter plot
-ggsave(here("figures/iucn_threatened_200nmonly_taxon_jitterplot_072126.png"), taxon_jitter_plot_only, width = 7, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_200nmonly_taxon_jitterplot_080326.png"), taxon_jitter_plot_only, width = 7, height = 5, dpi = 300)
 
-ggsave(here("figures/iucn_threatened_200nmonly_iucncat_jitterplot_072126.png"), iucn_jitter_plot_only, width = 7, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_200nmonly_iucncat_jitterplot_080326.png"), iucn_jitter_plot_only, width = 7, height = 5, dpi = 300)
 ```
 
 ```{r}
 # Save only the bar plot
-ggsave(here("figures/iucn_threatened_200nmonly_taxon_barplot_072126.png"), taxon_bar_plot, width = 7, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_200nmonly_taxon_barplot_080326.png"), taxon_bar_plot, width = 7, height = 5, dpi = 300)
 
-ggsave(here("figures/iucn_threatened_200nmonly_iucncat_barplot_072126.png"), iucn_bar_plot, width = 7, height = 5, dpi = 300)
+ggsave(here("figures/iucn_threatened_200nmonly_iucncat_barplot_080326.png"), iucn_bar_plot, width = 7, height = 5, dpi = 300)
 ```
 
 ## Get list of species entries by EEZ
