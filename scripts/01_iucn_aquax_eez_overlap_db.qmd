@@ -25,11 +25,11 @@ This document improves upon 01_iucn_aquax_eez_overlap.qmd by correcting for erro
 This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). 
 
 ```{r}
-iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/ab9cd09931a4ce5c12d0bcd2984595d6522ed158/_data/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
 ```
 
 ```{r}
-iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data_raw/iucn_redlist_2026/iucn_species_assessments.csv")
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data/iucn_redlist_2026/iucn_species_assessments.csv")
 ```
 
 ```{r}
@@ -648,4 +648,188 @@ eez_sum_exit_scenarios_mrgid <- left_join(eez_sum_exit_scenarios, eez_ids) %>%
 ```{r}
 # save data as rds
 saveRDS(eez_sum_exit_scenarios_mrgid, here("data/iucn_atrisk_10pxlthres_exit_pxls_072926.rds"))
+```
+
+# Run counts of Least Concern species 
+
+```{r}
+# Filter iucn categories for least concern (LC) species
+iucn_least_concern <- iucn_new_cat %>% 
+  filter(redlist_category == "LC")
+```
+
+```{r}
+# Merge in the iucn_lookup_sdm to get the AphiaID for the least concern species
+aphiaid_least_concern <- inner_join(iucn_lookup_sdm, iucn_least_concern, by = c("iucn_assessment_id" = "assessment_id")) 
+```
+
+```{r}
+# Get aphiaids for the least concern species
+aphiaid_least_concern <- unique(aphiaid_least_concern$aphia_id)
+```
+
+```{r}
+# Filter for the AphiaID of the least concern species - get 9,714 least concern species with SDMs
+df_least_concern <- df %>% 
+  filter(aphiaid %in% aphiaid_least_concern)
+```
+
+```{r}
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1017389.parquet")
+```
+
+# Test subsample for least concern pixels
+```{r}
+set.seed(123)
+test_spp_30 <- slice_sample(df_least_concern, n = 1000)
+files_30 <- test_spp_30$f
+aphiaid_30 <- test_spp_30$aphiaid
+```
+
+
+```{r}
+system.time({
+ least_concern_list_count_df <- parallel::mclapply(aphiaid_30, FUN = least_concern_count, 
+                                       df = test_spp_30, 
+                                       scenario = "RCP85_2050",
+                                       xmin = -180,
+                                       xmax = -90,
+                                       mc.cores = 40)
+})
+```
+
+```{r}
+least_concern_count_df <- bind_rows(least_concern_list_count_df) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+lc_sum_df <- least_concern_count_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+# dplyr 100x slower
+system.time({
+lc_sum_df_dplyr <- least_concern_count_df %>% 
+  group_by(x, y) %>% 
+  summarize(n_lc_spp = n()) %>% 
+  ungroup()
+})
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = lc_sum_df, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_y_continuous(limits = c(-90, 90)) +
+  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  scale_color_viridis_c(option = "plasma", direction = -1) +
+  theme_minimal() + 
+  labs(fill = "lc species count",
+       color = "lc species count") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+# Run full lc set
+
+```{r}
+# 1 minute for first stripe (-180 to -90)
+system.time({
+ lc_list_count_neg90_neg180_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+                                       df = df_least_concern, 
+                                       scenario = "RCP85_2050",
+                                       xmin = -180,
+                                       xmax = -90,
+                                       mc.cores = 40)
+})
+```
+
+```{r}
+lc_count_neg90_neg180_df <- bind_rows(lc_list_count_neg90_neg180_df) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+lc_sum_neg90_neg180_df <- lc_count_neg90_neg180_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = lc_sum_neg90_neg180_df, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_y_continuous(limits = c(-90, 90)) +
+  scale_fill_viridis_c(limits = c(1,2100), 
+                      breaks = c(1, 50, 100, 500, 1000, 2100),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(6, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,2100), 
+                        breaks = c(1, 50, 100, 500, 1000, 2100),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none") +
+  theme_minimal() + 
+  labs(fill = "lc species count",
+       color = "lc species count") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+# Save first stripe of data (-90 to -180, RCP85_2050)
+saveRDS(lc_sum_neg90_neg180_df, here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg180_to_neg90_080426.rds"))
+```
+
+```{r}
+# 1 minute for 2nd stripe (-90 to 0)
+system.time({
+ lc_list_count_neg90_0_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+                                       df = df_least_concern, 
+                                       scenario = "RCP85_2050",
+                                       xmin = -90,
+                                       xmax = 0,
+                                       mc.cores = 40)
+})
+```
+
+```{r}
+lc_count_neg90_neg180_df <- bind_rows(lc_list_count_neg90_neg180_df) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+lc_sum_neg90_neg180_df <- lc_count_neg90_neg180_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
 ```

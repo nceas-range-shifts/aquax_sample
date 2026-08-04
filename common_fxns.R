@@ -334,7 +334,10 @@ least_concern_count <- function(id, df, scenario, xmin, xmax) {
   # Create database connection
   con <- DBI::dbConnect(duckdb::duckdb())
 
-  query_str <- paste0("SELECT x, y, cutoff, ", paste(scenario, collapse = ", "), 
+  # Ensure connection is closed 
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+
+  query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(scenario, collapse = ", "), 
     " FROM read_parquet('", spp_filter$f, "')",
     " WHERE ", paste(paste(scenario, ">= cutoff"), collapse = " AND "),
     " AND x >= ", xmin, " AND x < ", xmax)
@@ -343,16 +346,18 @@ least_concern_count <- function(id, df, scenario, xmin, xmax) {
 
     spp_df <- DBI::dbGetQuery(con, query_str) 
 
-  # Close connection
-  duckdb::dbDisconnect(con, shutdown = TRUE)
-
   # Set option for if there are no pixels above the cutoff threshold
     if (nrow(spp_df) == 0) {
         warning("No pixels above cutoff threshold for aphiaid: ", id)
-        # Still need to shut connection in this case
-        duckdb::dbDisconnect(con, shutdown = TRUE)
-    }
+      # Return 0 to track loss species
+        return(data.frame(x = NA, y = NA, binary = 0, s = scenario))
+    } else {
   
   # Return the pixels above the cutoff to be summarized into LC count  
-  return(spp_df)
-}
+  spp_df_clean <- spp_df %>% 
+    mutate(binary = 1) %>%  
+    dplyr::select(x, y, binary) %>% 
+    mutate(s = scenario)
+
+  return(spp_df_clean)
+}}
