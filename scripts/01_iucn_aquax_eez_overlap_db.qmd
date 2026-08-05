@@ -691,32 +691,33 @@ aphiaid_30 <- test_spp_30$aphiaid
 system.time({
  least_concern_list_count_df <- parallel::mclapply(aphiaid_30, FUN = least_concern_count, 
                                        df = test_spp_30, 
-                                       scenario = "RCP85_2050",
-                                       xmin = -180,
-                                       xmax = -90,
+                                       scenario = "Current",
+                                       n_threads = 2,
                                        mc.cores = 40)
 })
 ```
 
 ```{r}
-least_concern_count_df <- bind_rows(least_concern_list_count_df) %>% 
-  # drop binary = 0 (no pixels above threshold)
-  filter(binary == 1)
+least_concern_count_df <- bind_rows(least_concern_list_count_df) 
 ```
 
 ```{r}
 # Sum by XY cell, using collapse
 system.time({
 lc_sum_df <- least_concern_count_df %>% 
+  # drop binary = 0 (no pixels above threshold)
+  fsubset(binary == 1) %>%
+  # count the number of species in each XY cell
   fgroup_by(x, y) %>% 
   fcount()
 })
 ```
 
 ```{r}
-# dplyr 100x slower
+# dplyr 10x slower
 system.time({
 lc_sum_df_dplyr <- least_concern_count_df %>% 
+  filter(binary == 1) %>%
   group_by(x, y) %>% 
   summarize(n_lc_spp = n()) %>% 
   ungroup()
@@ -747,11 +748,12 @@ ggplot() +
 ```{r}
 # 5 minute for all data (-180 to 180)
 system.time({
- lc_list_count_neg90_0_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+ lc_list_count_neg90_0_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count_xmin_xmax, 
                                        df = df_least_concern, 
                                        scenario = "RCP85_2050",
                                        xmin = -180,
                                        xmax = 180,
+                                       n_threads = 2,
                                        mc.cores = 40)
 })
 ```
@@ -832,4 +834,139 @@ saveRDS(lc_sum_neg90_zero, here("data/iucn_least_concern/iucn_lc_rcp85_2050_neg9
 saveRDS(lc_sum_zero_90, here("data/iucn_least_concern/iucn_lc_rcp85_2050_zero_to_90_080426.rds"))
 
 saveRDS(lc_sum_90_180, here("data/iucn_least_concern/iucn_lc_rcp85_2050_90_to_180_080426.rds"))
+```
+
+Next, run current scenario least concern species
+
+```{r}
+# 6 minutes for Current data
+system.time({
+ lc_list_count_current_df <- parallel::mclapply(aphiaid_least_concern, FUN = least_concern_count, 
+                                       df = df_least_concern, 
+                                       scenario = "Current",
+                                       n_threads = 2,
+                                       mc.cores = 40)
+})
+```
+
+```{r}
+# Too many rows in list, need to do in sections and filter out the binary = 0 rows to reduce memory usage
+lc_list_current_1 <- lc_list_count_current_df[1:4000]
+lc_list_current_2 <- lc_list_count_current_df[4001:9741]
+```
+
+```{r}
+lc_count_current_1_df <- data.table::rbindlist(lc_list_current_1) %>% 
+  fsubset(binary == 1)
+
+lc_count_current_2_df <- data.table::rbindlist(lc_list_current_2) %>% 
+  fsubset(binary == 1)
+```
+
+```{r}
+lc_count_current_1_df_neg <- lc_count_current_1_df %>% 
+  fsubset(x < 0)
+
+lc_count_current_1_df_pos <- lc_count_current_1_df %>% 
+  fsubset(x >= 0)
+```
+
+```{r}
+lc_count_current_2_df_neg <- lc_count_current_2_df %>% 
+  fsubset(x < 0)
+
+lc_count_current_2_df_pos <- lc_count_current_2_df %>% 
+  fsubset(x >= 0)
+```
+
+```{r}
+# recombine the two sets of dataframes in order to group and summarize
+lc_count_current_df_neg <- data.table::rbindlist(list(lc_count_current_1_df_neg, lc_count_current_2_df_neg))
+lc_count_current_df_pos <- data.table::rbindlist(list(lc_count_current_1_df_pos, lc_count_current_2_df_pos))
+```
+
+```{r}
+# Sum by XY cell, using collapse (2 min)
+system.time({
+lc_sum_current_df_neg <- lc_count_current_df_neg %>% 
+  # count the number of species in each XY cell
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+# Sum by XY cell, using collapse (2 min)
+system.time({
+lc_sum_current_df_pos <- lc_count_current_df_pos %>% 
+  # count the number of species in each XY cell
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+lc_plot_current_count <- ggplot() +
+  geom_sf(data = eez) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = lc_sum_current_df_neg, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  geom_tile(data = lc_sum_current_df_pos, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +                          
+  scale_y_continuous(limits = c(-90, 90)) +
+  scale_fill_viridis_c(limits = c(1,3200), 
+                      breaks = c(1, 25, 50, 100, 500, 1500, 3200),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(10, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,3200), 
+                        breaks = c(1, 25, 50, 100, 500, 1500, 3200),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none") +
+  theme_minimal() + 
+  labs(fill = "count",
+       color = "count",
+       title = "Least concern species count - Current") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+# Save plot of least concern species
+ggsave(here("figures/iucn_lc_spp_current_080526.png"), lc_plot_current_count, width = 10, height = 5, dpi = 300)
+```
+
+
+```{r}
+# Prepare data for saving as rds files
+lc_sum_current_neg90_neg180 <- lc_sum_current_df_neg %>% 
+  filter(x < -90)
+
+lc_sum_current_neg90_zero <- lc_sum_current_df_neg %>% 
+  filter(x >= -90 & x < 0)
+
+lc_sum_current_zero_90 <- lc_sum_current_df_pos %>% 
+  filter(x >= 0 & x < 90)
+
+lc_sum_current_90_180 <- lc_sum_current_df_pos %>% 
+  filter(x >= 90)
+```
+
+```{r}
+saveRDS(lc_sum_current_neg90_neg180, here("data/iucn_least_concern/iucn_lc_current_neg180_to_neg90_080526.rds"))
+
+saveRDS(lc_sum_current_neg90_zero, here("data/iucn_least_concern/iucn_lc_current_neg90_to_zero_080526.rds"))
+
+saveRDS(lc_sum_current_zero_90, here("data/iucn_least_concern/iucn_lc_current_zero_to_90_080526.rds"))
+
+saveRDS(lc_sum_current_90_180, here("data/iucn_least_concern/iucn_lc_current_90_to_180_080526.rds"))
 ```

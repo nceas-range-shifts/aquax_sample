@@ -323,7 +323,7 @@ calculate_area <- function(id, df, scenario, unit) {
   return(r_spp_df)
 }
 
-least_concern_count <- function(id, df, scenario, xmin, xmax) {
+least_concern_count_xmin_xmax <- function(id, df, scenario, xmin, xmax, n_threads = 1) {
     spp_filter <- df %>% filter(aphiaid == id)
   
   if (nrow(spp_filter) == 0) {
@@ -337,10 +337,54 @@ least_concern_count <- function(id, df, scenario, xmin, xmax) {
   # Ensure connection is closed 
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
+  # Cap threads so that function doesn't overscribe and hang
+  DBI::dbExecute(con, paste0("PRAGMA threads = ", n_threads, ";"))
+
   query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(scenario, collapse = ", "), 
     " FROM read_parquet('", spp_filter$f, "')",
     " WHERE ", paste(paste(scenario, ">= cutoff"), collapse = " AND "),
     " AND x >= ", xmin, " AND x < ", xmax)
+
+ # Run query and filter for scenario pixels above cutoff threshold
+
+    spp_df <- DBI::dbGetQuery(con, query_str) 
+
+  # Set option for if there are no pixels above the cutoff threshold
+    if (nrow(spp_df) == 0) {
+        warning("No pixels above cutoff threshold for aphiaid: ", id)
+      # Return 0 to track loss species
+        return(data.frame(x = NA, y = NA, binary = 0, s = scenario))
+    } else {
+  
+  # Return the pixels above the cutoff to be summarized into LC count  
+  spp_df_clean <- spp_df %>% 
+    mutate(binary = 1) %>%  
+    dplyr::select(x, y, binary) %>% 
+    mutate(s = scenario)
+
+  return(spp_df_clean)
+}}
+
+least_concern_count <- function(id, df, scenario, n_threads = 1) {
+    spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+
+  # Ensure connection is closed 
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+
+  # Cap threads so that function doesn't overscribe and hang
+  DBI::dbExecute(con, paste0("PRAGMA threads = ", n_threads, ";"))
+
+  query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(scenario, collapse = ", "), 
+    " FROM read_parquet('", spp_filter$f, "')",
+    " WHERE ", paste(scenario, collapse = ", "), " >= cutoff")
 
  # Run query and filter for scenario pixels above cutoff threshold
 
