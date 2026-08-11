@@ -361,7 +361,8 @@ eez_spp_pxls_long <- spp_eez_pxl_count %>%
                values_to = "pxl_count") %>% 
   mutate(scenario = str_remove(scenario, "n_")) %>% 
   # Replace NA with 0, otherwise will be assigned to "continued presence"
-  replace_na(list(pxl_count = 0, n_current = 0)) %>% 
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
   # Set 10 pixel threshold (at least ten pixels need in EEZ for species presence)
   mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
                             n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
@@ -589,6 +590,7 @@ ggsave(here("figures/iucn_atrisk_taxon_entry_exit_080326.png"), entry_exit_barpl
 ## Plot North Korea Species Entries
 ```{r}
 library(rnaturalearth)
+globe <- ne_countries(scale = "large", returnclass = "sf")
 north_korea <- ne_countries(country = "North Korea", scale = "large", returnclass = "sf")
 south_korea <- ne_countries(country = "South Korea", scale = "large", returnclass = "sf")
 japan <- ne_countries(country = "Japan", scale = "large", returnclass = "sf")
@@ -915,7 +917,8 @@ df <- data.frame(f = spp_fs) %>%
     left_join(META, by = c('aphiaid' = 'AphiaID'))
 ```
 
-# NK
+## NK
+
 ```{r}
 # Get aphiaids for the reef building corals entering NK
 nk_coral <- nk_spp_future_iucn %>% 
@@ -925,15 +928,287 @@ nk_coral_aphiaid <- nk_coral$aphiaid
 ```
 
 ```{r}
-# Only include NK in species in entry df
-nk_spp_entry <- eez_spp_pxls_long %>% 
-  filter(spp_change == "entry into new") %>% 
-  filter(MRGID == 8328)
+# Get aphiaids for the reef building corals entering NK
+nk_sharks <- nk_spp_future_iucn %>% 
+  filter(general_group == "sharks_and_rays")
+
+nk_sharks_aphiaid <- nk_sharks$aphiaid
+```
+
+```{r}
+# Coral range area
+nk_corals_range_area <- area_df %>% 
+  filter(aphiaid %in% nk_coral_aphiaid) %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  #dplyr::select(aphiaid, current_area_km2, scenario_area_km2) %>% 
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
+```
+
+```{r}
+# Sharks range area
+nk_sharks_range_area <- area_df %>% 
+  filter(aphiaid %in% nk_sharks_aphiaid) %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  #dplyr::select(aphiaid, current_area_km2, scenario_area_km2) %>% 
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
 ```
 
 ```{r}
 df_nk_corals <- df %>% 
   filter(aphiaid %in% nk_coral_aphiaid)
+
+df_nk_sharks <- df %>% 
+  filter(aphiaid %in% nk_sharks_aphiaid)
+```
+
+```{r}
+# Test one of the corals
+coral_test <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_207095.parquet")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_test %>% 
+  filter(Current >= 621), aes(x = x, y = y), color = "magenta", fill = "magenta", alpha = 0.6) +
+  #scale_fill_viridis_c(option = "mako") +
+  #scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Current range coral 207095",
+       subtitle = "Suitability threshold is 621",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_test %>% 
+  filter(RCP85_2050 >= 621), aes(x = x, y = y), color = "magenta", fill = "magenta", alpha = 0.6) +
+  #scale_fill_viridis_c(option = "mako") +
+  #scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "RCP 8.5 2050 range coral 207095",
+       subtitle = "Suitability threshold is 621",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+We can use the least concern count function to map the ranges of all the reef building corals entering the North Korea EEZ.
+
+```{r}
+# Run NK coral current species (don't need parallel)
+system.time({
+  coral_nk_all_current_list <- lapply(nk_coral_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_corals, 
+                                       s = "Current",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+coral_nk_all_current_df <- bind_rows(coral_nk_all_current_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+coral_nk_all_current_sum_df <- coral_nk_all_current_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_nk_all_current_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_fill_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  scale_color_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Current range of corals entering North Korea EEZ",
+       fill = "Coral count",
+       color = "Coral count") +
+  theme_minimal()
+```
+
+```{r}
+# Run NK coral current species (don't need parallel; 16 seconds)
+system.time({
+  coral_nk_all_rcp85_list <- lapply(nk_coral_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_corals, 
+                                       s = "RCP85_2050",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+coral_nk_all_rcp85_df <- bind_rows(coral_nk_all_rcp85_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+coral_nk_all_rcp85_sum_df <- coral_nk_all_rcp85_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_nk_all_rcp85_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_fill_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  scale_color_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "RCP 8.5 2050 range of corals entering North Korea EEZ",
+       fill = "Coral count",
+       color = "Coral count") +
+  theme_minimal()
+```
+
+```{r}
+coral_nk_sum_all <- rbind(coral_nk_all_current_sum_df %>% mutate(scenario = "Current"),
+                              coral_nk_all_rcp85_sum_df %>% mutate(scenario = "RCP85_2050"))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", color = "black", size = 0.5)+
+  geom_sf(data = north_korea, fill = "lightpink", color = "black", size = 0.5)+
+  geom_sf(data = eez_simple_sf) +
+  geom_tile(data = coral_nk_sum_all, aes(x = x, y = y, fill = N, color = N)) +
+  coord_sf(expand = FALSE,
+           xlim = c(110, 150),
+           ylim = c(20, 50)) +
+  scale_fill_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  scale_color_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  labs(title = "Range of corals entering North Korea EEZ",
+       fill = "Coral count",
+       color = "Coral count") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
+
+```{r}
+# Run NK shark current species (don't need parallel)
+system.time({
+  shark_nk_all_current_list <- lapply(nk_sharks_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_sharks, 
+                                       s = "Current",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+shark_nk_all_current_df <- bind_rows(shark_nk_all_current_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+shark_nk_all_current_sum_df <- shark_nk_all_current_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+# Run NK shark current species (don't need parallel)
+system.time({
+  shark_nk_all_rcp85_list <- lapply(nk_sharks_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_sharks, 
+                                       s = "RCP85_2050",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+shark_nk_all_rcp85_df <- bind_rows(shark_nk_all_rcp85_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+shark_nk_all_rcp85_sum_df <- shark_nk_all_rcp85_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+shark_nk_sum_all <- rbind(shark_nk_all_current_sum_df %>% mutate(scenario = "Current"),
+                              shark_nk_all_rcp85_sum_df %>% mutate(scenario = "RCP85_2050"))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", color = "black", size = 0.5)+
+  geom_sf(data = north_korea, fill = "lightpink", color = "black", size = 0.5)+
+  geom_sf(data = eez_simple_sf) +
+  geom_tile(data = shark_nk_sum_all, aes(x = x, y = y, fill = N, color = N)) +
+  coord_sf(expand = FALSE,
+           xlim = c(110, 150),
+           ylim = c(20, 50)) +
+  scale_fill_viridis_c(option = "mako",
+                      limits = c(1, 16),
+                      breaks = c(1, 4, 8, 12, 16)) +
+  scale_color_viridis_c(option = "mako",
+                      limits = c(1, 16),
+                      breaks = c(1, 4, 8, 12, 16)) +
+  labs(title = "Range of sharks and rays entering North Korea EEZ",
+       fill = "Shark and ray count",
+       color = "Shark and ray count") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
+
+
+
+# NK species entries 
+
+```{r}
+# Only include NK in species in entry df
+nk_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new") %>% 
+  filter(MRGID == 8328)
 ```
 
 ```{r}
