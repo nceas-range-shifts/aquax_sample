@@ -396,6 +396,21 @@ spp_exit_100_list <- spp_exit_100$aphiaid
 ```
 
 ```{r}
+# What about tracking entry and exit per species 
+spp_eez_entry_exit_count <- full_join(spp_eez_entry_count, spp_eez_exit_count, by = c("aphiaid", "scenario")) %>% 
+  mutate(n_eez_entry = replace_na(n_eez_entry, 0),
+         n_eez_exit = replace_na(n_eez_exit, 0))
+
+# Merge in IUCN info
+spp_eez_entry_exit_count_iucn <- left_join(spp_eez_entry_exit_count, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                  group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group))
+```
+
+```{r}
 # Area of 100 + species
 area_df_100 <- area_df %>% 
   filter(aphiaid %in% spp_exit_100_list) %>% 
@@ -928,6 +943,13 @@ nk_coral_aphiaid <- nk_coral$aphiaid
 ```
 
 ```{r}
+# Filter species entry and exit for just the reef building corals entering NK 
+nk_coral_entry_exit <- spp_eez_entry_exit_count_iucn %>% 
+  filter(aphiaid %in% nk_coral_aphiaid) %>% 
+  filter(scenario == "RCP85_2050")
+```
+
+```{r}
 # Get aphiaids for the reef building corals entering NK
 nk_sharks <- nk_spp_future_iucn %>% 
   filter(general_group == "sharks_and_rays")
@@ -1264,6 +1286,22 @@ hbi_coral <- hb_spp_exit_cat%>%
   filter(general_group == "reef_building_corals")
 
 hbi_coral_aphiaid <- hbi_coral$aphiaid
+```
+
+```{r}
+# Filter species entry and exit for just the reef building corals exiting HBI
+hbi_coral_entry_exit <- spp_eez_entry_exit_count_iucn %>% 
+  filter(aphiaid %in% hbi_coral_aphiaid) %>% 
+  filter(scenario == "RCP85_2050")
+
+hbi_coral_enter_nk <- hbi_coral_entry_exit %>% 
+  filter(aphiaid %in% nk_coral_aphiaid)
+
+hbi_coral_enter_nk_range <- area_df %>% 
+  filter(aphiaid %in% hbi_coral_enter_nk$aphiaid) %>% 
+  filter(scenario == "RCP85_2050") %>% 
+  #dplyr::select(aphiaid, current_area_km2, scenario_area_km2) %>% 
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
 ```
 
 ```{r}
