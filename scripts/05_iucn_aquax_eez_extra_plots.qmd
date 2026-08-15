@@ -396,6 +396,16 @@ spp_exit_100_list <- spp_exit_100$aphiaid
 ```
 
 ```{r}
+# Bentfin devil ray - exits zero EEZs
+bdr <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "entry into new") %>%
+  filter(aphiaid == 217430)
+  #filter(spp_change == "entry into new")
+```
+
+```{r}
 # What about tracking entry and exit per species 
 spp_eez_entry_exit_count <- full_join(spp_eez_entry_count, spp_eez_exit_count, by = c("aphiaid", "scenario")) %>% 
   mutate(n_eez_entry = replace_na(n_eez_entry, 0),
@@ -739,6 +749,24 @@ singapore_spp_future_iucn <- left_join(singapore_spp_future, iucn_cat_aphiaid) %
 singapore_exit_100 <- singapore_spp_future_iucn %>% 
   filter(aphiaid %in% spp_exit_100_list)
 ```
+
+```{r}
+# Which species has less than 10 pixels in current and the largest number of pixels in Canada in RCP 8.5 2050?
+canada_spp_future <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8493) %>% 
+  filter(scenario == "RCP85_2050") %>%
+  filter(spp_change == "entry into new") 
+
+# Merge in IUCN info
+canada_spp_future_iucn <- left_join(canada_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
+```
+
 
 ## Top species exits 
 
