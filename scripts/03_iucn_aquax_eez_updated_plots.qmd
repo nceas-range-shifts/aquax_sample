@@ -404,6 +404,11 @@ eez_c_f <- eez_spp_change_counts  %>%
 ```
 
 ```{r}
+# Save spsecies change data by EEZ
+write_csv(eez_c_f, here("data/iucn_atrisk_eez_spp_change_all_scenarios.csv"))
+```
+
+```{r}
 eez_sov_c_f <- eez_spp_change_sov_counts  %>% 
   mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
   pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
