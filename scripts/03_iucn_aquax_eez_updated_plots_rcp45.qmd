@@ -193,8 +193,8 @@ exit_combined_plot <- plot_exit_10_map + plot_exit_10_density +
 
 ```{r}
 # Save entry and exit maps
-ggsave(here("figures/iucn_atrisk_spp_entry_10pxl_map_rcp45_072926.png"), entry_combined_plot, width = 10, height = 5, dpi = 300)
-ggsave(here("figures/iucn_atrisk_spp_exit_10pxl_map_rcp45_072926.png"), exit_combined_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_10pxl_map_rcp45_072926.png"), entry_combined_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_exit_10pxl_map_rcp45_072926.png"), exit_combined_plot, width = 10, height = 5, dpi = 300)
 ```
 
 ## Bivariate plot
@@ -350,7 +350,7 @@ biplot_all <- ggdraw() +
 
 ```{r}
 # Save entry and exit maps
-ggsave(here("figures/iucn_atrisk_spp_entry_exit_density_10pxl_map_rcp45_073026.png"), biplot_all, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_density_10pxl_map_rcp45_073026.png"), biplot_all, width = 10, height = 5, dpi = 300)
 ```
 
 # Top species entry / exit by EEZ
@@ -584,7 +584,7 @@ plot_perc_exit_current <- ggplot() +
 
 ```{r}
 # Save plot of percent entry and percent exits of current IUCN listed species
-ggsave(here("figures/iucn_atrisk_perc_exit_spp_rcp45_2050_080626.png"), plot_perc_exit_current, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_perc_exit_spp_rcp45_2050_080626.png"), plot_perc_exit_current, width = 10, height = 5, dpi = 300)
 
-ggsave(here("figures/iucn_atrisk_perc_entry_spp_rcp45_2050_080626.png"), plot_perc_entry_current, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_perc_entry_spp_rcp45_2050_080626.png"), plot_perc_entry_current, width = 10, height = 5, dpi = 300)
 ```
