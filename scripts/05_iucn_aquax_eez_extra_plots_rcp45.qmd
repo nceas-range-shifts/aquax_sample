@@ -1,0 +1,1580 @@
+---
+title: "Additional plots"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(patchwork)
+library(cowplot)
+library(collapse)
+```
+
+This document creates some more focused plots for the data calculated in 01_iucn_aquax_eez_overlap_db.qmd and 02_iucn_aquax_rangearea.qmd. It saves figures for RCP 4.5 2050.
+
+## Read in threatened species data
+
+```{r}
+# Spp in EEZs
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels
+spp_entry_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_entry_pxls_072826.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_exit_pxls_072926.rds"))
+```
+
+```{r}
+# Species range area
+area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
+```
+
+## EEZs
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez <- st_read('/Users/abowd/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
+eez_200nm_list <- eez %>% 
+  filter(POL_TYPE == "200NM") %>% 
+  pull(MRGID)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list)
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez_simple_sf, eez_raster_blank, field = "MRGID")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>% 
+  # Round so that the X and Y match the AquaX data (which is rounded to 3 decimal places)
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_raster_df, aes(x = x, y = y,
+                              fill = MRGID,
+                              color = MRGID)) 
+```
+
+## Try out rainbow plot by IUCN status
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/ab9cd09931a4ce5c12d0bcd2984595d6522ed158/_data/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data/iucn_redlist_2026/iucn_species_assessments.csv")
+```
+
+```{r}
+# Add aphiaid to iucn_cat
+iucn_cat_aphiaid <- left_join(iucn_cat, (iucn_lookup %>% dplyr::select(iucn_assessment_id, aphia_id)),
+ by = c("assessment_id" = "iucn_assessment_id")) %>% 
+  rename(aphiaid = aphia_id) 
+```
+
+```{r}
+# Merge in iucn_cat to get group for each species
+spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
+```
+
+```{r}
+# What's the count of each group 
+spp_eez_group_count <- spp_eez_pxl_count_group %>% 
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   #group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   TRUE ~ group)) %>% 
+  group_by(general_group) %>% 
+  summarise(n_spp = length(unique(aphiaid))) %>% 
+  ungroup()
+```
+
+```{r}
+# Get count of number of EEZ by group and count of IUCN cat by group (create figure similar to bar chart)
+group_eez_count <- spp_eez_pxl_count_group %>% 
+  # Filter for 
+  filter(MRGID %in% eez_200nm_list) %>%
+  group_by(group, aphiaid, redlist_category) %>% 
+  summarize(current_eez_count = sum(n_current >= 10, na.rm = TRUE),
+            RCP45_2050_eez_count = sum(n_RCP45_2050 >= 10, na.rm = TRUE),
+            RCP45_2100_eez_count = sum(n_RCP45_2100 >= 10, na.rm = TRUE),
+            RCP85_2050_eez_count = sum(n_RCP85_2050 >= 10, na.rm = TRUE),
+            RCP85_2100_eez_count = sum(n_RCP85_2100 >= 10, na.rm = TRUE)) %>% 
+  ungroup()
+
+group_iucncat_count <- group_eez_count %>% 
+  group_by(group, redlist_category) %>% 
+  summarize(redlist_count = n()) %>% 
+  ungroup()
+```
+
+
+```{r}
+ggplot() +
+  geom_density(data = group_eez_count, aes(x = current_eez_count, fill = redlist_category), alpha = 0.5) +
+  labs(title = "Distribution of current EEZ counts by IUCN redlist category",
+       x = "current EEZ count") +
+  facet_wrap(~redlist_category) +
+  theme_bw()
+```
+
+
+
+```{r}
+# Assign EEZ count thresholds based on plotted density (drop not comprehensively assessed)
+group_eez_count_threshold <- group_eez_count %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  # Drop those with current and RCP45_2050 EEZ counts of 0 (i.e., not in any EEZ)
+  filter(current_eez_count != 0 | RCP45_2050_eez_count != 0) %>% 
+  mutate(current_eez_count_cat = case_when(current_eez_count == 1 ~ "1",
+                                          current_eez_count == 2 ~ "2",
+                                           current_eez_count > 2 & current_eez_count <= 5 ~ "3-5",
+                                           current_eez_count > 5 & current_eez_count <= 15 ~ "6-15",
+                                           current_eez_count > 15 & current_eez_count <= 25 ~ "16-25",
+                                           current_eez_count > 25 & current_eez_count <= 50 ~ "26-50",
+                                           current_eez_count > 50 & current_eez_count <= 100 ~ "51-100",
+                                           current_eez_count > 100 ~ ">100",
+                                           TRUE ~ "0"),
+         RCP45_2050_eez_count_cat = case_when(RCP45_2050_eez_count == 1 ~ "1",
+                                            RCP45_2050_eez_count == 2 ~ "2",
+                                           RCP45_2050_eez_count > 2 & RCP45_2050_eez_count <= 5 ~ "3-5",
+                                           RCP45_2050_eez_count > 5 & RCP45_2050_eez_count <= 15 ~ "6-15",
+                                           RCP45_2050_eez_count > 15 & RCP45_2050_eez_count <= 25 ~ "16-25",
+                                           RCP45_2050_eez_count > 25 & RCP45_2050_eez_count <= 50 ~ "26-50",
+                                           RCP45_2050_eez_count > 50 & RCP45_2050_eez_count <= 100 ~ "51-100",
+                                           RCP45_2050_eez_count > 100 ~ ">100",
+                                           TRUE ~ "0")) %>%
+
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   #group %in% c("marine_turtles", "seasnakes") ~ "marine_turtles_and_seasnakes",
+                                   TRUE ~ group))
+```
+
+```{r}
+cat_summary <- group_eez_count_threshold %>% 
+  group_by(redlist_category, current_eez_count_cat) %>% 
+  summarise(n_cat = n()) %>% 
+  ungroup()
+
+# Get total number in each group
+group_count <- group_eez_count_threshold %>% 
+  group_by(redlist_category) %>% 
+  summarise(n_group = n()) %>% 
+  ungroup()
+
+# Merge in group count to get percentage
+cat_summary_perc <- left_join(cat_summary, group_count) %>% 
+  mutate(perc_cat = n_cat/n_group * 100)
+```
+
+```{r}
+group_eez_count_threshold$current_eez_count_cat <- factor(group_eez_count_threshold$current_eez_count_cat, 
+levels = c("0", "1", "2", "3-5", "6-15", "16-25", "26-50", "51-100", ">100"))
+
+group_eez_count_threshold$RCP45_2050_eez_count_cat <- factor(group_eez_count_threshold$RCP45_2050_eez_count_cat, 
+levels = c("0", "1", "2", "3-5", "6-15", "16-25", "26-50", "51-100", ">100"))
+
+group_eez_count_threshold$redlist_category <- factor(group_eez_count_threshold$redlist_category,
+levels = c("CR", "EN", "VU", "NT"))
+```
+
+```{r}
+library(forcats)
+# Plot a bar graph by group with fill as the EEZ count category
+ggplot() +
+  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(redlist_category), fill = fct_rev(current_eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d() +
+  labs(title = "Current EEZ count category by IUCN category",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw()
+```
+
+```{r}
+# Plot a bar graph by group with fill as the EEZ count category
+ggplot() +
+  geom_bar(data = group_eez_count_threshold, aes(y = fct_rev(redlist_category), fill = fct_rev(RCP45_2050_eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d() +
+  labs(title = "RCP 4.5 2050 EEZ count category by IUCN category",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw()
+```
+
+## Set up dataframe so that it's easier to plot current vs future side by side for each group 
+```{r}
+eez_count_group_simple <- group_eez_count_threshold %>% 
+  dplyr::select(redlist_category, general_group, current_eez_count_cat, RCP45_2050_eez_count_cat) %>% 
+  pivot_longer(cols = c(current_eez_count_cat, RCP45_2050_eez_count_cat), names_to = "scenario", values_to = "eez_count_cat") %>% 
+  mutate(scenario = str_replace(scenario, "current_eez_count_cat", "current"),
+         scenario = str_replace(scenario, "RCP45_2050_eez_count_cat", "RCP45_2050"))
+```
+
+```{r}
+eez_count_summary_taxon <- eez_count_group_simple %>%
+  filter(general_group != "not comprehensively assessed") %>%
+  count(scenario, general_group, eez_count_cat, name = "n") %>%
+  group_by(scenario, general_group) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+
+eez_count_summary_iucn <- eez_count_group_simple %>%
+  count(scenario, redlist_category, eez_count_cat, name = "n") %>%
+  group_by(scenario, redlist_category) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup()
+```
+
+```{r}
+# Plot a bar graph by group with fill as the EEZ count category
+taxon_bar_plot <- ggplot() +
+  geom_bar(data = eez_count_group_simple %>% 
+  filter(general_group != "not comprehensively assessed"), aes(y = fct_rev(general_group), fill = fct_rev(eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d(option = "turbo") +
+  labs(title = "",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
+
+```{r}
+# Plot a bar graph by group with fill as the EEZ count category
+iucn_bar_plot <- ggplot() +
+  geom_bar(data = eez_count_group_simple, aes(y = fct_rev(redlist_category), fill = fct_rev(eez_count_cat)), position = "fill") +
+  scale_fill_viridis_d(option = "turbo") +
+  labs(title = "",
+       y = "",
+       x = "proportion",
+       fill = "EEZ count") +
+  theme_bw() + 
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
+
+```{r}
+group_eez_count_diff <- group_eez_count_threshold %>% 
+  mutate(eez_count_diff = RCP45_2050_eez_count - current_eez_count) #%>% 
+  #dplyr::select(redlist_category, aphiaid, current_eez_count,RCP45_2050_eez_count, eez_count_diff)
+```
+
+```{r}
+taxon_jitter_plot_only <- ggplot() +
+  geom_jitter(data = group_eez_count_diff %>% filter(general_group != "not comprehensively assessed"),
+   aes(x = eez_count_diff, y = fct_rev(general_group), alpha = 0.6),
+   color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
+  scale_y_discrete() + 
+  #scale_x_continuous(limits = c(-25, 10)) +
+  labs(title = "EEZ region counts by IUCN comprehensive group",
+       x = "EEZ region count change\n(RCP4.5 2050 - current)",
+       y = "") +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+```{r}
+iucn_jitter_plot_only <- ggplot() +
+  geom_jitter(data = group_eez_count_diff, aes(x = eez_count_diff, y = fct_rev(redlist_category), alpha = 0.6),
+   color = "gray10", position = position_jitterdodge(dodge.width = 0, jitter.width = .6),) +
+  scale_y_discrete() + 
+  #scale_x_continuous(limits = c(-25, 10)) +
+  labs(title = "EEZ region counts by IUCN redlst category",
+       x = "EEZ region count change\n(RCP4.5 2050 - current)",
+       y = "") +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Save only the jitter plot
+ggsave(here("figures/iucn_threatened_200nmonly_taxon_jitterplot_rcp45_080326.png"), taxon_jitter_plot_only, width = 7, height = 5, dpi = 300)
+
+ggsave(here("figures/iucn_threatened_200nmonly_iucncat_jitterplot_rcp45_080326.png"), iucn_jitter_plot_only, width = 7, height = 5, dpi = 300)
+```
+
+```{r}
+# Save only the bar plot
+ggsave(here("figures/iucn_threatened_200nmonly_taxon_barplot_rcp45_080326.png"), taxon_bar_plot, width = 7, height = 5, dpi = 300)
+
+ggsave(here("figures/iucn_threatened_200nmonly_iucncat_barplot_rcp45_080326.png"), iucn_bar_plot, width = 7, height = 5, dpi = 300)
+```
+
+## Get list of species entries by EEZ
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- spp_eez_pxl_count %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  # Set 10 pixel threshold (at least ten pixels need in EEZ for species presence)
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Which species have the most EEZ region entries?
+spp_eez_entry_count <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  filter(spp_change == "entry into new") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_eez_entry = n()) %>% 
+  ungroup()
+
+# Which species have the most EEZ region exits?
+spp_eez_exit_count <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  filter(spp_change == "exit from historical") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_eez_exit = n()) %>% 
+  ungroup()
+
+# Get list of EEZ exits 100 and over
+spp_exit_100 <- spp_eez_exit_count %>% 
+  filter(n_eez_exit >= 100,
+         scenario == "RCP45_2050")
+
+spp_exit_100_list <- spp_exit_100$aphiaid
+```
+
+```{r}
+# Bentfin devil ray - exits zero EEZs
+bdr <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "entry into new") %>%
+  filter(aphiaid == 217430)
+  #filter(spp_change == "entry into new")
+```
+
+```{r}
+# What about tracking entry and exit per species 
+spp_eez_entry_exit_count <- full_join(spp_eez_entry_count, spp_eez_exit_count, by = c("aphiaid", "scenario")) %>% 
+  mutate(n_eez_entry = replace_na(n_eez_entry, 0),
+         n_eez_exit = replace_na(n_eez_exit, 0))
+
+# Merge in IUCN info
+spp_eez_entry_exit_count_iucn <- left_join(spp_eez_entry_exit_count, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                  group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group))
+```
+
+```{r}
+# Area of 100 + species
+area_df_100 <- area_df %>% 
+  filter(aphiaid %in% spp_exit_100_list) %>% 
+  filter(scenario == "RCP45_2050") %>%
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
+```
+
+```{r}
+# Merge in IUCN info
+spp_eez_entry_count_iucn <- left_join(spp_eez_entry_count, iucn_cat_aphiaid) %>% 
+  filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                  group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  group_by(general_group, scenario, n_eez_entry) %>% 
+  summarize(n_spp = n()) 
+```
+
+```{r}
+spp_entry_summary <- spp_eez_entry_count_iucn %>% 
+  group_by(scenario, n_eez_entry) %>% 
+  summarize(n_spp = sum(n_spp))
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_entry_count_iucn %>% filter(scenario == "RCP45_2050"),
+            aes(x = n_eez_entry, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_sqrt(breaks = c(1, 5,10, 20, 30, 40, 50)) +
+  #scale_x_continuous(breaks = c(1, 2, 3, 4, 5, 10, 20, 30, 40, 50)) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(title = "Number EEZs entered by IUCN comprehensive group",
+       x = "Total number of EEZs entered",
+       y = "Species count",
+       fill = "")
+```
+
+```{r}
+# Merge in IUCN info
+spp_eez_exit_count_iucn <- left_join(spp_eez_exit_count, iucn_cat_aphiaid) %>% 
+  filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  group_by(general_group, scenario, n_eez_exit) %>% 
+  summarize(n_spp = n())
+```
+
+```{r}
+spp_exit_summary <- spp_eez_exit_count_iucn %>% 
+  group_by(scenario, n_eez_exit) %>% 
+  summarize(n_spp = sum(n_spp))
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_exit_count_iucn %>% filter(scenario == "RCP45_2050"),
+            aes(x = n_eez_exit, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_sqrt(breaks = c(1, 10, 20, 40, 80, 120, 160)) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(title = "Number of EEZs left by IUCN comprehensive group",
+       x = "Total number of EEZs exited",
+       y = "Species count",
+       fill = "")
+  
+```
+
+```{r}
+spp_eez_entry_clean <- spp_eez_entry_count_iucn %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  mutate(n_eez_entry_group = ifelse(n_eez_entry >= 10, "10+", as.character(n_eez_entry)))
+```
+
+```{r}
+spp_eez_entry_clean <- spp_eez_entry_count_iucn %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  mutate(n_eez_entry_group = case_when(n_eez_entry >= 10 & n_eez_entry < 50 ~ "10+",
+                                        n_eez_entry >= 50 & n_eez_entry < 100 ~ "50+",
+                                         n_eez_entry >= 100 ~ "100+",
+                                         TRUE ~ as.character(n_eez_entry)))
+
+```
+
+```{r}
+spp_eez_entry_clean$n_eez_entry_group <- factor(spp_eez_entry_clean$n_eez_entry_group, 
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "50+", "100+"))
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_entry_clean,
+            aes(x = n_eez_entry_group, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "50+", "100+")) +
+  theme_minimal() +
+  theme(legend.position = "right") +
+  labs(title = "Number EEZs entered by IUCN comprehensive group",
+       x = "Total number of EEZs entered",
+       y = "Species count",
+       fill = "")
+  
+```
+
+
+# For species exit bar graph, lump 10+, 50+, 100+ into separate bar
+
+```{r}
+spp_eez_exit_clean <- spp_eez_exit_count_iucn %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  mutate(n_eez_exit_group = case_when(n_eez_exit >= 10 & n_eez_exit < 50 ~ "10+",
+                                        n_eez_exit >= 50 & n_eez_exit < 100 ~ "50+",
+                                         n_eez_exit >= 100 ~ "100+",
+                                         TRUE ~ as.character(n_eez_exit)))
+```
+
+```{r}
+spp_eez_exit_clean$n_eez_exit_group <- factor(spp_eez_exit_clean$n_eez_exit_group, 
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "50+", "100+"))
+```
+
+```{r}
+ggplot() +
+  geom_bar(data = spp_eez_exit_clean,
+            aes(x = n_eez_exit_group, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "50+", "100+")) +
+  theme_minimal() +
+  theme(legend.position = "right") +
+  labs(title = "Number of EEZs left by IUCN comprehensive group",
+       x = "Total number of EEZs exited",
+       y = "Species count",
+       fill = "")
+  
+```
+
+## Both species entries and exits on faceted plot
+
+```{r}
+spp_eez_exit_entry_clean <- rbind(spp_eez_exit_clean %>% 
+                                  dplyr::select(general_group, scenario, n_eez_exit_group, n_spp) %>% 
+                                  mutate(change = "Exits") %>% 
+                                  rename(n_eez_group = n_eez_exit_group),
+                                  spp_eez_entry_clean %>% 
+                                  dplyr::select(general_group, scenario, n_eez_entry_group, n_spp) %>% 
+                                  mutate(change = "Entries") %>% 
+                                  rename(n_eez_group = n_eez_entry_group))
+```
+
+```{r}
+spp_eez_exit_entry_clean$n_eez_group <- factor(spp_eez_exit_entry_clean$n_eez_group, 
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "50+", "100+"))
+```
+
+```{r}
+entry_exit_barplot <- ggplot() +
+  geom_bar(data = spp_eez_exit_entry_clean,
+            aes(x = n_eez_group, y = n_spp, fill = general_group), stat = "identity") +
+  scale_fill_viridis_d(option = "turbo", direction = -1) +
+  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "50+", "100+")) +
+  theme_minimal() +
+  facet_wrap(~change) + 
+  theme(legend.position = "bottom") +
+  labs(title = "EEZ entries and exits by IUCN comprehensive group",
+       x = "EEZ count",
+       y = "Species count",
+       fill = "")
+  
+```
+
+```{r}
+# Save only the bar plot
+ggsave(here("figures/iucn_atrisk_taxon_entry_exit_rcp45_080326.png"), entry_exit_barplot, width = 7, height = 5, dpi = 300)
+
+```
+
+## Plot North Korea Species Entries
+```{r}
+library(rnaturalearth)
+globe <- ne_countries(scale = "large", returnclass = "sf")
+north_korea <- ne_countries(country = "North Korea", scale = "large", returnclass = "sf")
+south_korea <- ne_countries(country = "South Korea", scale = "large", returnclass = "sf")
+japan <- ne_countries(country = "Japan", scale = "large", returnclass = "sf")
+```
+
+```{r}
+nk_entry_pixels <- spp_entry_pxls %>% 
+  filter(MRGID == 8328) 
+
+nk_entry_rcp45_2050 <- nk_entry_pixels %>% 
+  filter(scenario == "RCP45_2050")
+```
+
+```{r}
+sk_entry_rcp45_2050 <- spp_entry_pxls %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  filter(MRGID == 8327) 
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328 )) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_entry_rcp45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "North Korea EEZ species entries (RCP4.5 2050)",
+       fill = "Species entry count",
+       color = "Species entry count") +
+  theme_minimal() 
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID %in% c(8328, 8327))) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_entry_rcp45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+    geom_tile(data = sk_entry_rcp45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,21), 
+                        breaks = c(1, 5, 10, 15, 21)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  geom_sf(data = south_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "North & South Korea EEZ species entries (RCP4.5 2050)",
+       fill = "Species entry count",
+       color = "Species entry count") +
+  theme_minimal() 
+```
+
+
+```{r}
+# Which species has less than 10 pixels in current and the largest number of pixels in NK in RCP 4.5 2050?
+nk_spp_future <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8328) %>% 
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "entry into new") 
+
+# Merge in IUCN info
+nk_spp_future_iucn <- left_join(nk_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
+```
+
+```{r}
+# Which species has less than 10 pixels in current and the largest number of pixels in Russia in RCP 4.5 2050?
+russia_spp_future <- eez_spp_pxls_long %>% 
+  filter(MRGID == 5690) %>% 
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "entry into new") 
+
+# Merge in IUCN info
+russia_spp_future_iucn <- left_join(russia_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
+```
+
+```{r}
+# Are any russia species entries also in North Korea? (i.e., same aphiaid)
+russia_nk_spp_overlap <- inner_join(russia_spp_future_iucn, nk_spp_future_iucn, by = "aphiaid")
+```
+
+```{r}
+# Are any of russia species in the spp_exit_100_list? 
+russia_exit_100 <- russia_spp_future_iucn %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+
+#NK
+nk_exit_100 <- nk_spp_future_iucn %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+# What about the Singapore EEZ? (MRGID = 8485)
+singapore_spp_future <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8485) %>%
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "entry into new")
+
+singapore_spp_future_iucn <- left_join(singapore_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
+```
+
+```{r}
+singapore_exit_100 <- singapore_spp_future_iucn %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+# Which species has less than 10 pixels in current and the largest number of pixels in Canada in RCP 4.5 2050?
+canada_spp_future <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8493) %>% 
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "entry into new") 
+
+# Merge in IUCN info
+canada_spp_future_iucn <- left_join(canada_spp_future, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(pxl_count))
+```
+
+
+## Top species exits 
+
+```{r}
+# Christmas Island
+christmas_island_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8309) %>%
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "exit from historical")
+
+ci_spp_exit_cat <- left_join(christmas_island_spp, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(n_current))
+
+ci_exit_100 <- ci_spp_exit_cat %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+# Howland & Baker Islands - US
+hb_island_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8451) %>%
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "exit from historical")
+
+hb_spp_exit_cat <- left_join(hb_island_spp, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(n_current))
+
+hb_exit_100 <- hb_spp_exit_cat %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+# Bassas da India - France
+bdi_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID == 8340) %>%
+  filter(scenario == "RCP45_2050") %>%
+  filter(spp_change == "exit from historical")
+
+bdi_spp_exit_cat <- left_join(bdi_spp, iucn_cat_aphiaid) %>% 
+  #filter(group != "not comprehensively assessed") %>%
+  mutate(general_group = case_when(group %in% c("hagfishes", "sturgeons", "tunas_and_billfishes", "tarpons_and_ladyfishes")~ "pelagic_fishes",
+                                   group %in% c("angelfishes", "blennies", "butterfly_fishes", "groupers", "pufferfishes", "seabreams_porgies_picarels", "surgeonfishes", "wrasses_and_parrotfishes") ~ "reef_fishes",
+                                   group %in% c("marine_turtles", "seasnakes") ~ "marine_reptiles",
+                                   TRUE ~ group)) %>% 
+  arrange(desc(n_current))
+
+bdi_exit_100 <- bdi_spp_exit_cat %>% 
+  filter(aphiaid %in% spp_exit_100_list)
+```
+
+```{r}
+hbi_exit_rcp45_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  filter(MRGID == 8451) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8451 )) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = hbi_exit_rcp45_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Howland & Baker EEZ region species exits (RCP4.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+```{r}
+ci_exit_rcp45_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  filter(MRGID == 8309) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8309)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = ci_exit_rcp45_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Christmas Island EEZ region species exits (RCP4.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+```{r}
+ci_exit_rcp45_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  filter(MRGID == 8309) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8309)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = ci_exit_rcp45_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Christmas Island EEZ region species exits (RCP4.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+```{r}
+bdi_exit_rcp45_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  filter(MRGID == 8340) 
+```
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8340)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = bdi_exit_rcp45_2050, aes(x = x, y = y,
+                                               fill = n_exit_spp,
+                                               color = n_exit_spp)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,40),
+                        breaks = c(1, 10, 20, 30, 40)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Bassas da India EEZ region species exits (RCP4.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+## Mapping specific taxons in specific EEZs
+Both NK and Howland & Baker Islands have a lot of reef-builing coral entries and exits, respectively. Let's take a closer look. I suspect that the hotspots here are small area concentrations of corals. 
+
+```{r}
+# Run species entry pixels but just for corals
+source(here( "common_fxns.R"))
+```
+
+# Read in AquaX files 
+
+```{r}
+# read in meta data on the aquax species
+load("/home/shares/data-aquax/META_02122025.Rdata")
+```
+
+```{r}
+meta_clean <- META %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+## NK
+
+```{r}
+# Get aphiaids for the reef building corals entering NK
+nk_coral <- nk_spp_future_iucn %>% 
+  filter(general_group == "reef_building_corals")
+
+nk_coral_aphiaid <- nk_coral$aphiaid
+```
+
+```{r}
+# Filter species entry and exit for just the reef building corals entering NK 
+nk_coral_entry_exit <- spp_eez_entry_exit_count_iucn %>% 
+  filter(aphiaid %in% nk_coral_aphiaid) %>% 
+  filter(scenario == "RCP45_2050")
+```
+
+```{r}
+# Get aphiaids for the reef building corals entering NK
+nk_sharks <- nk_spp_future_iucn %>% 
+  filter(general_group == "sharks_and_rays")
+
+nk_sharks_aphiaid <- nk_sharks$aphiaid
+```
+
+```{r}
+# Coral range area
+nk_corals_range_area <- area_df %>% 
+  filter(aphiaid %in% nk_coral_aphiaid) %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  #dplyr::select(aphiaid, current_area_km2, scenario_area_km2) %>% 
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
+```
+
+```{r}
+# Sharks range area
+nk_sharks_range_area <- area_df %>% 
+  filter(aphiaid %in% nk_sharks_aphiaid) %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  #dplyr::select(aphiaid, current_area_km2, scenario_area_km2) %>% 
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
+```
+
+```{r}
+df_nk_corals <- df %>% 
+  filter(aphiaid %in% nk_coral_aphiaid)
+
+df_nk_sharks <- df %>% 
+  filter(aphiaid %in% nk_sharks_aphiaid)
+```
+
+```{r}
+# Test one of the corals
+coral_test <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_207095.parquet")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_test %>% 
+  filter(Current >= 621), aes(x = x, y = y), color = "magenta", fill = "magenta", alpha = 0.6) +
+  #scale_fill_viridis_c(option = "mako") +
+  #scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Current range coral 207095",
+       subtitle = "Suitability threshold is 621",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_test %>% 
+  filter(RCP45_2050 >= 621), aes(x = x, y = y), color = "magenta", fill = "magenta", alpha = 0.6) +
+  #scale_fill_viridis_c(option = "mako") +
+  #scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "RCP 4.5 2050 range coral 207095",
+       subtitle = "Suitability threshold is 621",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+We can use the least concern count function to map the ranges of all the reef building corals entering the North Korea EEZ.
+
+```{r}
+# Run NK coral current species (don't need parallel)
+system.time({
+  coral_nk_all_current_list <- lapply(nk_coral_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_corals, 
+                                       s = "Current",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+coral_nk_all_current_df <- bind_rows(coral_nk_all_current_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+coral_nk_all_current_sum_df <- coral_nk_all_current_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_nk_all_current_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_fill_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  scale_color_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Current range of corals entering North Korea EEZ",
+       fill = "Coral count",
+       color = "Coral count") +
+  theme_minimal()
+```
+
+```{r}
+# Run NK coral current species (don't need parallel; 16 seconds)
+system.time({
+  coral_nk_all_rcp45_list <- lapply(nk_coral_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_corals, 
+                                       s = "RCP45_2050",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+coral_nk_all_rcp45_df <- bind_rows(coral_nk_all_rcp45_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+coral_nk_all_rcp45_sum_df <- coral_nk_all_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_nk_all_rcp45_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_fill_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  scale_color_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "RCP 4.5 2050 range of corals entering North Korea EEZ",
+       fill = "Coral count",
+       color = "Coral count") +
+  theme_minimal()
+```
+
+```{r}
+coral_nk_sum_all <- rbind(coral_nk_all_current_sum_df %>% mutate(scenario = "Current"),
+                              coral_nk_all_rcp45_sum_df %>% mutate(scenario = "RCP45_2050"))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", color = "black", size = 0.5)+
+  geom_sf(data = north_korea, fill = "lightpink", color = "black", size = 0.5)+
+  geom_sf(data = eez_simple_sf) +
+  geom_tile(data = coral_nk_sum_all, aes(x = x, y = y, fill = N, color = N)) +
+  coord_sf(expand = FALSE,
+           xlim = c(110, 150),
+           ylim = c(20, 50)) +
+  scale_fill_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  scale_color_viridis_c(option = "plasma",
+                      limits = c(1, 24),
+                      breaks = c(1, 6, 12, 18, 24)) +
+  labs(title = "Range of corals entering North Korea EEZ",
+       fill = "Coral count",
+       color = "Coral count") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
+
+```{r}
+# Run NK shark current species (don't need parallel)
+system.time({
+  shark_nk_all_current_list <- lapply(nk_sharks_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_sharks, 
+                                       s = "Current",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+shark_nk_all_current_df <- bind_rows(shark_nk_all_current_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+shark_nk_all_current_sum_df <- shark_nk_all_current_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+# Run NK shark current species (don't need parallel)
+system.time({
+  shark_nk_all_rcp45_list <- lapply(nk_sharks_aphiaid, FUN = least_concern_count, 
+                                       df = df_nk_sharks, 
+                                       s = "RCP45_2050",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+shark_nk_all_rcp45_df <- bind_rows(shark_nk_all_rcp45_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (20 seconds)
+system.time({
+shark_nk_all_rcp45_sum_df <- shark_nk_all_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+shark_nk_sum_all <- rbind(shark_nk_all_current_sum_df %>% mutate(scenario = "Current"),
+                              shark_nk_all_rcp45_sum_df %>% mutate(scenario = "RCP45_2050"))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", color = "black", size = 0.5)+
+  geom_sf(data = north_korea, fill = "lightpink", color = "black", size = 0.5)+
+  geom_sf(data = eez_simple_sf) +
+  geom_tile(data = shark_nk_sum_all, aes(x = x, y = y, fill = N, color = N)) +
+  coord_sf(expand = FALSE,
+           xlim = c(110, 150),
+           ylim = c(20, 50)) +
+  scale_fill_viridis_c(option = "mako",
+                      limits = c(1, 16),
+                      breaks = c(1, 4, 8, 12, 16)) +
+  scale_color_viridis_c(option = "mako",
+                      limits = c(1, 16),
+                      breaks = c(1, 4, 8, 12, 16)) +
+  labs(title = "Range of sharks and rays entering North Korea EEZ",
+       fill = "Shark and ray count",
+       color = "Shark and ray count") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  facet_wrap(~scenario)
+```
+
+
+
+# NK species entries 
+
+```{r}
+# Only include NK in species in entry df
+nk_spp_entry <- eez_spp_pxls_long %>% 
+  filter(spp_change == "entry into new") %>% 
+  filter(MRGID == 8328)
+```
+
+```{r}
+# Run NK coral species (don't need parallel)
+system.time({
+  coral_nk_entry_rcp45_list <- lapply(nk_coral_aphiaid, FUN = extract_eez_entry_pixels_df_db, 
+                                       df = df_nk_corals, 
+                                       s = "RCP45_2050",
+                                       eez_spp_entry = nk_spp_entry,
+                                       eez_raster_df = eez_raster_df)
+})
+```
+
+```{r}
+coral_nk_entry_rcp45_df  <- bind_rows(coral_nk_entry_rcp45_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+coral_nk_entry_rcp45_sum_df  <- coral_nk_entry_rcp45_df  %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050")
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328 )) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_nk_entry_rcp45_sum_df, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_fill_viridis_c(option = "turbo",
+                        breaks = c(1, 3, 6, 9, 12)) +
+  scale_color_viridis_c(option = "turbo",
+                        breaks = c(1, 3, 6, 9, 12)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "North Korea EEZ coral species entries (RCP4.5 2050)",
+       fill = "Species entry count",
+       color = "Species entry count") +
+  theme_minimal() 
+```
+
+# HBI
+
+```{r}
+# Get aphiaids for the reef building corals exiting Howland and Baker Islands
+hbi_coral <- hb_spp_exit_cat%>% 
+  filter(general_group == "reef_building_corals")
+
+hbi_coral_aphiaid <- hbi_coral$aphiaid
+```
+
+```{r}
+# Filter species entry and exit for just the reef building corals exiting HBI
+hbi_coral_entry_exit <- spp_eez_entry_exit_count_iucn %>% 
+  filter(aphiaid %in% hbi_coral_aphiaid) %>% 
+  filter(scenario == "RCP45_2050")
+
+hbi_coral_enter_nk <- hbi_coral_entry_exit %>% 
+  filter(aphiaid %in% nk_coral_aphiaid)
+
+hbi_coral_enter_nk_range <- area_df %>% 
+  filter(aphiaid %in% hbi_coral_enter_nk$aphiaid) %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  #dplyr::select(aphiaid, current_area_km2, scenario_area_km2) %>% 
+  mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
+```
+
+```{r}
+# Only include HBI in species in exit df
+hbi_spp_exit <- eez_spp_pxls_long %>% 
+  filter(spp_change == "exit from historical") %>% 
+  filter(MRGID == 8451)
+```
+
+```{r}
+df_hbi_corals <- df %>% 
+  filter(aphiaid %in% hbi_coral_aphiaid)
+```
+
+```{r}
+# Run HBI coral species (don't need parallel)
+system.time({
+  coral_hbi_exit_rcp45_list <- lapply(hbi_coral_aphiaid, FUN = extract_eez_exit_pixels_df_db, 
+                                       df = df_hbi_corals, 
+                                       s = "RCP45_2050",
+                                       eez_spp_exit = hbi_spp_exit,
+                                       eez_raster_df = eez_raster_df)
+})
+```
+
+```{r}
+coral_hbi_exit_rcp45_df  <- bind_rows(coral_hbi_exit_rcp45_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+coral_hbi_exit_rcp45_sum_df  <- coral_hbi_exit_rcp45_df  %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050")
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8451 )) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = coral_hbi_exit_rcp45_sum_df, aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_fill_viridis_c(option = "turbo",
+                        limits = c(1,26),
+                        breaks = c(1, 5, 10, 15, 20, 26)) +
+  scale_color_viridis_c(option = "turbo",
+                        limits = c(1,26),
+                        breaks = c(1, 5, 10, 15, 20, 26)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Howland & Baker EEZ region coral species exits (RCP4.5 2050)",
+       fill = "Species exit count",
+       color = "Species exit count") +
+  theme_minimal() 
+```
+
+## Izu stingray (Hemitrygon izuensis) range
+```{r}
+# Let's look at the range of the Izu stingrayy (Hemitrygon izuensis)
+izu <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1042848.parquet")
+```
+
+
+```{r}
+# Izu cutoff is 444 so filter RCP 4.5 2050 to only include pixels with values greater than 444
+izu_rcp45_2050 <- izu %>% 
+  mutate(RCP45_2050_suitable = ifelse(RCP45_2050 >= 444, "suitable", "not suitable")) 
+```
+
+```{r}
+izu_rcp45_2050_suitable <- rbind(izu %>%  mutate(RCP45_2050_suitable = "all"), (izu_rcp45_2050 %>% 
+  filter(RCP45_2050_suitable == "suitable")))
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = izu_rcp45_2050_suitable, aes(x = x, y = y,
+                              fill = RCP45_2050,
+                              color = RCP45_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  geom_sf(data = south_korea, fill = "cornsilk2", color = "black", size = 0.5) +
+  geom_sf(data = japan, fill = "cornsilk2", color = "black", size = 0.5) +
+  labs(title = "Izu stingray range (RCP4.5 2050)",
+       subtitle = "Suitability threshold is 444",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  facet_wrap(~RCP45_2050_suitable) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = izu_rcp45_2050_suitable %>% 
+  filter(RCP45_2050_suitable == "suitable"), aes(x = x, y = y,
+                              fill = RCP45_2050,
+                              color = RCP45_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  scale_y_continuous(limits = c(37, 43)) +
+  scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Izu stingray range (RCP4.5 2050)",
+       subtitle = "Suitability threshold is 444",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+## Thrasher shark (cutoff is 560)
+
+```{r}
+ts <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_220019.parquet")
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = ts %>% 
+  filter(RCP45_2050 >= 560), aes(x = x, y = y,
+                              fill = RCP45_2050,
+                              color = RCP45_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  scale_y_continuous(limits = c(37, 43)) +
+  scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Thrasher shark range (RCP4.5 2050)",
+       subtitle = "Suitability threshold is 560",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+## Test out function with NK data to see what's causing horizontal lines in the plot
+```{r}
+# From common_fxns.R
+# Join the eez dataframe and filter for the spp_entry_eezs
+  spp_eez <- inner_join(spp, eez_raster_df) %>% 
+    filter(GEONAME %in% spp_entry_eezs) %>% 
+    filter(.data[[s]] >= cutoff) %>% 
+    mutate(binary = 1) %>% 
+    bind_rows()
+```
+
+
+```{r}
+# Join eez_raster_df and thrasher shark data, filter for NK EEZ and RCP4.5 2050
+nk_ts <- inner_join(ts, eez_raster_df) %>%
+  filter(MRGID == 8328) %>%
+  filter(RCP45_2050 >= cutoff) %>% 
+  mutate(binary = 1) 
+```
+
+```{r}
+ts_filtered <- ts %>% 
+  filter(RCP45_2050 >= cutoff) %>% 
+  filter(x >= 122 & x <= 134) %>%
+  filter(y >= 37 & y <= 43)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_ts, aes(x = x, y = y,
+                              fill = RCP45_2050,
+                              color = RCP45_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Thrasher shark range (RCP4.5 2050)",
+       subtitle = "Suitability threshold is 560",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_raster_df %>% filter(MRGID == 8328), aes(x = x, y = y)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  theme_minimal()
+```
+
+
+```{r}
+# Check alignment
+# Check if origins match (ts_test_raster is e-15 off from 0, 0 center, so rounding X and Y should fix stripes)
+origin(eez_raster_blank)
+ts_test_raster <- rast(ts, type = "xyz", crs = "EPSG:4326")  # if ts has a regular grid
+origin(ts_test_raster)
+res(ts_test_raster)
+```
+
+```{r}
+# See if rounding fixes problem
+eez_raster_df_round <- eez_raster_df %>% 
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+
+ts_round <- ts %>% 
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
+```{r}
+nk_ts_round <- inner_join(ts_round, eez_raster_df_round, by = c("x", "y")) %>%
+  filter(MRGID == 8328) %>%
+  filter(RCP45_2050 >= cutoff) %>% 
+  mutate(binary = 1)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez %>% filter(MRGID == 8328)) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = nk_ts_round, aes(x = x, y = y,
+                              fill = RCP45_2050,
+                              color = RCP45_2050)) +
+  scale_fill_viridis_c(option = "mako") +
+  scale_color_viridis_c(option = "mako") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Thrasher shark range (RCP4.5 2050) - rounded",
+       subtitle = "Suitability threshold is 560",
+       fill = "Suitability value",
+       color = "Suitability value") +
+  theme_minimal()
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_change <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% eez_200nm_list) %>%
+  group_by(GEONAME, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
