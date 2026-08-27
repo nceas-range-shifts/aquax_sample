@@ -1,0 +1,590 @@
+---
+title: "Plots of Threatened Species Ranges & EEZs"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(patchwork)
+library(cowplot)
+```
+
+This document creates updated plots useing the updated entry and exit data from 01_iucn_aquax_eez_overlap_db.qmd. It focuses on the scenario RCP 4.5 for the year 2050. The plots include maps of species entry and exit pixels, bivariate plots of species entry vs exit, and calculations of species change by EEZ and sovereign nation.
+
+## Read in at-risk species data
+
+```{r}
+# Spp in EEZs
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels
+spp_entry_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_entry_pxls_072826.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_exit_pxls_072926.rds"))
+```
+
+```{r}
+# Species range area
+area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
+```
+
+## Read in EEZs
+
+```{r}
+eez <- st_read('/Users/abowd/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
+eez_200nm_list <- eez %>% 
+  filter(POL_TYPE == "200NM") %>% 
+  pull(MRGID)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list)
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+## Plot species pixels
+Only include 200 nm EEZs (no overlapping claims or joint regimes)
+
+```{r}
+spp_entry_pxls_45_2050 <- spp_entry_pxls %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  filter(MRGID %in% eez_200nm_list)
+
+spp_exit_pxls_45_2050 <- spp_exit_pxls %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+# Plot EEZ entry pixels
+plot_entry_10_map <- ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_pxls_45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  scale_fill_viridis_c(limits = c(1, 40), 
+                      breaks = c(1, 2, 4, 8, 16, 28, 40),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1,40), 
+                        breaks = c(1, 2, 4, 8, 16, 28, 40),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+plot_entry_10_density <- ggplot(spp_entry_pxls_45_2050, aes(x = y)) +
+  geom_density(fill = "forestgreen", alpha = 0.5) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "",
+       y = "") +
+  theme(plot.margin = margin(0, 0, 0, 0))
+```
+
+```{r}
+entry_combined_plot <- plot_entry_10_map + plot_entry_10_density + 
+  plot_annotation(title = "Species entry, RCP 4.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom") 
+```
+
+```{r}
+# Plot EEZ exit pixels
+plot_exit_10_map <- ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_exit_pxls_45_2050, aes(x = x, y = y,
+                                              fill = n_exit_spp,
+                                              color = n_exit_spp)) +
+  scale_fill_viridis_c(limits = c(1,40), 
+                       breaks = c(1, 2, 4, 8, 16, 28, 40),
+                       direction = -1, 
+                       trans = "log", # visually stretches the lower value data
+                       guide = guide_colorbar(
+                       barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                       barheight = unit(0.4, "cm"),
+                       ticks = TRUE,
+                       ticks.colour = "white",
+                       ticks.linewidth = 0.8)) +
+  scale_color_viridis_c(limits = c(1,40), 
+                        breaks = c(1, 2, 4, 8, 16, 32, 40), 
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species exit count",
+       color = "species exit count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt"))
+```
+
+```{r}
+plot_exit_10_density <- ggplot(spp_exit_pxls_45_2050, aes(x = y)) +
+  geom_density(fill = "darkmagenta", alpha = 0.5) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "",
+       y = "") +
+  theme(plot.margin = margin(0, 0, 0, 0))
+```
+
+```{r}
+exit_combined_plot <- plot_exit_10_map + plot_exit_10_density + 
+  plot_annotation(title = "Species exit, RCP 4.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom") 
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/iucn_atrisk_spp_entry_10pxl_map_rcp45_072926.png"), entry_combined_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/iucn_atrisk_spp_exit_10pxl_map_rcp45_072926.png"), exit_combined_plot, width = 10, height = 5, dpi = 300)
+```
+
+## Bivariate plot
+
+Code created with assistance from Claude to categorize the raster entry and exit pixels into a bivariate color scheme using the following categories to create a 3x3 grid:
+* 0 species entry and 0 species exit
+* 0 species entry and 1 species exit
+* 1 species entry and 0 species exit
+* 1 species entry and 1 species exit
+* 2+ species entry and 2+ species exit
+
+```{r}
+# Merge the entry and exit dataframes so that there are the same number of pixels in each raster
+spp_entry_exit_45_2050 <- full_join(spp_entry_pxls_45_2050, spp_exit_pxls_45_2050) %>% 
+  # Replace NA with 0
+  mutate(n_entry_spp = replace_na(n_entry_spp, 0),
+         n_exit_spp = replace_na(n_exit_spp, 0))
+```
+
+```{r}
+# Create a new column that categorizes the number of species entry and exit into 3 categories: 0, 1, and 2+
+spp_entry_exit_cat_45_2050 <- spp_entry_exit_45_2050 %>% 
+  # Assign numeric_category
+  mutate(entry_cat = case_when(n_entry_spp == 0 ~ 1,
+                               n_entry_spp == 1 ~ 2,
+                               n_entry_spp >= 2 ~ 3),
+         exit_cat = case_when(n_exit_spp == 0 ~ 1,
+                              n_exit_spp == 1 ~ 2,
+                              n_exit_spp >= 2 ~ 3)) %>% 
+  # Create a new column that combines the entry and exit categories into a single category
+  mutate(entry_exit_cat = (exit_cat - 1) * 3 + entry_cat)
+```
+
+```{r}
+# Define numeric categories for the bivariate color scheme
+bivar_levels <- data.frame(
+  entry_exit_cat    = 1:9,
+  label = c(
+    "En0_Ex0", "En1_Ex0", "En2_Ex0",   # exits = 0
+    "En0_Ex1", "En1_Ex1", "En2_Ex1",   # exits = 1
+    "En0_Ex2", "En1_Ex2", "En2_Ex2"    # exits = 2+
+  )
+)
+spp_entry_exit_cat_45_2050 <- left_join(spp_entry_exit_cat_45_2050, bivar_levels)
+```
+
+```{r}
+# Color palette
+# Entries increase left → right (blue axis)
+# Exits increase bottom → top (pink/purple axis)
+bivar_colors <- c(
+  "En0_Ex0" = "#e8e8e8",  # entries=0,   exits=0
+  "En1_Ex0" = "#ace4e4",  # entries=1, exits=0
+  "En2_Ex0" = "#5ac8c8",  # entries=2+,  exits=0
+  "En0_Ex1" = "#dfb0d6",  # entries=0,   exits=1
+  "En1_Ex1" = "#a5add3",  # entries=1, exits=1
+  "En2_Ex1" = "#5698b9",  # entries=2+,  exits=1
+  "En0_Ex2" = "#be64ac",  # entries=0,   exits=2+
+  "En1_Ex2" = "#8c62aa",  # entries=1, exits=2+
+  "En2_Ex2" = "#3b4994"   # entries=2+,  exits=2+
+)
+```
+
+```{r}
+biplot <- ggplot() +
+  geom_sf(data = eez_simple_sf, fill = "#e8e8e8") +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(title = "Species exits vs entries, RCP 4.5 2050",
+       x = "",
+       y = "")
+```
+
+```{r}
+# Create legend for bivariate color scheme
+legend_df <- expand.grid(entries = 1:3, exits = 1:3)
+legend_df$label <- paste0("En", legend_df$entries - 1, "_Ex", legend_df$exits - 1)
+
+legend_biplot <- ggplot(legend_df, aes(x = entries, y = exits, fill = label)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  scale_fill_manual(values = bivar_colors) +
+  scale_x_continuous(breaks = 1:3, labels = c("0", "1", "2+")) +
+  scale_y_continuous(breaks = 1:3, labels = c("0", "1", "2+")) +
+  labs(x = "Entries →", y = "Exits →") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text       = element_text(size = 8),
+    axis.title      = element_text(size = 9)
+  )
+```
+
+```{r}
+# Combine plot
+bivariate_map <- ggdraw() +
+  draw_plot(biplot,    0,    0,    1,    1) +
+  draw_plot(legend_biplot, 0.75, 0.75, 0.2, 0.25)
+```
+
+# Add density plot to bivariate map
+
+```{r}
+biplot_density <-ggplot() +
+  geom_density(data = spp_exit_pxls_45_2050, aes(x = y),fill = "#be64ac", color = "#be64ac", alpha = 0.5, size = 1) +
+  geom_density(data = spp_entry_pxls_45_2050, aes(x = y),fill = "#5698b9", color = "#5698b9", alpha = 0.5, size = 1) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "",
+       y = "") +
+  theme(plot.margin = margin(0, 0, 0, 0))
+```
+
+```{r}
+biplot_2 <- ggplot() +
+  geom_sf(data = eez_simple_sf, fill = "#e8e8e8") +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) +
+  labs(title = "",
+       x = "",
+       y = "") 
+```
+
+```{r}
+biplot_and_density <- biplot_2 + biplot_density + 
+  plot_annotation(title = "Species exit vs entry, RCP 4.5 2050") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "none") 
+```
+
+```{r}
+biplot_all <- ggdraw() +
+  draw_plot(biplot_and_density,    0,    0,    1,    1) +
+  draw_plot(legend_biplot, 0.6, 0.8, 0.2, 0.2)
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/iucn_atrisk_spp_entry_exit_density_10pxl_map_rcp45_073026.png"), biplot_all, width = 10, height = 5, dpi = 300)
+```
+
+# Top species entry / exit by EEZ
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- spp_eez_pxl_count %>% 
+  # Drop overlapping claim EEZs
+  filter(MRGID %in% eez_200nm_list) %>%
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by sovereign EEZ
+eez_spp_change_sov_counts <- left_join(eez_spp_pxls_long, eez %>% filter(MRGID %in% eez_200nm_list)) %>% 
+  group_by(SOVEREIGN1, MRGID_SOV1, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+Now, France, North Korea, United Kingdom, Russia, and United Kingdom are the top five for species entry. France is also at the top of the list for species exits with 227 species exits (for France, across their EEZ subparts there are 227 instances of species entirely leaving EEZ regions - pretty interesting). In comparision, there are 11 species exits for France if you dissolve the subparts of their EEZ. 
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by  EEZ region
+eez_spp_change_counts <- left_join(eez_spp_pxls_long, eez %>% filter(MRGID %in% eez_200nm_list)) %>% 
+  group_by(MRGID, GEONAME, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+eez_c_f <- eez_spp_change_counts  %>% 
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
+  mutate(continued_presence = replace_na(continued_presence, 0),
+         exit_from_historical = replace_na(exit_from_historical, 0),
+         entry_into_new = replace_na(entry_into_new, 0),
+         no_presence = replace_na(no_presence, 0)) %>%
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/current_spp,
+         spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
+
+```{r}
+eez_area <- eez %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  st_drop_geometry() %>% 
+  dplyr::select(MRGID, AREA_KM2)
+```
+
+```{r}
+# Merge in EEZ area
+eez_c_f_area <- left_join(eez_c_f, eez_area) %>% 
+  mutate(entry_per_km2 = entry_into_new/AREA_KM2,
+         exit_per_km2 = exit_from_historical/AREA_KM2)
+```
+
+```{r}
+eez_sov_c_f <- eez_spp_change_sov_counts  %>% 
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
+  mutate(continued_presence = replace_na(continued_presence, 0),
+         exit_from_historical = replace_na(exit_from_historical, 0),
+         entry_into_new = replace_na(entry_into_new, 0),
+         no_presence = replace_na(no_presence, 0)) %>%
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/current_spp,
+         spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
+
+# Entry and exit species percent by current IUCN listed species
+
+```{r}
+# Read in current global least concern species 
+lc_sum_current_neg90_neg180 <- readRDS(here("data/iucn_least_concern/iucn_lc_current_neg180_to_neg90_080526.rds"))
+
+lc_sum_current_neg90_zero <- readRDS(here("data/iucn_least_concern/iucn_lc_current_neg90_to_zero_080526.rds"))
+
+lc_sum_current_zero_90 <- readRDS(here("data/iucn_least_concern/iucn_lc_current_zero_to_90_080526.rds"))
+
+lc_sum_current_90_180 <- readRDS(here("data/iucn_least_concern/iucn_lc_current_90_to_180_080526.rds"))
+```
+
+```{r}
+# Read in current global threatened species 
+threat_sum_current_neg90_neg180 <- readRDS(here("data/iucn_atrisk_count_current_neg90_neg180_080526.rds"))
+
+threat_sum_current_neg90_zero <- readRDS(here("data/iucn_atrisk_count_current_neg90_zero_080526.rds"))
+
+threat_sum_current_zero_90 <- readRDS(here("data/iucn_atrisk_count_current_zero_90_080526.rds"))
+
+threat_sum_current_90_180 <- readRDS(here("data/iucn_atrisk_count_current_90_180_080526.rds"))
+```
+
+```{r}
+current_lc_threat_sum_df <- full_join(bind_rows(lc_sum_current_neg90_neg180,
+                                           lc_sum_current_neg90_zero,
+                                           lc_sum_current_zero_90,
+                                           lc_sum_current_90_180),
+                              bind_rows(threat_sum_current_neg90_neg180,
+                                    threat_sum_current_neg90_zero,
+                                    threat_sum_current_zero_90,
+                                    threat_sum_current_90_180))
+```
+
+```{r}
+# Join with species entry for RCP 4.5 2050 with current least concern and at-risk species
+# Maintaining a consistent denominator to calculate the percent of species entering or exiting EEZs relative to the current number of species in each EEZ
+current_lc_threat_count_entry <- left_join(spp_entry_pxls_45_2050,
+                                           current_lc_threat_sum_df)
+```
+
+```{r}
+n_entry_perc_allspp <- current_lc_threat_count_entry %>% 
+  # replace na with 0 
+  replace_na(0) %>% 
+  mutate(n_entry_perc = round(100 * n_entry_spp/(N + N_atrisk), 2))
+```
+
+```{r}
+# Plot percent entry pixels as percentage of current species present
+plot_perc_entry_current <- ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = n_entry_perc_allspp, aes(x = x, y = y,
+                                               fill = n_entry_perc,
+                                               color = n_entry_perc)) +
+  scale_fill_viridis_c(limits = c(0.03,100),
+                      trans = "log",
+                      option = "plasma",
+                      breaks = c(0.03, 1, 5, 10, 25, 50, 100),
+                      labels = c(0.03, 1, 5, 10, 25, 50, 100),
+                      direction = -1,
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(0.03,100), 
+                        trans = "log",
+                        option = "plasma",
+                        breaks = c(0.03, 1, 5, 10, 25, 50, 100),
+                        labels = c(0.03, 1, 5, 10, 25, 50, 100),
+                        direction = -1,
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species entry perc",
+       color = "species entry perc",
+       title = "Percent of current IUCN species that are new at-risk species by EEZ region",
+       subtitle = "RCP 4.5 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+# Join with species exit for RCP 4.5 2050 with current least concern and at-risk species
+# Maintaining a consistent denominator to calculate the percent of species entering or exiting EEZs relative to the current number of species in each EEZ
+current_lc_threat_count_exit <- left_join(spp_exit_pxls_45_2050,
+                                           current_lc_threat_sum_df)
+```
+
+```{r}
+n_exit_perc_allspp <- current_lc_threat_count_exit %>% 
+  # replace na with 0 
+  replace_na(0) %>% 
+  mutate(n_exit_perc = round(100 * n_exit_spp/(N + N_atrisk), 2))
+```
+
+```{r}
+# Plot percent exit pixels as percentage of current species present
+plot_perc_exit_current <- ggplot() +
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = n_exit_perc_allspp, aes(x = x, y = y,
+                                               fill = n_exit_perc,
+                                               color = n_exit_perc)) +
+  scale_fill_viridis_c(limits = c(0.03,100),
+                      trans = "log",
+                      option = "plasma",
+                      breaks = c(0.03, 1, 5, 10, 25, 50, 100),
+                      labels = c(0.03, 1, 5, 10, 25, 50, 100),
+                      direction = -1,
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(0.03,100), 
+                        trans = "log",
+                        option = "plasma",
+                        breaks = c(0.03, 1, 5, 10, 25, 50,100),
+                        labels = c(0.03, 1, 5, 10, 25, 50, 100),
+                        direction = -1,
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() + 
+  labs(fill = "species exit perc",
+       color = "species exit perc",
+       title = "Percent of current IUCN species that are at-risk species loss by EEZ region",
+       subtitle = "RCP 4.5 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+# Save plot of percent entry and percent exits of current IUCN listed species
+ggsave(here("figures/iucn_atrisk_perc_exit_spp_rcp45_2050_080626.png"), plot_perc_exit_current, width = 10, height = 5, dpi = 300)
+
+ggsave(here("figures/iucn_atrisk_perc_entry_spp_rcp45_2050_080626.png"), plot_perc_entry_current, width = 10, height = 5, dpi = 300)
+```
