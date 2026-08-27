@@ -404,8 +404,22 @@ eez_c_f <- eez_spp_change_counts  %>%
 ```
 
 ```{r}
+eez_area <- eez %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  st_drop_geometry() %>% 
+  dplyr::select(MRGID, AREA_KM2)
+```
+
+```{r}
+# Merge in EEZ area
+eez_c_f_area <- left_join(eez_c_f, eez_area) %>% 
+  mutate(entry_per_km2 = entry_into_new/AREA_KM2,
+         exit_per_km2 = exit_from_historical/AREA_KM2)
+```
+
+```{r}
 # Save spsecies change data by EEZ
-write_csv(eez_c_f, here("data/iucn_atrisk_eez_spp_change_all_scenarios.csv"))
+write_csv(eez_c_f_area, here("data/iucn_atrisk_eez_spp_change_all_scenarios.csv"))
 ```
 
 ```{r}
