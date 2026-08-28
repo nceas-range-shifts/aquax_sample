@@ -437,6 +437,148 @@ eez_sov_c_f <- eez_spp_change_sov_counts  %>%
          ssi = (2 * continued_presence)/(current_spp + future_spp)) 
 ```
 
+# Pixel map hotspots
+
+```{r}
+library(rnaturalearth)
+globe <- ne_countries(scale = "large", returnclass = "sf")
+```
+
+```{r}
+# Sea of Japan
+sea_of_japan <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_pxls_45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  
+  scale_y_continuous(limits = c(29, 48)) +
+  scale_x_continuous(limits = c(119, 148)) +
+  scale_fill_viridis_c(limits = c(1, 16), 
+                      breaks = c(1, 2, 4, 8, 16),
+                      direction = -1,
+                      trans = "sqrt", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                        direction = -1,
+                        trans = "sqrt", # visually stretches the lower value data
+                        guide = "none")  +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  theme_void() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       title = "Sea of Japan",
+       #subtitle = "SSP2-4.5, 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+```{r}
+# Black Sea 
+black_sea <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_pxls_45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  
+  scale_y_continuous(limits = c(39, 49)) +
+  scale_x_continuous(limits = c(25, 43)) +
+  scale_fill_viridis_c(limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                      direction = -1,
+                      trans = "sqrt", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                        direction = -1,
+                        trans = "sqrt", # visually stretches the lower value data
+                        guide = "none")  +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  theme_void() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       title = "Black Sea",
+       #subtitle = "SSP2-4.5, 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(r = 5,
+                            l = 5)) 
+```
+
+```{r}
+# Baltic Sea
+baltic_sea <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2") +
+  geom_sf(data = eez_simple_sf, size = 0.01) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_pxls_45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  
+  scale_y_continuous(limits = c(54, 66)) +
+  scale_x_continuous(limits = c(1, 29)) +
+  scale_fill_viridis_c(limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                      direction = -1,
+                      trans = "sqrt", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                        direction = -1,
+                        trans = "sqrt", # visually stretches the lower value data
+                        guide = "none")  +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  theme_void() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       title = "Baltic Sea",
+       #subtitle = "SSP2-4.5, 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(r = 5)) 
+```
+
+```{r}
+hotspots <- baltic_sea + black_sea + sea_of_japan + 
+  plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
+  plot_layout(ncol = 3,
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Save hotspots map 
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_hotspots_082826.png"), hotspots, width = 10, height = 5, dpi = 300)
+```
+
 # Entry and exit species percent by current IUCN listed species
 
 ```{r}
