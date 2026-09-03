@@ -1,0 +1,316 @@
+---
+title: "Untitled"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(patchwork)
+library(cowplot)
+library(collapse)
+```
+
+This document creates some more focused plots for the data calculated in 01_iucn_aquax_eez_overlap_db.qmd and 02_iucn_aquax_rangearea.qmd. It saves figures for RCP 4.5 2050.
+
+## Read in threatened species data
+
+```{r}
+# Spp in EEZs
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels
+spp_entry_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_entry_pxls_072826.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_exit_pxls_072926.rds"))
+```
+
+```{r}
+# Species range area
+area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
+```
+
+## EEZs
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez <- st_read('/Users/abowd/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
+eez_200nm_list <- eez %>% 
+  filter(POL_TYPE == "200NM") %>% 
+  pull(MRGID)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list)
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez_simple_sf, eez_raster_blank, field = "MRGID")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>% 
+  # Round so that the X and Y match the AquaX data (which is rounded to 3 decimal places)
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
+# Pixel map hotspots
+
+```{r}
+library(rnaturalearth)
+globe <- ne_countries(scale = "large", returnclass = "sf")
+```
+
+```{r}
+# Sea of Japan
+sea_of_japan <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_pxls_45_2050, aes(x = x, y = y,
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp)) +
+  
+  scale_y_continuous(limits = c(29, 48)) +
+  scale_x_continuous(limits = c(119, 148)) +
+  scale_fill_viridis_c(limits = c(1, 16), 
+                      breaks = c(1, 2, 4, 8, 16),
+                      direction = -1,
+                      trans = "sqrt", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                        direction = -1,
+                        trans = "sqrt", # visually stretches the lower value data
+                        guide = "none")  +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  theme_void() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       title = "Sea of Japan",
+       #subtitle = "SSP2-4.5, 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+#Find the species moving into North Korea, South Korea, and Russia and plot these
+
+```{r}
+# Organize dataframe so that's it's easier to select a scenario and compare to current
+eez_spp_pxls_long <- spp_eez_pxl_count %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  # Set 10 pixel threshold (at least ten pixels need in EEZ for species presence)
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# 65 species entering the Sea of Japan EEZ (MRGID 8328, 8327, 5690) under RCP4.5 in 2050 (tricky with Russia being such a large EEZ)
+sea_japan_entry_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% c(8328, 8327, 5690)) %>%
+  filter(scenario == "RCP45_2050") %>% 
+  filter(spp_change == "entry into new") 
+
+```
+
+# Read in AquaX files 
+
+```{r}
+# read in meta data on the aquax species
+load("/home/shares/data-aquax/META_02122025.Rdata")
+```
+
+```{r}
+meta_clean <- META %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+## Sea of Japan - entry species 
+Plot the current range of the species entering the Sea of Japan region
+
+```{r}
+# Get aphiaids for the reef building corals entering Sea of Japan
+sea_japan_aphiaid <- unique(sea_japan_entry_spp$aphiaid)
+```
+
+```{r}
+df_sea_japan <- df %>% 
+  filter(aphiaid %in% sea_japan_aphiaid)
+
+```
+
+We can use the least concern count function to map the ranges of all the reef building corals entering Sea of Japan.
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+```{r}
+# Run Sea of Japan coral current species (don't need parallel)
+system.time({
+  sea_japan_all_current_list <- lapply(sea_japan_aphiaid, 
+                                       FUN = least_concern_count, 
+                                       df = df_sea_japan, 
+                                       s = "Current",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+sea_japan_all_current_df <- bind_rows(sea_japan_all_current_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (4 seconds)
+system.time({
+sea_japan_all_current_sum_df <- sea_japan_all_current_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = sea_japan_all_current_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_y_continuous(limits = c(29, 48)) +
+  scale_x_continuous(limits = c(119, 148)) +
+  scale_fill_viridis_c(option = "viridis",
+direction = -1,
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 18, 24, 30, 56)) +
+  scale_color_viridis_c(option = "viridis",
+                      direction = -1,
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 18, 24, 30, 56)) +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Current range of species entering Sea of Japan EEZs",
+       fill = "Count",
+       color = "Count") +
+  theme_minimal()
+```
+
+```{r}
+# Run Sea of Japan coral current species (don't need parallel)
+system.time({
+  sea_japan_all_future_list <- lapply(sea_japan_aphiaid, 
+                                       FUN = least_concern_count, 
+                                       df = df_sea_japan, 
+                                       s = "RCP45_2050",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+sea_japan_all_future_df <- bind_rows(sea_japan_all_future_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (3 seconds)
+system.time({
+sea_japan_all_future_sum_df <- sea_japan_all_future_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = sea_japan_all_future_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_y_continuous(limits = c(29, 48)) +
+  scale_x_continuous(limits = c(119, 148)) +
+  scale_fill_viridis_c(option = "viridis",
+                        direction = -1,
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 18, 24, 30, 56)) +
+  scale_color_viridis_c(option = "viridis",
+                        direction = -1,
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 18, 24, 30, 56)) +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Future range of species entering Sea of Japan EEZs",
+       fill = "Count",
+       color = "Count") +
+  theme_minimal()
+```
