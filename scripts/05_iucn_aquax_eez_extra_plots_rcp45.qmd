@@ -399,7 +399,7 @@ entry_exit_barplot <- ggplot() +
 
 ```{r}
 # Save only the bar plot
-ggsave(here("figures/iucn_atrisk_taxon_entry_exit_rcp45_090226.png"), entry_exit_barplot, width = 7, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_taxon_entry_exit_rcp45_090226.png"), entry_exit_barplot, width = 10, height = 8, dpi = 300)
 
 ```
 
