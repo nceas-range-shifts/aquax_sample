@@ -167,6 +167,16 @@ sea_japan_entry_spp <- eez_spp_pxls_long %>%
 
 ```
 
+```{r}
+# 19 species entering the Baltic Sea EEZ (MRGID 5694, 5690, 5684, 5683, 5675, 5676, 5669, 5687, 5674) under RCP4.5 in 2050 (tricky with Russia being such a large EEZ)
+baltic_entry_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% c(5694, 5690, 5684, 5683, 5675, 5676, 5669, 5687, 5674)) %>%
+  filter(MRGID != 5690) %>% # remove russia (doesn't look like there are any species entries on map)
+  filter(scenario == "RCP45_2050") %>% 
+  filter(spp_change == "entry into new") 
+
+```
+
 # Read in AquaX files 
 
 ```{r}
