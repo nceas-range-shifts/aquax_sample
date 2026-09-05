@@ -42,6 +42,11 @@ spp_exit_pxls <- read_rds(here("data/iucn_atrisk_10pxlthres_exit_pxls_072926.rds
 area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
 ```
 
+```{r}
+spp_entry_pxls_45_2050 <- spp_entry_pxls %>% 
+  filter(scenario == "RCP45_2050") 
+```
+
 ## EEZs
 
 ```{r}
@@ -177,6 +182,16 @@ baltic_entry_spp <- eez_spp_pxls_long %>%
 
 ```
 
+```{r}
+# 18 species entering the Black Sea EEZ (MRGID 25206, 25205, 25201, 25203, 25202, 25204) under RCP4.5 in 2050 (tricky with Russia being such a large EEZ)
+black_sea_entry_spp <- eez_spp_pxls_long %>% 
+  filter(MRGID %in% c(5697, 5695, 5690, 5689, 5672, 5678)) %>%
+  #filter(MRGID != 5690) %>% # remove russia (only a few entries in the black sea portion)
+  filter(scenario == "RCP45_2050") %>% 
+  filter(spp_change == "entry into new") 
+
+```
+
 # Read in AquaX files 
 
 ```{r}
@@ -224,7 +239,7 @@ source(here( "common_fxns.R"))
 ```
 
 ```{r}
-# Run Sea of Japan coral current species (don't need parallel)
+# Run Sea of Japan current species (don't need parallel)
 system.time({
   sea_japan_all_current_list <- lapply(sea_japan_aphiaid, 
                                        FUN = least_concern_count, 
@@ -275,7 +290,7 @@ direction = -1,
 ```
 
 ```{r}
-# Run Sea of Japan coral current species (don't need parallel)
+# Run Sea of Japan future species (don't need parallel)
 system.time({
   sea_japan_all_future_list <- lapply(sea_japan_aphiaid, 
                                        FUN = least_concern_count, 
@@ -323,4 +338,287 @@ ggplot() +
        fill = "Count",
        color = "Count") +
   theme_minimal()
+```
+
+## Combine species entries and past range
+
+```{r}
+library(ggnewscale)
+```
+
+```{r}
+sea_of_japan <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01, fill = NA) +
+  #coord_sf(xlim = c(119, 148), ylim = c(29, 48), expand = FALSE, default_crs = st_crs(4326)) +
+  geom_tile(data = sea_japan_all_current_sum_df, aes(x = round(x,3), y = round(y,3), fill = N, color = N)) +
+  scale_y_continuous(limits = c(29, 48)) +
+  scale_x_continuous(limits = c(119, 148)) +
+  scale_fill_distiller(name = "Current count",
+                        palette = "Greys",
+                        direction = 1,
+                        trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56)) +
+  scale_color_distiller(name = "Current count",
+                      palette = "Greys",
+                      direction = 1,
+                      trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56),
+                      guide = "none") +
+  #scale_y_continuous(limits = c(37, 43)) +  
+  new_scale_fill() +
+  new_scale_color() +
+  geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
+                                               aes(x = round(x,3), y = round(y,3),
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp),
+                                               alpha = 0.7) +
+  scale_fill_viridis_c(name = "Entry count",
+                      limits = c(1, 16), 
+                      breaks = c(1, 2, 4, 8, 16),
+                      direction = -1,
+                      trans = "sqrt", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(name = "Entry count",
+                        limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                        direction = -1,
+                        trans = "sqrt", # visually stretches the lower value data
+                        guide = "none")  +    
+  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  theme_void() + 
+  labs(title = "Sea of Japan",
+       #subtitle = "SSP2-4.5, 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+## Baltic Sea - entry species 
+Plot the current range of the species entering the Baltic region. Dropped the species entering Russia, since they were not entering this portion of the Russian EEZ
+
+```{r}
+# Get aphiaids for the species entries for Baltic Sea
+baltic_aphiaid <- unique(baltic_entry_spp$aphiaid)
+```
+
+```{r}
+df_baltic <- df %>% 
+  filter(aphiaid %in% baltic_aphiaid)
+
+```
+
+We can use the least concern count function to map the ranges entering Baltic Sea.
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+```{r}
+# Run Baltic Sea current species (don't need parallel)
+system.time({
+  baltic_all_current_list <- lapply(baltic_aphiaid, 
+                                       FUN = least_concern_count, 
+                                       df = df_baltic, 
+                                       s = "Current",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+baltic_all_current_df <- bind_rows(baltic_all_current_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (4 seconds)
+system.time({
+baltic_all_current_sum_df <- baltic_all_current_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+baltic <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01, fill = NA) +
+  geom_tile(data = baltic_all_current_sum_df, aes(x = round(x,3), y = round(y,3), fill = N, color = N)) +
+  scale_y_continuous(limits = c(54, 66)) +
+  scale_x_continuous(limits = c(1, 29)) +
+  scale_fill_distiller(name = "Current count",
+                        palette = "Greys",
+                        direction = 1,
+                        trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56)) +
+  scale_color_distiller(name = "Current count",
+                      palette = "Greys",
+                      direction = 1,
+                      trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56),
+                      guide = "none") +
+  #scale_y_continuous(limits = c(37, 43)) +  
+  new_scale_fill() +
+  new_scale_color() +
+  geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
+                                               aes(x = round(x,3), y = round(y,3),
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp),
+                                               alpha = 0.7) +
+  scale_fill_viridis_c(name = "Entry count",
+                      limits = c(1, 16), 
+                      breaks = c(1, 2, 4, 8, 16),
+                      direction = -1,
+                      trans = "sqrt", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(name = "Entry count",
+                        limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                        direction = -1,
+                        trans = "sqrt", # visually stretches the lower value data
+                        guide = "none")  +    
+  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  theme_void() + 
+  labs(title = "Baltic Sea",
+       #subtitle = "SSP2-4.5, 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+## Black Sea - entry species 
+Plot the current range of the species entering the Black Sea
+
+```{r}
+# Get aphiaids for the species entries for Black Sea
+black_sea_aphiaid <- unique(black_sea_entry_spp$aphiaid)
+```
+
+```{r}
+df_black_sea <- df %>% 
+  filter(aphiaid %in% black_sea_aphiaid)
+
+```
+
+We can use the least concern count function to map the ranges entering Black Sea.
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+```{r}
+# Run Black Sea current species (don't need parallel)
+system.time({
+  black_sea_all_current_list <- lapply(black_sea_aphiaid, 
+                                       FUN = least_concern_count, 
+                                       df = df_black_sea, 
+                                       s = "Current",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+black_sea_all_current_df <- bind_rows(black_sea_all_current_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (4 seconds)
+system.time({
+black_sea_all_current_sum_df <- black_sea_all_current_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+black_sea <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01, fill = NA) +
+  geom_tile(data = black_sea_all_current_sum_df, aes(x = round(x,3), y = round(y,3), fill = N, color = N)) +
+  scale_y_continuous(limits = c(38, 48)) +
+  scale_x_continuous(limits = c(25, 43)) +
+  scale_fill_distiller(name = "Current count",
+                        palette = "Greys",
+                        direction = 1,
+                        trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56)) +
+  scale_color_distiller(name = "Current count",
+                      palette = "Greys",
+                      direction = 1,
+                      trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56),
+                      guide = "none") +
+  #scale_y_continuous(limits = c(37, 43)) +  
+  new_scale_fill() +
+  new_scale_color() +
+  geom_tile(data = spp_entry_pxls_45_2050 ,
+                                               aes(x = round(x,3), y = round(y,3),
+                                               fill = n_entry_spp,
+                                               color = n_entry_spp),
+                                               alpha = 0.7) +
+  scale_fill_viridis_c(name = "Entry count",
+                      limits = c(1, 16), 
+                      breaks = c(1, 2, 4, 8, 16),
+                      direction = -1,
+                      trans = "sqrt", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(name = "Entry count",
+                        limits = c(1, 16), 
+                        breaks = c(1, 2, 4, 8, 16),
+                        direction = -1,
+                        trans = "sqrt", # visually stretches the lower value data
+                        guide = "none")  +    
+  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  theme_void() + 
+  labs(title = "Black Sea",
+       #subtitle = "SSP2-4.5, 2050",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+```{r}
+hotspots <- baltic + black_sea + sea_of_japan + 
+  plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
+  plot_layout(ncol = 3,
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Save hotspots map 
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_hotspots_former_range_090426.png"), hotspots, width = 10, height = 5, dpi = 300)
 ```
