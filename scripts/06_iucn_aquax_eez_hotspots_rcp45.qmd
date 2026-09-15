@@ -268,10 +268,10 @@ sea_japan_all_current_sum_df <- sea_japan_all_current_df %>%
 ggplot() +
   geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   geom_sf(data = eez_simple_sf, size = 0.01) +
-  coord_sf(expand = FALSE) +
+  #coord_sf(expand = c(0,0)) +
   geom_tile(data = sea_japan_all_current_sum_df, aes(x = x, y = y, fill = N, color = N)) +
-  scale_y_continuous(limits = c(29, 48)) +
-  scale_x_continuous(limits = c(119, 148)) +
+  scale_y_continuous(limits = c(29, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(119, 148), expand = c(0,0)) +
   scale_fill_viridis_c(option = "viridis",
 direction = -1,
                       limits = c(1, 56),
@@ -319,10 +319,10 @@ sea_japan_all_future_sum_df <- sea_japan_all_future_df %>%
 ggplot() +
   geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   geom_sf(data = eez_simple_sf, size = 0.01) +
-  coord_sf(expand = FALSE) +
+  #coord_sf(expand = FALSE) +
   geom_tile(data = sea_japan_all_future_sum_df, aes(x = x, y = y, fill = N, color = N)) +
-  scale_y_continuous(limits = c(29, 48)) +
-  scale_x_continuous(limits = c(119, 148)) +
+  scale_y_continuous(limits = c(29, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(119, 148), expand = c(0,0)) +
   scale_fill_viridis_c(option = "viridis",
                         direction = -1,
                       limits = c(1, 56),
@@ -352,17 +352,17 @@ sea_of_japan <- ggplot() +
   geom_sf(data = eez_simple_sf, size = 0.01, fill = NA) +
   #coord_sf(xlim = c(119, 148), ylim = c(29, 48), expand = FALSE, default_crs = st_crs(4326)) +
   geom_tile(data = sea_japan_all_current_sum_df, aes(x = round(x,3), y = round(y,3), fill = N, color = N)) +
-  scale_y_continuous(limits = c(29, 48)) +
-  scale_x_continuous(limits = c(119, 148)) +
-  scale_fill_distiller(name = "Current count",
+  scale_y_continuous(limits = c(29, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(119, 148), expand = c(0,0)) +
+  scale_fill_distiller(name = "Current range count",
                         palette = "Greys",
-                        direction = 1,
+                        direction = -1,
                         trans = "sqrt",
                       limits = c(1, 56),
                       breaks = c(1, 6, 12, 24, 56)) +
-  scale_color_distiller(name = "Current count",
+  scale_color_distiller(name = "Current range count",
                       palette = "Greys",
-                      direction = 1,
+                      direction = -1,
                       trans = "sqrt",
                       limits = c(1, 56),
                       breaks = c(1, 6, 12, 24, 56),
@@ -372,9 +372,8 @@ sea_of_japan <- ggplot() +
   new_scale_color() +
   geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
                                                aes(x = round(x,3), y = round(y,3),
-                                               fill = n_entry_spp,
-                                               color = n_entry_spp),
-                                               alpha = 0.7) +
+                                               fill = n_entry_spp),
+                                               alpha = 0.6) +
   scale_fill_viridis_c(name = "Entry count",
                       limits = c(1, 16), 
                       breaks = c(1, 2, 4, 8, 16),
@@ -386,13 +385,7 @@ sea_of_japan <- ggplot() +
                       ticks = TRUE,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
-  )) +
-  scale_color_viridis_c(name = "Entry count",
-                        limits = c(1, 16), 
-                        breaks = c(1, 2, 4, 8, 16),
-                        direction = -1,
-                        trans = "sqrt", # visually stretches the lower value data
-                        guide = "none")  +    
+  )) +    
   geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
   theme_void() + 
   labs(title = "Sea of Japan",
@@ -455,17 +448,17 @@ baltic <- ggplot() +
   geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   geom_sf(data = eez_simple_sf, size = 0.01, fill = NA) +
   geom_tile(data = baltic_all_current_sum_df, aes(x = round(x,3), y = round(y,3), fill = N, color = N)) +
-  scale_y_continuous(limits = c(54, 66)) +
-  scale_x_continuous(limits = c(1, 29)) +
-  scale_fill_distiller(name = "Current count",
+  scale_y_continuous(limits = c(54, 66), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(1, 29), expand = c(0, 0)) +
+  scale_fill_distiller(name = "Current range count",
                         palette = "Greys",
-                        direction = 1,
+                        direction = -1,
                         trans = "sqrt",
                       limits = c(1, 56),
                       breaks = c(1, 6, 12, 24, 56)) +
-  scale_color_distiller(name = "Current count",
+  scale_color_distiller(name = "Current range count",
                       palette = "Greys",
-                      direction = 1,
+                      direction = -1,
                       trans = "sqrt",
                       limits = c(1, 56),
                       breaks = c(1, 6, 12, 24, 56),
@@ -475,9 +468,8 @@ baltic <- ggplot() +
   new_scale_color() +
   geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
                                                aes(x = round(x,3), y = round(y,3),
-                                               fill = n_entry_spp,
-                                               color = n_entry_spp),
-                                               alpha = 0.7) +
+                                               fill = n_entry_spp),
+                                               alpha = 0.6) +
   scale_fill_viridis_c(name = "Entry count",
                       limits = c(1, 16), 
                       breaks = c(1, 2, 4, 8, 16),
@@ -489,13 +481,7 @@ baltic <- ggplot() +
                       ticks = TRUE,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
-  )) +
-  scale_color_viridis_c(name = "Entry count",
-                        limits = c(1, 16), 
-                        breaks = c(1, 2, 4, 8, 16),
-                        direction = -1,
-                        trans = "sqrt", # visually stretches the lower value data
-                        guide = "none")  +    
+  )) +   
   geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
   theme_void() + 
   labs(title = "Baltic Sea",
@@ -554,21 +540,108 @@ black_sea_all_current_sum_df <- black_sea_all_current_df %>%
 ```
 
 ```{r}
+# Run Black Sea future species (don't need parallel)
+system.time({
+  black_sea_all_future_list <- lapply(black_sea_aphiaid, 
+                                       FUN = least_concern_count, 
+                                       df = df_black_sea, 
+                                       s = "RCP45_2050",
+                                       n_threads = 1)
+})
+```
+
+```{r}
+black_sea_all_future_df <- bind_rows(black_sea_all_future_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (4 seconds)
+system.time({
+black_sea_all_future_sum_df <- black_sea_all_future_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount()
+})
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01, fill = NA) +
+  #coord_sf(expand = FALSE) +
+  geom_tile(data = black_sea_all_current_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_y_continuous(limits = c(38, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(25, 43), expand = c(0,0)) +
+  scale_fill_distiller(name = "Current species",
+                        palette = "Greys",
+                        direction = -1,
+                        trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56)) +
+  scale_color_distiller(name = "Current species",
+                      palette = "Greys",
+                      direction = -1,
+                      trans = "sqrt",
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 24, 56),
+                      guide = "none") +
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Current range of species entering Black Sea EEZs",
+       fill = "Count",
+       color = "Count",
+       position = "bottom") +
+  theme_void()
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, size = 0.01) +
+  #coord_sf(expand = FALSE) +
+  geom_tile(data = black_sea_all_future_sum_df, aes(x = x, y = y, fill = N, color = N)) +
+  scale_y_continuous(limits = c(38, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(25, 43), expand = c(0,0)) +
+  scale_fill_viridis_c(option = "viridis",
+                        direction = -1,
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 18, 24, 30, 56)) +
+  scale_color_viridis_c(option = "viridis",
+                        direction = -1,
+                      limits = c(1, 56),
+                      breaks = c(1, 6, 12, 18, 24, 30, 56)) +
+  # Otuline species entries in black
+  geom_tile(data = spp_entry_pxls_45_2050 ,
+                                               aes(x = round(x,3), y = round(y,3)),
+                                               color = "black",
+                                               fill = NA) + 
+  #scale_y_continuous(limits = c(37, 43)) +
+  #scale_x_continuous(limits = c(122, 134)) +
+  #geom_sf(data = north_korea, fill = "cornsilk2", color = "black", size = 0.5)+
+  labs(title = "Future range of species entering Black Sea EEZs",
+       fill = "Count",
+       color = "Count") +
+  theme_minimal()
+```
+
+```{r}
 black_sea <- ggplot() +
   geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   geom_sf(data = eez_simple_sf, size = 0.01, fill = NA) +
   geom_tile(data = black_sea_all_current_sum_df, aes(x = round(x,3), y = round(y,3), fill = N, color = N)) +
-  scale_y_continuous(limits = c(38, 48)) +
-  scale_x_continuous(limits = c(25, 43)) +
-  scale_fill_distiller(name = "Current count",
+  scale_y_continuous(limits = c(38, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(25, 43), expand = c(0,0)) +
+  scale_fill_distiller(name = "Current range count",
                         palette = "Greys",
-                        direction = 1,
+                        direction = -1,
                         trans = "sqrt",
                       limits = c(1, 56),
                       breaks = c(1, 6, 12, 24, 56)) +
-  scale_color_distiller(name = "Current count",
+  scale_color_distiller(name = "Current range count",
                       palette = "Greys",
-                      direction = 1,
+                      direction = -1,
                       trans = "sqrt",
                       limits = c(1, 56),
                       breaks = c(1, 6, 12, 24, 56),
@@ -578,9 +651,8 @@ black_sea <- ggplot() +
   new_scale_color() +
   geom_tile(data = spp_entry_pxls_45_2050 ,
                                                aes(x = round(x,3), y = round(y,3),
-                                               fill = n_entry_spp,
-                                               color = n_entry_spp),
-                                               alpha = 0.7) +
+                                               fill = n_entry_spp),
+                                               alpha = 0.6) +
   scale_fill_viridis_c(name = "Entry count",
                       limits = c(1, 16), 
                       breaks = c(1, 2, 4, 8, 16),
@@ -593,12 +665,6 @@ black_sea <- ggplot() +
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  scale_color_viridis_c(name = "Entry count",
-                        limits = c(1, 16), 
-                        breaks = c(1, 2, 4, 8, 16),
-                        direction = -1,
-                        trans = "sqrt", # visually stretches the lower value data
-                        guide = "none")  +    
   geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
   theme_void() + 
   labs(title = "Black Sea",
@@ -620,5 +686,5 @@ hotspots <- baltic + black_sea + sea_of_japan +
 
 ```{r}
 # Save hotspots map 
-ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_hotspots_former_range_090426.png"), hotspots, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_hotspots_former_range_091526.png"), hotspots, width = 10, height = 5, dpi = 300)
 ```
