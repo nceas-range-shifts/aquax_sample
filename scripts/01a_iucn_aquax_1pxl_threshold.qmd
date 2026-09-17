@@ -185,6 +185,7 @@ eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>%
 ```
 
 # Run full set - species entries
+If Positron doesn't work, try Rstudio
 
 ```{r}
 # Took 34 seconds over 30 cores
@@ -315,3 +316,189 @@ entry_rcp45_2100_sum_df <- entry_rcp45_2100_df %>%
 })
 ```
 
+```{r}
+# Took 34 seconds over 30 cores (if doesn't work, helps to clear memory)
+system.time({
+  entry_rcp85_2100_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP85_2100",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+entry_rcp85_2100_df <- bind_rows(entry_rcp85_2100_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+entry_rcp85_2100_sum_df <- entry_rcp85_2100_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP85_2100")
+})
+```
+
+```{r}
+# Bind the entry cells together, add in GEONAME for EEZs
+eez_sum_threatened_scenarios <- rbind(entry_rcp45_2050_sum_df,
+                                      entry_rcp45_2100_sum_df,
+                                      entry_rcp85_sum_df,
+                                      entry_rcp85_2100_sum_df) %>% 
+  # Threshold for species presence is 1 pixel
+  mutate(pxl_thres = "1") %>% 
+  rename(n_entry_spp = N)
+
+eez_sum_threatened_scenarios_mrgid <- left_join(eez_sum_threatened_scenarios, eez_ids) %>% 
+  dplyr::select(x, y, GEONAME, MRGID, pxl_thres, scenario, n_entry_spp)
+```
+
+```{r}
+# save data as rds
+saveRDS(eez_sum_threatened_scenarios_mrgid, here("data/iucn_atrisk_1pxlthres_entry_pxls_091626.rds"))
+```
+
+## Species exits
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_exit <- eez_spp_pxls_long %>% 
+  filter(spp_change == "exit from historical")
+```
+
+## Run full sample for exits
+
+```{r}
+# Took 30 seconds over 30 cores
+system.time({
+  exit_rcp85_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_exit_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP85_2050",
+                                       eez_spp_exit = eez_spp_exit,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+exit_rcp85_df <- bind_rows(exit_rcp85_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+exit_rcp85_sum_df <- exit_rcp85_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP85_2050")
+})
+```
+
+```{r}
+# Took 30 seconds over 30 cores
+system.time({
+  exit_rcp85_2100_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_exit_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP85_2100",
+                                       eez_spp_exit = eez_spp_exit,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+exit_rcp85_2100_df <- bind_rows(exit_rcp85_2100_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+exit_rcp85_2100_sum_df <- exit_rcp85_2100_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP85_2100")
+})
+```
+
+```{r}
+# Took 30 seconds over 30 cores
+system.time({
+  exit_rcp45_2050_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_exit_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2050",
+                                       eez_spp_exit = eez_spp_exit,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+exit_rcp45_2050_df <- bind_rows(exit_rcp45_2050_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+exit_rcp45_2050_sum_df <- exit_rcp45_2050_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050")
+})
+```
+
+```{r}
+# Took 30 seconds over 30 cores
+system.time({
+  exit_rcp45_2100_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_exit_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2100",
+                                       eez_spp_exit = eez_spp_exit,
+                                       eez_raster_df = eez_raster_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+exit_rcp45_2100_df <- bind_rows(exit_rcp45_2100_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+exit_rcp45_2100_sum_df <- exit_rcp45_2100_df %>% 
+  fgroup_by(MRGID, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2100")
+})
+```
+
+```{r}
+# Bind the exit cells together, add in GEONAME for EEZs
+eez_sum_exit_scenarios <- rbind(exit_rcp45_2050_sum_df,
+                                      exit_rcp45_2100_sum_df,
+                                      exit_rcp85_sum_df,
+                                      exit_rcp85_2100_sum_df) %>% 
+  # Threshold for species presence is 1 pixel
+  mutate(pxl_thres = "1") %>% 
+  rename(n_exit_spp = N)
+
+eez_sum_exit_scenarios_mrgid <- left_join(eez_sum_exit_scenarios, eez_ids) %>% 
+  dplyr::select(x, y, GEONAME, MRGID, pxl_thres, scenario, n_exit_spp)
+```
+
+```{r}
+# save data as rds
+saveRDS(eez_sum_exit_scenarios_mrgid, here("data/iucn_atrisk_1pxlthres_exit_pxls_091626.rds"))
+```
