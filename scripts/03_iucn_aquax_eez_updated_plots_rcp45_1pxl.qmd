@@ -78,6 +78,87 @@ eez_simple_sf <- eez %>%
   filter(MRGID %in% eez_200nm_list)
 ```
 
+## Compare species entry/exit thresholds
+
+```{r}
+eez_spp_pxls_long_1pxl <- spp_eez_pxl_count %>% 
+  # Drop overlapping claim EEZs
+  filter(MRGID %in% eez_200nm_list) %>%
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  mutate(spp_change = case_when(n_current < 1 &  pxl_count >= 1 ~ 'entry into new',
+                            n_current >= 1  & pxl_count < 1 ~ 'exit from historical',
+                            n_current < 1  & pxl_count < 1 ~ 'no presence',
+                            TRUE ~ 'continued presence')) %>% 
+  mutate(pxl_threshold = "1pxl") 
+
+eez_spp_pxls_long_10pxl <- spp_eez_pxl_count %>% 
+  # Drop overlapping claim EEZs
+  filter(MRGID %in% eez_200nm_list) %>%
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  mutate(spp_change = case_when(n_current < 10 &  pxl_count >= 10 ~ 'entry into new',
+                            n_current >= 10  & pxl_count < 10 ~ 'exit from historical',
+                            n_current < 10  & pxl_count < 10 ~ 'no presence',
+                            TRUE ~ 'continued presence')) %>% 
+  mutate(pxl_threshold = "10pxl")  
+
+eez_spp_pxls_long_100pxl <- spp_eez_pxl_count %>% 
+  # Drop overlapping claim EEZs
+  filter(MRGID %in% eez_200nm_list) %>%
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  mutate(spp_change = case_when(n_current < 100 &  pxl_count >= 100 ~ 'entry into new',
+                            n_current >= 100  & pxl_count < 100 ~ 'exit from historical',
+                            n_current < 100  & pxl_count < 100 ~ 'no presence',
+                            TRUE ~ 'continued presence')) %>% 
+  mutate(pxl_threshold = "100pxl")  
+                      
+```
+
+```{r}
+eez_spp_pxls_long_all <- bind_rows(eez_spp_pxls_long_1pxl, eez_spp_pxls_long_10pxl, eez_spp_pxls_long_100pxl) %>% filter(scenario == "RCP45_2050")
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by  EEZ region
+eez_spp_change_counts_all <- left_join(eez_spp_pxls_long_all, eez_simple) %>% 
+  group_by(MRGID, GEONAME, scenario, pxl_threshold, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+eez_c_f_all <- eez_spp_change_counts_all  %>% 
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>% 
+  mutate(continued_presence = replace_na(continued_presence, 0),
+         exit_from_historical = replace_na(exit_from_historical, 0),
+         entry_into_new = replace_na(entry_into_new, 0),
+         no_presence = replace_na(no_presence, 0)) %>%
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/current_spp,
+         spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
+
 ## Plot species pixels
 Only include 200 nm EEZs (no overlapping claims or joint regimes)
 
