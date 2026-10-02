@@ -830,7 +830,7 @@ black_sea_entry <- ggplot() +
   geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
                                                aes(x = round(x,3), y = round(y,3),
                                                fill = n_entry_spp)) +
-  scale_fill_viridis_c(name = "Entry count",
+  scale_fill_viridis_c(name = "Entry species count",
                       limits = c(1, 17), 
                       breaks = c(1, 2, 4, 8, 17),
                       option = "plasma",
