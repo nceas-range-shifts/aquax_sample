@@ -362,7 +362,7 @@ biplot <- ggplot() +
   scale_color_manual(values = bivar_colors, na.value = "white") +
   theme_minimal() +
   theme(legend.position = "none") +
-  labs(title = "Species exits vs entries, RCP 4.5 2050",
+  labs(#title = "Species exits vs entries, RCP 4.5 2050",
        x = "",
        y = "")
 ```
@@ -429,7 +429,7 @@ biplot_2 <- ggplot() +
 
 ```{r}
 biplot_and_density <- biplot_2 + biplot_density + 
-  plot_annotation(title = "Species exit vs entry, RCP 4.5 2050") +
+  plot_annotation(title = "") +
   plot_layout(widths = c(4, 1),
               axis_titles = "collect",
               guides = "collect") &
@@ -444,7 +444,7 @@ biplot_all <- ggdraw() +
 
 ```{r}
 # Save entry and exit maps
-ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_density_1pxl_map_rcp45_091726.png"), biplot_all, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_density_1pxl_map_rcp45_100226.png"), biplot_all, width = 10, height = 5, dpi = 300)
 ```
 
 # Top species entry / exit by EEZ
