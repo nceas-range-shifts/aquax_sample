@@ -68,6 +68,15 @@ eez_200nm_list <- c(eez_200nm_list, 5695)
 ```
 
 ```{r}
+# Get list of EEZs that are not POL_TYPE = 200NM
+eez_contested_list <- eez %>% 
+  filter(POL_TYPE != "200NM") %>%
+  # Remove Ukraine from this list
+  filter(MRGID != 5695) %>% 
+  pull(MRGID)
+```
+
+```{r}
 eez_simple <- eez %>% 
   dplyr::select(MRGID, GEONAME) %>% 
   st_drop_geometry() %>% 
@@ -76,6 +85,12 @@ eez_simple <- eez %>%
 eez_simple_sf <- eez %>% 
   dplyr::select(MRGID, GEONAME) %>% 
   filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+eez_contested_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_contested_list)
 ```
 
 ```{r}
@@ -147,7 +162,7 @@ sea_of_japan <- ggplot() +
         plot.margin = margin(l = 5)) 
 ```
 
-#Find the species moving into North Korea, South Korea, and Russia and plot these
+#Find the species moving into North Korea, South Korea, Russia, and Japan and plot these
 
 ```{r}
 # Organize dataframe so that's it's easier to select a scenario and compare to current
@@ -167,9 +182,9 @@ eez_spp_pxls_long <- spp_eez_pxl_count %>%
 ```
 
 ```{r}
-# 86 species entering the Sea of Japan EEZ (MRGID 8328, 8327, 5690) under RCP4.5 in 2050 (tricky with Russia being such a large EEZ)
+# 82 species entering the Sea of Japan EEZ (MRGID 8328, 8327, 8487, 5690) under RCP4.5 in 2050 (tricky with Russia being such a large EEZ)
 sea_japan_entry_spp <- eez_spp_pxls_long %>% 
-  filter(MRGID %in% c(8328, 8327, 5690)) %>%
+  filter(MRGID %in% c(8328, 8327, 8487, 5690)) %>%
   filter(scenario == "RCP45_2050") %>% 
   filter(spp_change == "entry into new") 
 
@@ -269,8 +284,6 @@ sea_japan_all_current_sum_df <- sea_japan_all_current_df %>%
 
 ```{r}
 sea_of_japan_current <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   #coord_sf(expand = c(0,0)) +
   geom_tile(data = sea_japan_all_current_sum_df, aes(x = x, y = y, fill = N)) +
   scale_y_continuous(limits = c(29, 48), expand = c(0,0)) +
@@ -287,7 +300,10 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  labs(title = "Sea of Japan",
+  geom_sf(data = eez_simple_sf, color = "yellow", size = 0.1, fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(#title = "Sea of Japan",
        fill = "Current range count", 
        x = "",
        y = "") +
@@ -324,8 +340,6 @@ sea_japan_all_future_sum_df <- sea_japan_all_future_df %>%
 
 ```{r}
 sea_of_japan_future <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   scale_y_continuous(limits = c(29, 48), expand = c(0,0)) +
   scale_x_continuous(limits = c(119, 148), expand = c(0,0)) +
   #coord_sf(expand = c(0,0)) +
@@ -344,7 +358,10 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  labs(title = "Sea of Japan",
+    geom_sf(data = eez_simple_sf, color = "yellow", size = 0.1, fill = "NA") +
+    geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+    geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(#title = "Sea of Japan",
        fill = "Future range count", 
        x = "",
        y = "") +
@@ -355,14 +372,12 @@ direction = 1,
 
 ```{r}
 sea_of_japan_entry <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   scale_y_continuous(limits = c(29, 48), expand = c(0,0)) +
   scale_x_continuous(limits = c(119, 148), expand = c(0,0)) +
   geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
                                                aes(x = round(x,3), y = round(y,3),
                                                fill = n_entry_spp)) +
-  scale_fill_viridis_c(name = "Entry count",
+  scale_fill_viridis_c(name = "Entry species count",
                       limits = c(1, 17), 
                       breaks = c(1, 2, 4, 8, 17),
                       option = "plasma",
@@ -375,7 +390,9 @@ sea_of_japan_entry <- ggplot() +
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +    
-  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  geom_sf(data = eez_simple_sf, fill = NA, size = 0.1, color = "yellow") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   theme_void() + 
   labs(title = "Sea of Japan",
        #subtitle = "SSP2-4.5, 2050",
@@ -386,8 +403,8 @@ sea_of_japan_entry <- ggplot() +
 ```
 
 ```{r}
-sea_of_japan_all <- sea_of_japan_current + sea_of_japan_future + sea_of_japan_entry + 
-  plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
+sea_of_japan_all <- sea_of_japan_entry + sea_of_japan_current + sea_of_japan_future + 
+  #plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
   plot_layout(ncol = 3,
               axis_titles = "collect") &
   theme(legend.position = "bottom")
@@ -525,8 +542,6 @@ baltic_all_future_sum_df <- baltic_all_future_df %>%
 
 ```{r}
 baltic_current <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   #coord_sf(expand = c(0,0)) +
   geom_tile(data = baltic_all_current_sum_df, aes(x = x, y = y, fill = N)) +
   scale_y_continuous(limits = c(54, 66), expand = c(0, 0)) +
@@ -543,7 +558,10 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  labs(title = "Baltic Sea",
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(#title = "Baltic Sea",
        fill = "Current range count", 
        x = "",
        y = "") +
@@ -554,8 +572,6 @@ direction = 1,
 
 ```{r}
 baltic_future <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   scale_y_continuous(limits = c(54, 66), expand = c(0, 0)) +
   scale_x_continuous(limits = c(1, 29), expand = c(0, 0)) +
   #coord_sf(expand = c(0,0)) +
@@ -572,7 +588,10 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  labs(title = "Baltic Sea",
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(#title = "Baltic Sea",
        fill = "Future range count", 
        x = "",
        y = "") +
@@ -583,14 +602,12 @@ direction = 1,
 
 ```{r}
 baltic_entry <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   scale_y_continuous(limits = c(54, 66), expand = c(0, 0)) +
   scale_x_continuous(limits = c(1, 29), expand = c(0, 0)) +
   geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
                                                aes(x = round(x,3), y = round(y,3),
                                                fill = n_entry_spp)) +
-  scale_fill_viridis_c(name = "Entry count",
+  scale_fill_viridis_c(name = "Entry species count",
                       limits = c(1, 17), 
                       breaks = c(1, 2, 4, 8, 17),
                       option = "plasma",
@@ -603,7 +620,9 @@ baltic_entry <- ggplot() +
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +    
-  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   theme_void() + 
   labs(title = "Baltic Sea",
        #subtitle = "SSP2-4.5, 2050",
@@ -614,8 +633,8 @@ baltic_entry <- ggplot() +
 ```
 
 ```{r}
-baltic_all <- baltic_current + baltic_future + baltic_entry + 
-  plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
+baltic_all <- baltic_entry + baltic_current + baltic_future + 
+  #plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
   plot_layout(ncol = 3,
               axis_titles = "collect") &
   theme(legend.position = "bottom")
@@ -746,8 +765,6 @@ black_sea_all_future_sum_df <- black_sea_all_future_df %>%
 
 ```{r}
 black_sea_current <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   #coord_sf(expand = c(0,0)) +
   geom_tile(data = black_sea_all_current_sum_df, aes(x = x, y = y, fill = N)) +
   scale_y_continuous(limits = c(38, 48), expand = c(0,0)) +
@@ -764,7 +781,10 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  labs(title = "Black Sea",
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(#title = "Black Sea",
        fill = "Current range count", 
        x = "",
        y = "") +
@@ -775,8 +795,6 @@ direction = 1,
 
 ```{r}
 black_sea_future <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   scale_y_continuous(limits = c(38, 48), expand = c(0,0)) +
   scale_x_continuous(limits = c(25, 43), expand = c(0,0)) +
   #coord_sf(expand = c(0,0)) +
@@ -793,7 +811,10 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  labs(title = "Black Sea",
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(#title = "Black Sea",
        fill = "Future range count", 
        x = "",
        y = "") +
@@ -804,8 +825,6 @@ direction = 1,
 
 ```{r}
 black_sea_entry <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
-  geom_sf(data = eez_simple_sf, size = 0.01, fill = "NA") +
   scale_y_continuous(limits = c(38, 48), expand = c(0,0)) +
   scale_x_continuous(limits = c(25, 43), expand = c(0,0)) +
   geom_tile(data = spp_entry_pxls_45_2050 %>% filter(MRGID %in% eez_200nm_list),
@@ -824,7 +843,9 @@ black_sea_entry <- ggplot() +
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +    
-  geom_sf(data = eez_simple_sf, fill = NA, color = "black", size = 0.01) +
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.1, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   theme_void() + 
   labs(title = "Black Sea",
        #subtitle = "SSP2-4.5, 2050",
@@ -835,8 +856,8 @@ black_sea_entry <- ggplot() +
 ```
 
 ```{r}
-black_sea_all <- black_sea_current + black_sea_future + black_sea_entry + 
-  plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
+black_sea_all <- black_sea_entry + black_sea_current + black_sea_future + 
+  #plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
   plot_layout(ncol = 3,
               axis_titles = "collect") &
   theme(legend.position = "bottom")
@@ -910,7 +931,7 @@ ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_hotspots_former_range_0915
 
 ```{r}
 # Save broken up hotspots maps
-ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_baltic_former_range_091826.png"), baltic_all, width = 10, height = 5, dpi = 300)
-ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_blacksea_former_range_091826.png"), black_sea_all, width = 10, height = 5, dpi = 300)
-ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_seaofjapan_former_range_091826.png"), sea_of_japan_all, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_baltic_former_range_100226.png"), baltic_all, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_blacksea_former_range_100226.png"), black_sea_all, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_seaofjapan_former_range_100226.png"), sea_of_japan_all, width = 10, height = 5, dpi = 300)
 ```
