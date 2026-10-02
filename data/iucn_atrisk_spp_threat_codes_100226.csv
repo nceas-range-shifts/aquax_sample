@@ -1,0 +1,86 @@
+code,description,n
+10_2,Earthquakes/tsunamis,3
+11_1,Habitat shifting & alteration,162
+11_2,Droughts,7
+11_3,Temperature extremes,468
+11_4,Storms & flooding,361
+11_5,Other impacts,42
+12_1,Other threat,2
+1_1,Housing & urban areas,515
+1_2,Commercial & industrial areas,511
+1_3,Tourism & recreation areas,412
+2_1_2,Small-holder farming,2
+2_1_3,Agro-industry farming,5
+2_1_4,Scale Unknown/Unrecorded,4
+2_2_2,Agro-industry plantations,2
+2_2_3,Scale Unknown/Unrecorded,4
+2_3_3,"Agro-industry grazing, ranching or farming",3
+2_3_4,Scale Unknown/Unrecorded,5
+2_4_1,Subsistence/artisinal aquaculture,28
+2_4_2,Industrial aquaculture,33
+2_4_3,Scale Unknown/Unrecorded,10
+3_1,Oil & gas drilling,23
+3_2,Mining & quarrying,31
+3_3,Renewable energy,7
+4_1,Roads & railroads,3
+4_2,Utility & service lines,1
+4_3,Shipping lanes,366
+4_4,Flight paths,1
+5_1_1,Intentional use (species is the target),3
+5_1_2,Unintentional effects (species is not the target),2
+5_1_3,Persecution/control,1
+5_3_1,Intentional use: (subsistence/small scale) [harvest],1
+5_3_2,Intentional use: (large scale) [harvest],1
+5_3_3,Unintentional effects: (subsistence/small scale) [harvest],4
+5_3_4,Unintentional effects: (large scale) [harvest],2
+5_3_5,Motivation Unknown/Unrecorded,3
+5_4_1,Intentional use: (subsistence/small scale) [harvest],557
+5_4_2,Intentional use: (large scale) [harvest],405
+5_4_3,Unintentional effects: (subsistence/small scale) [harvest],839
+5_4_4,Unintentional effects: (large scale) [harvest],622
+5_4_5,Persecution/control,21
+5_4_6,Motivation Unknown/Unrecorded,326
+6_1,Recreational activities,376
+6_2,"War, civil unrest & military exercises",3
+6_3,Work & other activities,10
+7_1_1,Increase in fire frequency/intensity,1
+7_2_1,Abstraction of surface water (domestic use),9
+7_2_10,Large dams,21
+7_2_11,Dams (size unknown),30
+7_2_2,Abstraction of surface water (commercial use),4
+7_2_3,Abstraction of surface water (agricultural use),13
+7_2_4,Abstraction of surface water (unknown use),3
+7_2_5,Abstraction of ground water (domestic use),3
+7_2_6,Abstraction of ground water (commercial use),1
+7_2_7,Abstraction of ground water (agricultural use),3
+7_2_8,Abstraction of ground water (unknown use),3
+7_2_9,Small dams,14
+7_3,Other ecosystem modifications,44
+8_1_1,Unspecified species,348
+8_1_2,Named species,28
+8_2,Problematic native species/diseases,44
+8_2_1,Unspecified species,320
+8_2_2,Named species,198
+8_3,Introduced genetic material,10
+8_4_1,Unspecified species,1
+8_4_2,Named species,29
+8_5_1,Unspecified species,4
+8_5_2,Named species,2
+8_6,Diseases of unknown cause,15
+9_1_1,Sewage,81
+9_1_2,Run-off,74
+9_1_3,Type Unknown/Unrecorded,381
+9_2_1,Oil spills,62
+9_2_2,Seepage from mining,19
+9_2_3,Type Unknown/Unrecorded,392
+9_3_1,Nutrient loads,46
+9_3_2,"Soil erosion, sedimentation",378
+9_3_3,Herbicides and pesticides,33
+9_3_4,Type Unknown/Unrecorded,368
+9_4,Garbage & solid waste,37
+9_5_1,Acid rain,1
+9_5_3,Ozone,328
+9_5_4,Type Unknown/Unrecorded,1
+9_6_1,Light pollution,3
+9_6_2,Thermal pollution,5
+9_6_3,Noise pollution,18

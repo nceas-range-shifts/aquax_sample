@@ -1,0 +1,109 @@
+---
+title: "IUCN threat category"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(patchwork)
+library(cowplot)
+library(collapse)
+```
+
+This document finds the threat categories listed by the IUCN for the at-risk species in this analysis (1,323)
+
+## Read in threatened species data
+
+```{r}
+# Spp in EEZs
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels
+spp_entry_pxls <- read_rds(here("data/iucn_atrisk_1pxlthres_entry_pxls_091626.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_atrisk_1pxlthres_exit_pxls_091626.rds"))
+```
+
+```{r}
+# Species range area
+area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
+```
+
+
+## IUCN info
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/ab9cd09931a4ce5c12d0bcd2984595d6522ed158/_data/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data/iucn_redlist_2026/iucn_species_assessments.csv")
+```
+
+```{r}
+# Add aphiaid to iucn_cat
+iucn_cat_aphiaid <- left_join(iucn_cat, (iucn_lookup %>% dplyr::select(iucn_assessment_id, aphia_id)),
+ by = c("assessment_id" = "iucn_assessment_id")) %>% 
+  rename(aphiaid = aphia_id) 
+```
+
+```{r}
+# Merge in iucn_cat to get group for each species
+spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
+```
+
+## IUCN threats
+For those species experiencing range shifts, what are the most common IUCN threats? Are there particular threats that are more common for species experiencing range loss vs gain?
+https://www.iucnredlist.org/resources/threat-classification-scheme
+
+According to the IUCN, threats marked with timing as “ongoing”, severity as “rapid” or “very rapid” declines and scopes of “majority” or “whole” are typically considered major threats to a species. IUCN stopped using scores in 2022 due to lack of sceintific method.
+
+```{r}
+library(iucnredlist) ### remotes::install_github("IUCN-UK/iucnredlist")
+```
+
+```{r}
+api_key <- Sys.getenv("IUCN_API_KEY") ### usethis::edit_r_environ() to add key to R environment file
+api <- init_api(api_key)
+```
+
+```{r}
+# Get IUCN ID data 
+iucn_id_data <- unique(spp_eez_pxl_count_group$assessment_id)
+```
+
+```{r}
+# still need to run this through assesment_data_many
+iucn_id_data <- assessment_data_many(api, iucn_id_data, wait_time = 0.5)
+```
+
+```{r}
+# run element_names() to see what categories can be extracted
+iucn_threats <- extract_element(iucn_id_data, "threats")
+```
+
+```{r}
+# Group by threat code and count the unique number of assessment_ids in each
+iucn_threat_codes_summary <- iucn_threats %>% 
+    group_by(code, description) %>% 
+    summarize(n = length(unique(assessment_id)))
+```
+
+
+```{r}
+# Save data
+write_csv(iucn_threat_codes_summary, here("data/iucn_atrisk_spp_threat_codes_100226.csv"))
+```
