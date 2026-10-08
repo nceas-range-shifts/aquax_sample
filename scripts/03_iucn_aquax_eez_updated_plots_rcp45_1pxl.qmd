@@ -46,7 +46,7 @@ area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
 ```{r}
 library(rnaturalearth)
 globe <- ne_countries(scale = "large", returnclass = "sf")
-globe <- ne_coastline(scale = "large", returnclass = "sf")
+#globe <- ne_coastline(scale = "large", returnclass = "sf")
 ```
 
 ```{r}
@@ -69,13 +69,35 @@ eez_200nm_list <- c(eez_200nm_list, 5695)
 
 ```{r}
 eez_simple <- eez %>% 
-  dplyr::select(MRGID, GEONAME) %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1) %>% 
   st_drop_geometry() %>% 
-  filter(MRGID %in% eez_200nm_list)
+  filter(MRGID %in% eez_200nm_list) %>% 
+  mutate(ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1))
 
 eez_simple_sf <- eez %>% 
   dplyr::select(MRGID, GEONAME) %>% 
   filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+# Create shapefile of EEZ territories and sovereign nations for plotting
+sf_use_s2(FALSE)
+
+eez_terr_sov_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1) %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  mutate(ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1)) %>% 
+  st_make_valid() %>%
+  group_by(ISO_TER1, ISO_SOV1) %>%
+  summarize(regions = n())
+
+sf_use_s2(TRUE)
+```
+
+```{r}
+ggplot() +
+  geom_sf(data = eez_terr_sov_sf, aes(fill = ISO_TER1)) + 
+  theme(legend.position = "none") 
 ```
 
 ## Compare species entry/exit thresholds
@@ -448,6 +470,7 @@ ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_density_1pxl_map_rcp4
 ```
 
 # Top species entry / exit by EEZ
+Group EEZ regions into terretories and sovereign nations. 
 
 ```{r}
 # Organize dataframe so that's it's easier to select a scenario and compare to current
@@ -468,10 +491,90 @@ eez_spp_pxls_long <- spp_eez_pxl_count %>%
 ```
 
 ```{r}
-# Get counts of entry into new, exit from historical etc. by sovereign EEZ
+# Try applying species entries / exits by territories and sovereign EEZ
+eez_spp_pxls_long_sov <- left_join(spp_eez_pxl_count %>% filter(MRGID %in% eez_200nm_list), eez_simple) %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  # Group by territory and sovereign EEZ to calcualte species entry and exit
+  group_by(ISO_TER1, ISO_SOV1, scenario, aphiaid) %>% 
+  summarize(sum_n_current = sum(n_current),
+            sum_pxl_count = sum(pxl_count)) %>% 
+  ungroup() %>% 
+  mutate(sov_spp_change = case_when(sum_n_current < 1 &  sum_pxl_count >= 1 ~ 'entry into new',
+                            sum_n_current >= 1  & sum_pxl_count < 1 ~ 'exit from historical',
+                            sum_n_current < 1  & sum_pxl_count < 1 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by sovereign EEZ only (not separated by territories)
 eez_spp_change_sov_counts <- left_join(eez_spp_pxls_long, eez %>% filter(MRGID %in% eez_200nm_list)) %>% 
   group_by(SOVEREIGN1, MRGID_SOV1, scenario, spp_change) %>% 
   summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by territory and sovereign EEZ - but only count if the species is entirely new or loss from territory andsovereign EEZ
+eez_spp_change_sov_counts_sovonly <- eez_spp_pxls_long_sov  %>% 
+  group_by(ISO_TER1, ISO_SOV1, scenario, sov_spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+eez_c_f_sov <- eez_spp_change_sov_counts_sovonly  %>% 
+  mutate(sov_spp_change = str_replace_all(sov_spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = sov_spp_change, values_from = spp_change_count) %>% 
+  mutate(continued_presence = replace_na(continued_presence, 0),
+         exit_from_historical = replace_na(exit_from_historical, 0),
+         entry_into_new = replace_na(entry_into_new, 0),
+         no_presence = replace_na(no_presence, 0)) %>%
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new,
+         perc_exit = 100 * exit_from_historical/current_spp,
+         perc_enter = 100 * entry_into_new/current_spp,
+         sov_spp_change = future_spp - current_spp,
+         ssi = (2 * continued_presence)/(current_spp + future_spp)) 
+```
+
+
+```{r}
+# Which species have the most EEZ region entries? Using regions
+spp_eez_entry_count <- left_join(eez_spp_pxls_long, eez %>% filter(MRGID %in% eez_200nm_list)) %>% 
+  #filter(MRGID %in% eez_200nm_list) %>%
+  filter(spp_change == "entry into new") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_eez_entry = n()) %>% 
+  ungroup()
+
+# Which species have the most EEZ region exits? Using regions
+spp_eez_exit_count <- left_join(eez_spp_pxls_long, eez %>% filter(MRGID %in% eez_200nm_list)) %>% 
+  #filter(MRGID %in% eez_200nm_list) %>%
+  filter(spp_change == "exit from historical") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_eez_entry = n()) %>% 
+  ungroup()
+
+# which species enter the most EEZ ergions - using only sovereignties/territories
+spp_eez_entry_count_sov <- eez_spp_pxls_long_sov %>% 
+  #filter(MRGID %in% eez_200nm_list) %>%
+  filter(sov_spp_change == "entry into new") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_sov_eez_entry = n()) %>% 
+  ungroup()
+
+# Which species have the most EEZ region exits - using sovereignties/territories
+spp_eez_exit_count_sov <- eez_spp_pxls_long_sov %>% 
+  #filter(MRGID %in% eez_200nm_list) %>%
+  filter(sov_spp_change == "exit from historical") %>% 
+  group_by(aphiaid, scenario) %>% 
+  summarise(n_sov_eez_exit = n()) %>% 
   ungroup()
 ```
 
@@ -531,3 +634,87 @@ eez_sov_c_f <- eez_spp_change_sov_counts  %>%
          ssi = (2 * continued_presence)/(current_spp + future_spp)) 
 ```
 
+## Plot total species entry/exit by EEZ
+
+
+```{r}
+# Merge EEZ entries with EEz shapefile
+eez_entry_count_sov <- eez_spp_change_sov_counts_sovonly%>%
+  filter(sov_spp_change == "entry into new",
+        scenario == "RCP45_2050")
+
+eez_entries_sf <- left_join(eez_entry_count_sov , eez_terr_sov_sf, by = c("ISO_TER1" = "ISO_TER1", "ISO_SOV1" = "ISO_SOV1"))
+
+```
+
+
+```{r}
+entry_sum_plot <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk")+  
+  geom_sf(data = eez_simple_sf, fill = "lightgray") +
+  geom_sf(data = eez_entries_sf, aes(fill = spp_change_count, geometry = geom)) +
+  coord_sf(expand = FALSE) + 
+  scale_fill_viridis_c(limits = c(1, 47), 
+                      breaks = c(1, 2, 4, 8, 16, 28, 47),
+                      option = "plasma",
+                      direction = 1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8)) +
+  theme_void() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+# Merge EEZ exits with EEz shapefile
+eez_exit_count_sov <- eez_spp_change_sov_counts_sovonly%>%
+  filter(sov_spp_change == "exit from historical",
+        scenario == "RCP45_2050")
+
+eez_exits_sf <- left_join(eez_exit_count_sov , eez_terr_sov_sf, by = c("ISO_TER1" = "ISO_TER1", "ISO_SOV1" = "ISO_SOV1"))
+
+```
+
+
+```{r}
+exit_sum_plot <- ggplot() +
+  geom_sf(data = globe, fill = "cornsilk")+  
+  geom_sf(data = eez_simple_sf, fill = "lightgray") +
+  geom_sf(data = eez_exits_sf, aes(fill = spp_change_count, geometry = geom)) +
+  coord_sf(expand = FALSE) + 
+  scale_fill_viridis_c(limits = c(1, 47), 
+                      breaks = c(1, 2, 4, 8, 16, 28, 47),
+                      option = "plasma",
+                      direction = 1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8)) +
+  theme_void() + 
+  labs(fill = "species exit count",
+       color = "species exit count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/rcp45_2050/iucn_atrisk_total_spp_entry_1pxl_map_rcp45_100826.png"), entry_sum_plot, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_total_spp_exit_1pxl_map_rcp45_100826.png"), exit_sum_plot, width = 10, height = 5, dpi = 300)
+```
