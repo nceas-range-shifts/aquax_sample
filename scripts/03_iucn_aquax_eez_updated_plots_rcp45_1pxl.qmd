@@ -415,6 +415,64 @@ bivariate_map <- ggdraw() +
   draw_plot(legend_biplot, 0.75, 0.75, 0.2, 0.25)
 ```
 
+## Biplot in Pacific-centered plot (0-360 longitude)
+
+```{r}
+# Shift tile centroids from -180/180 to 0/360 so the Pacific sits in the
+# middle of the plot instead of at the edges
+spp_entry_exit_cat_45_2050_pacific <- spp_entry_exit_cat_45_2050 %>%
+  mutate(x_shift = ifelse(x < 0, x + 360, x))
+```
+
+```{r}
+# Claude - Sonnet 5
+# Countries straddle different meridians -- Russia/Fiji/Alaska cross
+# +/-180, while France/Spain/UK/Ghana cross lon 0 -- so any single
+# wrap-then-relabel pass (st_wrap_dateline + st_shift_longitude, or a
+# modular coordinate shift) leaves some ring unsplit, which gets drawn
+# as a horizontal line spanning the whole plot.
+#
+# Simpler and more robust: duplicate each layer with a copy shifted by
+# +360 degrees longitude, then let coord_sf's xlim = c(0, 360) clip the
+# display window. For every country, whichever copy (original or +360)
+# happens to land inside the window will be a complete, unbroken ring;
+# the other copy falls entirely outside and is just clipped away. No
+# ring-splitting is needed because ggplot never has to render a polygon
+# that straddles the window edge.
+duplicate_shift_lon <- function(x) {
+  x_shifted <- st_set_geometry(x, st_geometry(x) + c(360, 0)) %>%
+    st_set_crs(st_crs(x))
+  bind_rows(x, x_shifted)
+}
+
+globe_pacific_shift <- duplicate_shift_lon(globe)
+eez_simple_sf_pacific_shift <- duplicate_shift_lon(eez_simple_sf)
+```
+
+```{r}
+biplot_pacific <- ggplot() +
+  geom_sf(data = globe_pacific_shift, fill = "white", color = "black") +
+  geom_sf(data = eez_simple_sf_pacific_shift, fill = "#e8e8e8") +
+  geom_tile(data = spp_entry_exit_cat_45_2050_pacific,
+            aes(x = x_shift, y = y, fill = label, color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  coord_sf(xlim = c(0, 360), expand = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  labs(x = "", y = "")
+```
+
+```{r}
+# Combine with the same legend used for the original biplot
+bivariate_map_pacific <- ggdraw() +
+  draw_plot(biplot_pacific,    0,    0,    1,    1) +
+  draw_plot(legend_biplot, 0.75, 0.75, 0.2, 0.25)
+
+biplot_pacific
+```
+
 # Add density plot to bivariate map
 
 ```{r}
