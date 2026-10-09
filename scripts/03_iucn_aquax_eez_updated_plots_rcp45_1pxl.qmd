@@ -473,6 +473,64 @@ bivariate_map_pacific <- ggdraw() +
 biplot_pacific
 ```
 
+## Panels for biplot
+
+```{r}
+# Hawaii
+ggplot() +
+  geom_sf(data = globe_pacific_shift, fill = "white", color = "black") +
+  geom_sf(data = eez_simple_sf_pacific_shift, fill = "#e8e8e8") +
+  geom_tile(data = spp_entry_exit_cat_45_2050_pacific,
+            aes(x = x_shift, y = y, fill = label, color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(12, 35), expand = c(0,0)) +
+  scale_x_continuous(limits = c(-185 + 360, -145 + 360), expand = c(0,0)) +
+  #coord_sf(xlim = c(0, 360), expand = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  labs(x = "", y = "")
+```
+
+```{r}
+# New Caldonia (and Norfolk island to south east)
+ggplot() +
+  geom_sf(data = globe_pacific_shift, fill = "white", color = "black") +
+  geom_sf(data = eez_simple_sf_pacific_shift, fill = "#e8e8e8") +
+  geom_tile(data = spp_entry_exit_cat_45_2050_pacific,
+            aes(x = x_shift, y = y, fill = label, color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(-35, -10), expand = c(0,0)) +
+  scale_x_continuous(limits = c(155, 180), expand = c(0,0)) +
+  #coord_sf(xlim = c(0, 360), expand = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  labs(x = "", y = "")
+```
+
+```{r}
+# Chile
+ggplot() +
+  geom_sf(data = globe_pacific_shift, fill = "white", color = "black") +
+  geom_sf(data = eez_simple_sf_pacific_shift, fill = "#e8e8e8") +
+  geom_tile(data = spp_entry_exit_cat_45_2050_pacific,
+            aes(x = x_shift, y = y, fill = label, color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(-40, -20), expand = c(0,0)) +
+  scale_x_continuous(limits = c(-85 + 360, -75 + 360), expand = c(0,0)) +
+  #coord_sf(xlim = c(0, 360), expand = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  labs(x = "", y = "")
+```
+
+
+
 # Add density plot to bivariate map
 
 ```{r}
