@@ -74,6 +74,34 @@ eez_simple_sf <- eez %>%
 ```
 
 ```{r}
+# EEZ terretories 
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  mutate(ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1))
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+# Create shapefile of EEZ territories and sovereign nations for plotting
+sf_use_s2(FALSE)
+
+eez_terr_sov_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1) %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  mutate(ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1)) %>% 
+  st_make_valid() %>%
+  group_by(ISO_TER1, ISO_SOV1) %>%
+  summarize(regions = n())
+
+sf_use_s2(TRUE)
+```
+
+```{r}
 # Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
 eez_raster_blank <- rast(xmin = -180,
                   xmax = 180,
@@ -174,34 +202,55 @@ eez_spp_pxls_long <- spp_eez_group_meta %>%
 ```
 
 ```{r}
+# Try applying species entries / exits by territories and sovereign EEZ
+eez_spp_pxls_long_sov <- left_join(spp_eez_group_meta %>% filter(MRGID %in% eez_200nm_list), eez_simple) %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  # Group by territory and sovereign EEZ to calcualte species entry and exit
+  group_by(ISO_TER1, ISO_SOV1, scenario, aphiaid, general_group, group) %>% 
+  summarize(sum_n_current = sum(n_current),
+            sum_pxl_count = sum(pxl_count)) %>% 
+  ungroup() %>% 
+  mutate(spp_change = case_when(sum_n_current < 1 &  sum_pxl_count >= 1 ~ 'entry into new',
+                            sum_n_current >= 1  & sum_pxl_count < 1 ~ 'exit from historical',
+                            sum_n_current < 1  & sum_pxl_count < 1 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
 # Which species have the most EEZ region entries?
-spp_eez_entry_count <- eez_spp_pxls_long %>% 
-  filter(MRGID %in% eez_200nm_list) %>%
+spp_eez_entry_count <- eez_spp_pxls_long_sov %>% 
+  #filter(MRGID %in% eez_200nm_list) %>%
   filter(spp_change == "entry into new") %>% 
   group_by(aphiaid, scenario, general_group, group) %>% 
   summarise(n_eez_entry = n()) %>% 
   ungroup()
 
 # Which species have the most EEZ region exits?
-spp_eez_exit_count <- eez_spp_pxls_long %>% 
-  filter(MRGID %in% eez_200nm_list) %>%
+spp_eez_exit_count <- eez_spp_pxls_long_sov %>% 
+  #filter(MRGID %in% eez_200nm_list) %>%
   filter(spp_change == "exit from historical") %>% 
   group_by(aphiaid, scenario, general_group, group) %>% 
   summarise(n_eez_exit = n()) %>% 
   ungroup()
 
-# Get list of EEZ exits 90 and over
-spp_exit_90 <- spp_eez_exit_count %>% 
-  filter(n_eez_exit >= 90,
+# Get list of EEZ exits 80 and over
+spp_exit_80 <- spp_eez_exit_count %>% 
+  filter(n_eez_exit >= 80,
          scenario == "RCP45_2050")
 
-spp_exit_90_list <- spp_exit_90$aphiaid
+spp_exit_80_list <- spp_exit_80$aphiaid
 ```
 
 ```{r}
 # Bentfin devil ray - exits zero EEZs
-bdr <- eez_spp_pxls_long %>% 
-  filter(MRGID %in% eez_200nm_list) %>%
+bdr <- eez_spp_pxls_long_sov %>% 
+  #filter(MRGID %in% eez_200nm_list) %>%
   filter(scenario == "RCP45_2050") %>%
   filter(spp_change == "entry into new") %>%
   filter(aphiaid == 217430)
@@ -240,30 +289,30 @@ spp_eez_exit_count_iucn <- spp_eez_exit_count %>%
 ```{r}
 spp_eez_entry_clean <- spp_eez_entry_count_iucn %>% 
   filter(scenario == "RCP45_2050") %>% 
-  mutate(n_eez_entry_group = case_when(n_eez_entry >= 10 & n_eez_entry < 40 ~ "10+",
-                                        n_eez_entry >= 40 & n_eez_entry < 80 ~ "40+",
-                                         n_eez_entry >= 80 ~ "80+",
+  mutate(n_eez_entry_group = case_when(n_eez_entry >= 10 & n_eez_entry < 30 ~ "10-29",
+                                        n_eez_entry >= 30 & n_eez_entry < 60 ~ "30-59",
+                                         n_eez_entry >= 60 ~ ">=60",
                                          TRUE ~ as.character(n_eez_entry)))
 
 ```
 
 ```{r}
 spp_eez_entry_clean$n_eez_entry_group <- factor(spp_eez_entry_clean$n_eez_entry_group, 
-levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "40+", "80+"))
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10-29", "30-59", ">=60"))
 ```
 
 ```{r}
 spp_eez_exit_clean <- spp_eez_exit_count_iucn %>% 
   filter(scenario == "RCP45_2050") %>% 
-  mutate(n_eez_exit_group = case_when(n_eez_exit >= 10 & n_eez_exit < 40 ~ "10+",
-                                        n_eez_exit >= 40 & n_eez_exit < 80 ~ "40+",
-                                         n_eez_exit >= 80 ~ "80+",
+  mutate(n_eez_exit_group = case_when(n_eez_exit >= 10 & n_eez_exit < 30 ~ "10-29",
+                                        n_eez_exit >= 30 & n_eez_exit < 60 ~ "30-59",
+                                         n_eez_exit >= 60 ~ ">=60",
                                          TRUE ~ as.character(n_eez_exit)))
 ```
 
 ```{r}
 spp_eez_exit_clean$n_eez_exit_group <- factor(spp_eez_exit_clean$n_eez_exit_group, 
-levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "40+", "80+"))
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10-29", "30-59", ">=60"))
 ```
 
 ```{r}
@@ -279,7 +328,7 @@ spp_eez_exit_entry_clean <- rbind(spp_eez_exit_clean %>%
 
 ```{r}
 spp_eez_exit_entry_clean$n_eez_group <- factor(spp_eez_exit_entry_clean$n_eez_group, 
-levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "40+", "80+"))
+levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10-29", "30-59", ">=60"))
 ```
 
 ```{r}
@@ -287,19 +336,20 @@ entry_exit_barplot <- ggplot() +
   geom_bar(data = spp_eez_exit_entry_clean,
             aes(x = n_eez_group, y = n_spp, fill = general_group), stat = "identity") +
   scale_fill_viridis_d(option = "turbo", direction = 1) +
-  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10+", "40+", "80+")) +
-  theme_minimal() +
+  scale_x_discrete(breaks = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10-29", "30-59", ">=60")) +
+  theme_bw() +
   facet_wrap(~change) + 
-  theme(legend.position = "bottom") +
-  labs(title = "EEZ entries and exits by taxonomic group",
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.85, 0.8)) +
+  labs(#title = "EEZ entries and exits by taxonomic group",
        x = "EEZ count",
        y = "Species count",
-       fill = "")
+       fill = "Taxon")
   
 ```
 
 ```{r}
 # Save bar plot
-ggsave(here("figures/rcp45_2050/iucn_atrisk_taxon_entry_exit_rcp45_1pxl_091826.png"), entry_exit_barplot, width = 10, height = 8, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_taxon_entry_exit_rcp45_1pxl_100926.png"), entry_exit_barplot, width = 10, height = 8, dpi = 300)
 
 ```
