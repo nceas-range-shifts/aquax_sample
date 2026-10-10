@@ -239,12 +239,12 @@ spp_eez_exit_count <- eez_spp_pxls_long_sov %>%
   summarise(n_eez_exit = n()) %>% 
   ungroup()
 
-# Get list of EEZ exits 80 and over
-spp_exit_80 <- spp_eez_exit_count %>% 
-  filter(n_eez_exit >= 80,
+# Get list of EEZ exits 60 and over
+spp_exit_60 <- spp_eez_exit_count %>% 
+  filter(n_eez_exit >= 60,
          scenario == "RCP45_2050")
 
-spp_exit_80_list <- spp_exit_80$aphiaid
+spp_exit_60_list <- spp_exit_60$aphiaid
 ```
 
 ```{r}
@@ -266,9 +266,9 @@ spp_eez_entry_exit_count <- full_join(spp_eez_entry_count, spp_eez_exit_count, b
 ```
 
 ```{r}
-# Area of 90 + species
-area_df_90 <- area_df %>% 
-  filter(aphiaid %in% spp_exit_90_list) %>% 
+# Area of 60 + species
+area_df_60 <- area_df %>% 
+  filter(aphiaid %in% spp_exit_60_list) %>% 
   filter(scenario == "RCP45_2050") %>%
   mutate(perc_of_current = scenario_area_km2 / current_area_km2 * 100)
 ```
