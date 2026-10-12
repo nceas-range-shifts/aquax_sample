@@ -35,6 +35,46 @@ iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/c
 source(here( "common_fxns.R"))
 ```
 
+# EEZ
+prep for later maps
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez_simple <- eez |>
+  select(MRGID, GEONAME, geom)
+```
+
+```{r}
+eez_ids <- eez %>% 
+  st_drop_geometry() %>% 
+  dplyr::select(MRGID, GEONAME)
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez_simple, eez_raster_blank, field = "MRGID")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>% 
+  # Round so that the X and Y match the AquaX data (which is rounded to 3 decimal places)
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
 # IUCN threatened species
 
 ```{r}
@@ -113,16 +153,84 @@ ggplot() +
 
 ```{r}
 set.seed(123)
-test_spp_10 <- slice_sample(df_threatened, n = 10)
-files_10 <- test_spp_10$f
-aphiaid_10 <- test_spp_10$aphiaid
+test_spp_100 <- slice_sample(df_threatened, n = 100)
+files_100 <- test_spp_100$f
+aphiaid_100 <- test_spp_100$aphiaid
 ```
 
 ```{r}
 system.time({
-  spp_entry_pxl_count_df <- parallel::mclapply(aphiaid_10, FUN = extract_all_entry_pixels_df_db, 
-                                       df = test_spp_10, 
+  spp_entry_pxl_count_df <- parallel::mclapply(aphiaid_100, FUN = extract_all_entry_pixels_df_db, 
+                                       df = test_spp_100, 
                                        s = "RCP45_2050",
                                        mc.cores = 10)
 })
 ```
+
+```{r}
+entry_rcp45_df <- bind_rows(spp_entry_pxl_count_df) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(entry == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+entry_rcp45_sum_df <- entry_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  rename(n_entry_pxls = N)
+})
+```
+
+```{r}
+# Plot test
+ggplot() +
+  geom_tile(data = entry_rcp45_sum_df, aes(x = x, y = y, fill = n_entry_pxls)) 
+```
+
+```{r}
+# Join with raster dataframe to only plot pixels in EEZ
+eez_entry_rcp45_sum_df <- inner_join(eez_raster_df, entry_rcp45_sum_df)
+```
+```{r}
+# Plot pixels in EEZs
+ggplot() +
+  geom_tile(data = eez_entry_rcp45_sum_df, aes(x = x, y = y, fill = n_entry_pxls)) 
+```
+
+# Run full sample for entry pixels
+
+```{r}
+system.time({
+  spp_entry_pxl_rcp45_2050_list <- parallel::mclapply(aphiaid_threat, FUN = extract_all_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+entry_rcp45_df <- bind_rows(spp_entry_pxl_rcp45_2050_list) %>% 
+  # drop entry = 0 (no entry pixels for aphiaid)
+  filter(entry == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+entry_rcp45_sum_df <- entry_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  rename(n_entry_pxls = N)
+})
+```
+
+```{r}
+# Plot
+ggplot() +
+  geom_tile(data = entry_rcp45_sum_df, aes(x = x, y = y, fill = n_entry_pxls)) 
+```
+
