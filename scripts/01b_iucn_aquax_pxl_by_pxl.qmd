@@ -1,0 +1,128 @@
+---
+title: "Aquax - pixel by pixel entry and exit species"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(collapse)
+```
+
+This document is a supplement to 01_iucn_aquax_eez_overlap.qmd and runs the pixel by pixel species entry and exit data. Regardless of the species' relationship with the overall EEZ, this document identifies new pixels for the species (entry pixels) and lost pixels for the species (exit pixels).
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/ab9cd09931a4ce5c12d0bcd2984595d6522ed158/_data/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data/iucn_redlist_2026/iucn_species_assessments.csv")
+```
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+# IUCN threatened species
+
+```{r}
+# Filter the iucn_lookup for species with an SDM
+iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
+```
+
+```{r}
+# Filter iucn categories for threatened species (CR, EN, VU) and near threatened (NT) species
+iucn_threatened <- iucn_new_cat %>% 
+  filter(redlist_category %in% c("CR","EN", "VU", "NT"))
+```
+
+```{r}
+# Merge in the iucn_lookup_sdm to get the AphiaID for the threatened species
+aphiaid_threatened <- inner_join(iucn_lookup_sdm, iucn_threatened, by = c("iucn_assessment_id" = "assessment_id")) 
+```
+
+```{r}
+# Get aphiaids for the threatened species
+aphiaid_threat <- unique(aphiaid_threatened$aphia_id)
+```
+
+## Prep AquaX data
+We'll be working with the 1,323 at-risk aphiaids
+
+```{r}
+# read in meta data on the aquax species
+load("/home/shares/data-aquax/META_02122025.Rdata")
+```
+
+```{r}
+meta_clean <- META %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+```{r}
+# Filter for the AphiaID of the threatend species - get 1,047 threatened species and 276 non-threatened species with SDMs
+df_threatened <- df %>% 
+  filter(aphiaid %in% aphiaid_threat)
+```
+
+```{r}
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1017389.parquet")
+```
+
+```{r}
+# Find new pixels for RCP45_2050
+test_f_entry <- test_f %>% 
+  filter(Current < cutoff & RCP45_2050 >= cutoff)
+```
+
+```{r}
+# The magenta pixels are what the function is finding and summarizing (the new pixels for the species)
+ggplot() +
+  geom_tile(data = test_f_entry, aes(x = x, y = y), fill = "magenta") +
+  geom_tile(data = test_f %>% filter(Current >= cutoff), aes(x = x, y = y), fill = "black") 
+```
+
+## Identify new pixels for all at-risk species
+
+# Test 
+
+```{r}
+set.seed(123)
+test_spp_10 <- slice_sample(df_threatened, n = 10)
+files_10 <- test_spp_10$f
+aphiaid_10 <- test_spp_10$aphiaid
+```
+
+```{r}
+system.time({
+  spp_entry_pxl_count_df <- parallel::mclapply(aphiaid_10, FUN = extract_all_entry_pixels_df_db, 
+                                       df = test_spp_10, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 10)
+})
+```
