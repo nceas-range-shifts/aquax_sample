@@ -96,12 +96,39 @@ iucn_threats <- extract_element(iucn_id_data, "threats")
 ```
 
 ```{r}
+# Save data
+write_csv(iucn_threats, here("data/iucn_atrisk_spp_full_threat_codes_101126.csv"))
+```
+
+```{r}
+# Filter for only threats 5_4_1 (Intentional use: (subsistence/small scale) [harvest]) and 5_4_2 (Intentional use: (large scale) [harvest])
+threats_5_4 <- iucn_threats %>% 
+    filter(code %in% c("5_4_1", "5_4_2"))
+
+length(unique(threats_5_4$assessment_id))
+```
+
+```{r}
+threats_5_4_sum <- threats_5_4 %>% 
+    distinct(assessment_id, code) %>% 
+    group_by(assessment_id) %>%
+    summarize(threat_group = case_when(
+        n_distinct(code) == 2 ~ "both",
+        first(code) == "5_4_1" ~ "small only",
+        first(code) == "5_4_2" ~ "large only"
+    ),
+    .groups = "drop"
+    ) 
+
+threats_5_4_sum %>% count(threat_group)
+```
+
+```{r}
 # Group by threat code and count the unique number of assessment_ids in each
 iucn_threat_codes_summary <- iucn_threats %>% 
     group_by(code, description) %>% 
     summarize(n = length(unique(assessment_id)))
 ```
-
 
 ```{r}
 # Save data
