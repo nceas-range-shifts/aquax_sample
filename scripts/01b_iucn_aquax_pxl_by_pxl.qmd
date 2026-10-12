@@ -75,6 +75,36 @@ eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>%
          y = round(y, 3))
 ```
 
+```{r}
+# Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
+eez_200nm_list <- eez %>% 
+  filter(POL_TYPE == "200NM") %>% 
+  pull(MRGID)
+
+# Add Ukraine to list
+eez_200nm_list <- c(eez_200nm_list, 5695)
+```
+
+```{r}
+# Get list of EEZs that are not POL_TYPE = 200NM
+eez_contested_list <- eez %>% 
+  filter(POL_TYPE != "200NM") %>%
+  # Remove Ukraine from this list
+  filter(MRGID != 5695) %>% 
+  pull(MRGID)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list)
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
 # IUCN threatened species
 
 ```{r}
@@ -168,6 +198,15 @@ system.time({
 ```
 
 ```{r}
+system.time({
+  spp_exit_pxl_count_df_100 <- parallel::mclapply(aphiaid_100, FUN = extract_all_exit_pixels_df_db, 
+                                       df = test_spp_100, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 10)
+})
+```
+
+```{r}
 entry_rcp45_df <- bind_rows(spp_entry_pxl_count_df) %>% 
   # drop binary = 0 (no pixels above threshold)
   filter(entry == 1)
@@ -203,6 +242,7 @@ ggplot() +
 # Run full sample for entry pixels
 
 ```{r}
+# 185 seconds
 system.time({
   spp_entry_pxl_rcp45_2050_list <- parallel::mclapply(aphiaid_threat, FUN = extract_all_entry_pixels_df_db, 
                                        df = df_threatened, 
@@ -234,3 +274,122 @@ ggplot() +
   geom_tile(data = entry_rcp45_sum_df, aes(x = x, y = y, fill = n_entry_pxls)) 
 ```
 
+```{r}
+# Join with raster dataframe to only plot pixels in EEZ
+eez_entry_rcp45_sum_df <- inner_join(eez_raster_df, entry_rcp45_sum_df)
+```
+
+```{r}
+# Plot pixels in EEZs
+ggplot() +
+  geom_tile(data = eez_entry_rcp45_sum_df, aes(x = x, y = y, fill = n_entry_pxls)) 
+```
+
+```{r}
+library(rnaturalearth)
+globe <- ne_countries(scale = "large", returnclass = "sf")
+```
+
+```{r}
+# Plot pixel by pixel entries within EEZs
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk", color = "black")+  
+  geom_sf(data = eez_simple_sf, fill = "#e8e8e8", color = NA) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_entry_rcp45_sum_df, aes(x = x, y = y,
+                                               fill = n_entry_pxls)) +
+  scale_fill_viridis_c(limits = c(1, 131), 
+                      option = "mako",
+                      breaks = c(1, 5, 10, 25, 50, 75, 131),
+                      #direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_y_continuous(limits = c(-90, 90)) +
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  theme_void() + 
+  labs(fill = "new species count",
+       color = "new species count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+# Run full sample for exit pixels
+
+```{r}
+# 86 seconds
+system.time({
+  spp_exit_pxl_rcp45_2050_list <- parallel::mclapply(aphiaid_threat, FUN = extract_all_exit_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+exit_rcp45_df <- bind_rows(spp_exit_pxl_rcp45_2050_list) %>% 
+  # drop entry = 0 (no entry pixels for aphiaid)
+  filter(exit == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+exit_rcp45_sum_df <- exit_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  rename(n_exit_pxls = N)
+})
+```
+
+```{r}
+# Plot
+ggplot() +
+  geom_tile(data = exit_rcp45_sum_df, aes(x = x, y = y, fill = n_exit_pxls)) 
+```
+
+```{r}
+# Join with raster dataframe to only plot pixels in EEZ
+eez_exit_rcp45_sum_df <- inner_join(eez_raster_df, exit_rcp45_sum_df)
+```
+
+```{r}
+# Plot pixel by pixel exit within EEZs
+ggplot() +
+  geom_sf(data = globe, fill = "cornsilk", color = "black")+  
+  geom_sf(data = eez_simple_sf, fill = "#e8e8e8", color = NA) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = eez_exit_rcp45_sum_df, aes(x = x, y = y,
+                                               fill = n_exit_pxls)) +
+  scale_fill_viridis_c(limits = c(1, 150), 
+                      option = "rocket",
+                      breaks = c(1, 5, 10, 25, 50, 75, 150),
+                      #direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_y_continuous(limits = c(-90, 90)) +
+  geom_sf(data = eez_simple_sf, size = 0.01, color = "yellow", fill = "NA") +
+  theme_void() + 
+  labs(fill = "lost species count",
+       color = "lost species count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
