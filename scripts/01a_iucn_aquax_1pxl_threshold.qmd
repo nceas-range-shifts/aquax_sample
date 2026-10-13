@@ -20,7 +20,7 @@ library(arrow)
 library(collapse)
 ```
 
-This document is a supplement to 01_iucn_aquax_eez_overlap.qmd and runs the species entry and exit data for a threshold of 1 pixel instead of 10 pixels.
+This document is a supplement to 01_iucn_aquax_eez_overlap.qmd and runs the species entry and exit data for a threshold of 1 pixel instead of 10 pixels. At the bottom of the document, I ran the species entry and exit by sovereign and territory EEZs instead of EEZ regions. 
 
 This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). 
 
@@ -501,4 +501,252 @@ eez_sum_exit_scenarios_mrgid <- left_join(eez_sum_exit_scenarios, eez_ids) %>%
 ```{r}
 # save data as rds
 saveRDS(eez_sum_exit_scenarios_mrgid, here("data/iucn_atrisk_1pxlthres_exit_pxls_091626.rds"))
+```
+
+## Find species entry and exit pixels for EEZ sovereignties and territories 
+
+```{r}
+eez <- st_read('/Users/abowd/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
+eez_200nm_list <- eez %>% 
+  filter(POL_TYPE == "200NM") %>% 
+  pull(MRGID)
+
+# Add Ukraine to list
+eez_200nm_list <- c(eez_200nm_list, 5695)
+```
+
+```{r}
+# Group EEZs by territories 
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1, MRGID_SOV1, MRGID_TER1) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  # For the territories that don't have ISO or IDs (like HI and AK), assign to SOV 
+  mutate(MRGID_TER1 = ifelse(is.na(ISO_TER1), MRGID_SOV1, MRGID_TER1),
+        ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1))
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+# Create shapefile of EEZ territories and sovereign nations for plotting
+sf_use_s2(FALSE)
+
+eez_terr_sov_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1, MRGID_SOV1, MRGID_TER1) %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  mutate(MRGID_TER1 = ifelse(is.na(ISO_TER1), MRGID_SOV1, MRGID_TER1),
+        ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1)) %>% 
+  st_make_valid() %>%
+  group_by(ISO_TER1, MRGID_TER1, ISO_SOV1, MRGID_SOV1) %>%
+  summarize(regions = n())
+
+sf_use_s2(TRUE)
+```
+
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
+```
+
+```{r}
+eez_raster_mrgid_ter <- rasterize(eez_terr_sov_sf, eez_raster_blank, field = "MRGID_TER1")
+```
+
+```{r}
+# Get species entries / exits by territories and sovereign EEZ
+eez_spp_pxls_long_sov <- left_join(spp_eez_pxl_count %>% filter(MRGID %in% eez_200nm_list), eez_simple) %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  # Group by territory and sovereign EEZ to calculate species entry and exit
+  group_by(ISO_TER1, MRGID_TER1, ISO_SOV1, MRGID_SOV1, scenario, aphiaid) %>% 
+  summarize(sum_n_current = sum(n_current),
+            sum_pxl_count = sum(pxl_count)) %>% 
+  ungroup() %>% 
+  mutate(spp_change = case_when(sum_n_current < 1 &  sum_pxl_count >= 1 ~ 'entry into new',
+                            sum_n_current >= 1  & sum_pxl_count < 1 ~ 'exit from historical',
+                            sum_n_current < 1  & sum_pxl_count < 1 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by territory and sovereign EEZ - but only count if the species is entirely new or loss from territory andsovereign EEZ
+eez_spp_change_sov_counts_sovonly <- eez_spp_pxls_long_sov  %>% 
+  group_by(ISO_TER1, ISO_SOV1, scenario, sov_spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_entry <- eez_spp_pxls_long_sov %>% 
+  filter(spp_change == "entry into new")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_ter_df <- as.data.frame(eez_raster_mrgid_ter, xy = TRUE) %>% 
+  # Round so that the X and Y match the AquaX data (which is rounded to 3 decimal places)
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
+# Run full set - species entries
+If Positron doesn't work, try Rstudio
+
+```{r}
+# Took 34 seconds over 30 cores
+system.time({
+  entry_rcp45_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_ter_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2050",
+                                       eez_spp_entry = eez_spp_entry,
+                                       eez_raster_df = eez_raster_ter_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+entry_rcp45_df <- bind_rows(entry_rcp45_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+entry_rcp45_sum_df <- entry_rcp45_df %>% 
+  fgroup_by(MRGID_TER1, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050")
+})
+```
+
+```{r}
+# Plot EEZ entry pixels
+ggplot() +
+  #geom_sf(data = globe, fill = "white", color = "black")+  
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = entry_rcp45_sum_df , aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_fill_viridis_c(limits = c(1, 17), 
+                      breaks = c(1, 2, 4, 8, 17),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1,17), 
+                        breaks = c(1, 2, 4, 8, 17),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_void() + 
+  labs(fill = "species entry count",
+       color = "species entry count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
+```
+
+# Run full set - species exits
+If Positron doesn't work, try Rstudio
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by EEZ
+eez_spp_exit <- eez_spp_pxls_long_sov %>% 
+  filter(spp_change == "exit from historical")
+```
+
+```{r}
+# Took 34 seconds over 30 cores
+system.time({
+  exit_rcp45_list <- parallel::mclapply(aphiaid_threat, FUN = extract_eez_ter_exit_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2050",
+                                       eez_spp_exit = eez_spp_exit,
+                                       eez_raster_df = eez_raster_ter_df,
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+exit_rcp45_df <- bind_rows(exit_rcp45_list) %>% 
+  # drop binary = 0 (no pixels above threshold)
+  filter(binary == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+exit_rcp45_sum_df <- exit_rcp45_df %>% 
+  fgroup_by(MRGID_TER1, x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050")
+})
+```
+
+```{r}
+# Plot EEZ exit pixels
+ggplot() +
+  #geom_sf(data = globe, fill = "white", color = "black")+  
+  geom_sf(data = eez_simple_sf) +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = exit_rcp45_sum_df , aes(x = x, y = y,
+                                               fill = N,
+                                               color = N)) +
+  scale_fill_viridis_c(limits = c(1, 28), 
+                      breaks = c(1, 2, 4, 8, 16, 28),
+                      direction = -1,
+                      trans = "log", # visually stretches the lower value data
+                      guide = guide_colorbar(
+                      barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  scale_color_viridis_c(limits = c(1,28), 
+                        breaks = c(1, 2, 4, 16, 28),
+                        direction = -1,
+                        trans = "log", # visually stretches the lower value data
+                        guide = "none")  +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_void() + 
+  labs(fill = "species exit count",
+       color = "species exit count",
+       x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) 
 ```

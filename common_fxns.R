@@ -477,3 +477,95 @@ extract_all_exit_pixels_df_db <- function(id, df, s) {
     return(spp_exit_pxls)
   }
 }
+
+# Get entry pixels for EEZ territory using duckdb to filter first
+extract_eez_ter_entry_pixels_df_db <- function(id, df, s, eez_spp_entry, eez_raster_df) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+  # Ensure connection is closed 
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  # Write query to round x and y to 3 decimal places and filter for scenario pixels at or above cutoff threshold
+  query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(s, collapse = ", "), 
+                      " FROM read_parquet('", spp_filter$f, "')",
+                      " WHERE ", paste(s, collapse = ", "), " >= cutoff")
+  
+  # Run query and filter for scenario pixels above cutoff threshold
+  spp <- DBI::dbGetQuery(con, query_str) 
+  
+  # Set option for if there are no pixels above the cutoff threshold
+  if (nrow(spp) == 0) {
+    warning("No pixels above cutoff threshold for aphiaid: ", id)
+    # Return NA to track no pixels above threshold
+    return(data.frame(x = NA, y = NA, MRGID_TER1 = NA, binary = 0))
+  } else {
+    
+    # Filter the df of EEZ species entry into for this species & scenario
+    entry_spp_df <- eez_spp_entry %>% 
+      filter(aphiaid == id) %>% 
+      filter(scenario == s)
+    
+    # Get the EEZs for which the species & scenario is entry
+    spp_entry_eezs <- unique(entry_spp_df$MRGID_TER1)
+    
+    # Join the eez dataframe and filter for the spp_entry_eezs
+    spp_eez <- inner_join(spp, eez_raster_df, by = c("x", "y")) %>% 
+      filter(MRGID_TER1 %in% spp_entry_eezs) %>% 
+      mutate(binary = 1) %>%  
+      dplyr::select(x, y, MRGID_TER1, binary)
+    
+    return(spp_eez)
+  }
+}
+
+# Get exit pixels for EEZ territory using duckdb to filter first
+extract_eez_ter_exit_pixels_df_db <- function(id, df, s, eez_spp_exit, eez_raster_df) {
+  spp_filter <- df %>% filter(aphiaid == id)
+  
+  if (nrow(spp_filter) == 0) {
+    warning("No rows found for aphiaid: ", id)
+    return(NULL)
+  }
+  
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+  # Ensure connection is closed 
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  # Write query to round x and y to 3 decimal places and filter for scenario pixels at or above cutoff threshold
+  query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, Current", 
+                      " FROM read_parquet('", spp_filter$f, "')",
+                      " WHERE Current >= cutoff")
+  
+  # Run query and filter for scenario pixels above cutoff threshold
+  spp <- DBI::dbGetQuery(con, query_str) 
+  
+  # Set option for if there are no pixels above the cutoff threshold
+  if (nrow(spp) == 0) {
+    warning("No pixels above cutoff threshold for aphiaid: ", id)
+    # Return NA to track no pixels above threshold
+    return(data.frame(x = NA, y = NA, MRGID_TER1 = NA, binary = 0))
+  } else {
+    
+    # Filter the df of EEZ species exit into for this species & scenario
+    exit_spp_df <- eez_spp_exit %>% 
+      filter(aphiaid == id) %>% 
+      filter(scenario == s)
+    
+    # Get the EEZs for which the species & scenario is exit
+    spp_exit_eezs <- unique(exit_spp_df$MRGID_TER1)
+    
+    # Join the eez dataframe and filter for the spp_entry_eezs
+    spp_eez <- inner_join(spp, eez_raster_df, by = c("x", "y")) %>% 
+      filter(MRGID_TER1 %in% spp_exit_eezs) %>% 
+      mutate(binary = 1) %>%  
+      dplyr::select(x, y, MRGID_TER1, binary)
+    
+    return(spp_eez)
+  }
+}
