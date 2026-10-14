@@ -750,3 +750,9 @@ ggplot() +
         plot.margin = margin(0, 0, 0, 0),
         panel.spacing = unit(0, "pt")) 
 ```
+
+```{r}
+# save data as rds
+saveRDS(entry_rcp45_sum_df, here("data/iucn_atrisk_rcp452050_1pxlthres_ter_entry_pxls_101426.rds"))
+saveRDS(exit_rcp45_sum_df, here("data/iucn_atrisk_rcp452050_1pxlthres_ter_exit_pxls_101426.rds"))
+```
