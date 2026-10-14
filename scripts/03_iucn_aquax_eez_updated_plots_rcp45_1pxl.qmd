@@ -1035,3 +1035,62 @@ biplot_all <- ggdraw() +
 # Save entry and exit maps
 ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_ter_density_1pxl_map_rcp45_101226.png"), biplot_all, width = 10, height = 5, dpi = 300)
 ```
+
+## Bivariate panels
+
+```{r}
+# New Caldonia (and Norfolk island to south east)
+ggplot() +
+  geom_sf(data = globe, fill = "white", color = "black") +
+  geom_sf(data = eez_terr_sov_sf, fill = "#f4f4f4") +
+  geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(-35, -10), expand = c(0,0)) +
+  scale_x_continuous(limits = c(155, 180), expand = c(0,0)) +
+  #coord_sf(xlim = c(0, 360), expand = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  labs(x = "", y = "")
+```
+
+```{r}
+# Reunion (contested region to north and Mauritius to east)
+ggplot() +
+  geom_sf(data = globe, fill = "white", color = "black") +
+  geom_sf(data = eez_terr_sov_sf, fill = "#f4f4f4") +
+  geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(-27, -12), expand = c(0,0)) +
+  scale_x_continuous(limits = c(46, 67), expand = c(0,0)) +
+  #coord_sf(xlim = c(0, 360), expand = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  labs(x = "", y = "")
+```
+
+```{r}
+# Bermuda
+ggplot() +
+  geom_sf(data = globe, fill = "white", color = "black") +
+  geom_sf(data = eez_terr_sov_sf, fill = "#f4f4f4") +
+  geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(27, 37), expand = c(0,0)) +
+  scale_x_continuous(limits = c(-70, -60), expand = c(0,0)) +
+  #coord_sf(xlim = c(0, 360), expand = FALSE) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank()) +
+  labs(x = "", y = "")
+```
