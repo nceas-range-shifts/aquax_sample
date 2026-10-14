@@ -31,9 +31,15 @@ spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv
 ```
 
 ```{r}
-# Spp EEZ entry/exit pixels
+# Spp EEZ entry/exit pixels (EEZ regions)
 spp_entry_pxls <- read_rds(here("data/iucn_atrisk_1pxlthres_entry_pxls_091626.rds"))
 spp_exit_pxls <- read_rds(here("data/iucn_atrisk_1pxlthres_exit_pxls_091626.rds"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels (EEZ territories)
+spp_entry_pxls_ter <- read_rds(here("data/iucn_atrisk_rcp452050_1pxlthres_ter_entry_pxls_101426.rds"))
+spp_exit_pxls_ter <- read_rds(here("data/iucn_atrisk_rcp452050_1pxlthres_ter_exit_pxls_101426.rds"))
 ```
 
 ```{r}
@@ -69,10 +75,12 @@ eez_200nm_list <- c(eez_200nm_list, 5695)
 
 ```{r}
 eez_simple <- eez %>% 
-  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1) %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1, MRGID_SOV1, MRGID_TER1) %>% 
   st_drop_geometry() %>% 
   filter(MRGID %in% eez_200nm_list) %>% 
-  mutate(ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1))
+  # For the territories that don't have ISO or IDs (like HI and AK), assign to SOV 
+  mutate(MRGID_TER1 = ifelse(is.na(ISO_TER1), MRGID_SOV1, MRGID_TER1),
+        ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1))
 
 eez_simple_sf <- eez %>% 
   dplyr::select(MRGID, GEONAME) %>% 
@@ -323,6 +331,14 @@ Code created with assistance from Claude to categorize the raster entry and exit
 ```{r}
 # Merge the entry and exit dataframes so that there are the same number of pixels in each raster
 spp_entry_exit_45_2050 <- full_join(spp_entry_pxls_45_2050, spp_exit_pxls_45_2050) %>% 
+  # Replace NA with 0
+  mutate(n_entry_spp = replace_na(n_entry_spp, 0),
+         n_exit_spp = replace_na(n_exit_spp, 0))
+```
+
+```{r}
+# Test with the territories entry/exit data (so no more HI pixels) Merge the entry and exit dataframes so that there are the same number of pixels in each raster
+spp_entry_exit_45_2050 <- full_join(spp_entry_pxls_ter %>% rename(n_entry_spp = N), spp_exit_pxls_ter %>% rename(n_exit_spp = N)) %>% 
   # Replace NA with 0
   mutate(n_entry_spp = replace_na(n_entry_spp, 0),
          n_exit_spp = replace_na(n_exit_spp, 0))
@@ -833,4 +849,189 @@ exit_sum_plot <- ggplot() +
 # Save entry and exit maps
 ggsave(here("figures/rcp45_2050/iucn_atrisk_total_spp_entry_1pxl_map_rcp45_100826.png"), entry_sum_plot, width = 10, height = 5, dpi = 300)
 ggsave(here("figures/rcp45_2050/iucn_atrisk_total_spp_exit_1pxl_map_rcp45_100826.png"), exit_sum_plot, width = 10, height = 5, dpi = 300)
+```
+
+## Bivariate plot
+
+Code created with assistance from Claude Sonnet 4.6 to categorize the raster entry and exit pixels into a bivariate color scheme using the following categories to create a 4x4 grid:
+* 0 species entry and 0 species exit
+* 0 species entry and 1 species exit
+* 1 species entry and 0 species exit
+* 1 species entry and 1 species exit
+* 2 species entry and 2 species exit
+* 3+ species entry and 3+ species exit
+* etc
+
+```{r}
+# Merge the entry and exit dataframes so that there are the same number of pixels in each raster
+spp_entry_exit_45_2050 <- full_join(spp_entry_pxls_45_2050, spp_exit_pxls_45_2050) %>% 
+  # Replace NA with 0
+  mutate(n_entry_spp = replace_na(n_entry_spp, 0),
+         n_exit_spp = replace_na(n_exit_spp, 0))
+```
+
+```{r}
+# Test with the territories entry/exit data (so no more HI pixels) Merge the entry and exit dataframes so that there are the same number of pixels in each raster
+spp_entry_exit_45_2050 <- full_join(spp_entry_pxls_ter %>% rename(n_entry_spp = N), spp_exit_pxls_ter %>% rename(n_exit_spp = N)) %>% 
+  # Replace NA with 0
+  mutate(n_entry_spp = replace_na(n_entry_spp, 0),
+         n_exit_spp = replace_na(n_exit_spp, 0))
+```
+
+```{r}
+# Create a new column that categorizes the number of species entry and exit into 3 categories: 0, 1, and 2+
+spp_entry_exit_cat_45_2050 <- spp_entry_exit_45_2050 %>% 
+  # Assign numeric_category
+  mutate(entry_cat = case_when(n_entry_spp == 0 ~ 1,
+                               n_entry_spp == 1 ~ 2,
+                               n_entry_spp == 2 ~ 3,
+                               n_entry_spp >= 3 ~ 4),
+         exit_cat = case_when(n_exit_spp == 0 ~ 1,
+                              n_exit_spp == 1 ~ 2,
+                              n_exit_spp == 2 ~ 3,
+                              n_exit_spp >= 3 ~ 4)) %>% 
+  # Create a new column that combines the entry and exit categories into a single category
+  mutate(entry_exit_cat = (exit_cat - 1) * 4 + entry_cat)
+```
+
+```{r}
+# Define numeric categories for the bivariate color scheme
+bivar_levels <- data.frame(
+  entry_exit_cat    = 1:16,
+  label = c(
+    "En0_Ex0", "En1_Ex0", "En2_Ex0", "En3_Ex0",   # exits = 0
+    "En0_Ex1", "En1_Ex1", "En2_Ex1", "En3_Ex1",   # exits = 1
+    "En0_Ex2", "En1_Ex2", "En2_Ex2", "En3_Ex2",   # exits = 2
+    "En0_Ex3", "En1_Ex3", "En2_Ex3", "En3_Ex3"    # exits = 3+
+  )
+)
+spp_entry_exit_cat_45_2050 <- left_join(spp_entry_exit_cat_45_2050, bivar_levels)
+```
+
+```{r}
+# Color palette
+# Entries increase left → right (blue axis)
+# Exits increase bottom → top (pink/purple axis)
+bivar_colors <- c(
+  "En0_Ex0" = "#e8e8e8",  # entries=0,  exits=0
+  "En1_Ex0" = "#c2e4e4",  # entries=1,  exits=0
+  "En2_Ex0" = "#8bd4d4",  # entries=2,  exits=0
+  "En3_Ex0" = "#5ac8c8",  # entries=3+, exits=0
+
+  "En0_Ex1" = "#e4c8df",  # entries=0,  exits=1
+  "En1_Ex1" = "#c0c4d8",  # entries=1,  exits=1
+  "En2_Ex1" = "#8ab5ce",  # entries=2,  exits=1
+  "En3_Ex1" = "#5698b9",  # entries=3+, exits=1
+
+  "En0_Ex2" = "#d4a0cc",  # entries=0,  exits=2
+  "En1_Ex2" = "#b09dc4",  # entries=1,  exits=2
+  "En2_Ex2" = "#8a8fba",  # entries=2,  exits=2
+  "En3_Ex2" = "#5a7aaa",  # entries=3+, exits=2
+
+  "En0_Ex3" = "#be64ac",  # entries=0,  exits=3+
+  "En1_Ex3" = "#8c62aa",  # entries=1,  exits=3+
+  "En2_Ex3" = "#5a5ea0",  # entries=2,  exits=3+
+  "En3_Ex3" = "#3b4994"   # entries=3+, exits=3+
+)
+
+```
+
+```{r}
+biplot <- ggplot() +
+  geom_sf(data = globe, fill = "white", color = "black")+
+  geom_sf(data = eez_simple_sf, fill = "#f4f4f4") +
+  coord_sf(expand = FALSE) +
+  # Plot pixels at 3x size to help with visualization
+  geom_tile(data = spp_entry_exit_cat_45_2050, width = 0.15, height = 0.15, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "#f4f4f4") +
+  scale_color_manual(values = bivar_colors, na.value = "#f4f4f4") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(#title = "Species exits vs entries, RCP 4.5 2050",
+       x = "",
+       y = "")
+```
+
+```{r}
+# Create legend for bivariate color scheme
+legend_df <- expand.grid(entries = 1:4, exits = 1:4)
+legend_df$label <- paste0("En", legend_df$entries - 1, "_Ex", legend_df$exits - 1)
+
+legend_biplot <- ggplot(legend_df, aes(x = entries, y = exits, fill = label)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  scale_fill_manual(values = bivar_colors) +
+  scale_x_continuous(breaks = 1:4, labels = c("0", "1", "2", "3+")) +
+  scale_y_continuous(breaks = 1:4, labels = c("0", "1", "2", "3+")) +
+  labs(x = "Entries →", y = "Exits →") +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text       = element_text(size = 8),
+    axis.title      = element_text(size = 9)
+  )
+```
+
+```{r}
+# Combine plot
+bivariate_map <- ggdraw() +
+  draw_plot(biplot,    0,    0,    1,    1) +
+  #draw_plot(legend_biplot, 0.75, 0.75, 0.2, 0.25)
+  draw_plot(legend_biplot, 0.12, 0.23, 0.15, 0.15)
+```
+
+# Add density plot to bivariate map
+
+```{r}
+biplot_density <-ggplot() +
+  geom_density(data = spp_exit_pxls_ter, aes(x = y),fill = "#be64ac", color = "#be64ac", alpha = 0.5, size = 1) +
+  geom_density(data = spp_entry_pxls_ter, aes(x = y),fill = "#5698b9", color = "#5698b9", alpha = 0.5, size = 1) +
+  coord_flip() +
+  scale_x_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  labs(x = "",
+       y = "") +
+  theme(plot.margin = margin(0, 0, 0, 0))
+```
+
+```{r}
+biplot_2 <- ggplot() +
+  geom_sf(data = globe, fill = "white", color = "black")+
+  geom_sf(data = eez_simple_sf, fill = "#f4f4f4") +
+  coord_sf(expand = FALSE) +
+  geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
+                                              fill = label,
+                                              color = label)) +
+  scale_fill_manual(values = bivar_colors, na.value = "white") +
+  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_y_continuous(limits = c(-90, 90)) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.margin = margin(0, 0, 0, 0),
+        panel.spacing = unit(0, "pt")) +
+  labs(title = "",
+       x = "",
+       y = "") 
+```
+
+```{r}
+biplot_and_density <- biplot_2 + biplot_density + 
+  plot_annotation(title = "") +
+  plot_layout(widths = c(4, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  theme(legend.position = "none") 
+```
+
+```{r}
+biplot_all <- ggdraw() +
+  draw_plot(biplot_and_density,    0,    0,    1,    1) +
+  #draw_plot(legend_biplot, 0.6, 0.8, 0.2, 0.2)
+  draw_plot(legend_biplot, 0.06, 0.15, 0.18, 0.18)
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_ter_density_1pxl_map_rcp45_101226.png"), biplot_all, width = 10, height = 5, dpi = 300)
 ```
