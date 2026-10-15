@@ -113,6 +113,28 @@ eez_contested_sf <- eez %>%
   filter(MRGID %in% eez_contested_list)
 ```
 
+```{r}
+# Create a blank raster matching AquaX resolution (EEZs should be large enough to just do 0.05 degree raster)
+eez_raster_blank <- rast(xmin = -180,
+                  xmax = 180,
+                  ymin = -90, 
+                  ymax = 90,
+                  resolution = 0.05,
+                  crs = "EPSG:4326")
+```
+
+```{r}
+eez_raster_mrgid <- rasterize(eez, eez_raster_blank, field = "MRGID")
+```
+
+```{r}
+# Create dataframe of EEZ raster
+eez_raster_df <- as.data.frame(eez_raster_mrgid, xy = TRUE) %>% 
+  # Round so that the X and Y match the AquaX data (which is rounded to 3 decimal places)
+  mutate(x = round(x, 3),
+         y = round(y, 3))
+```
+
 ## Future - Current species (new species per pixel)
 Only for the species entering the EEZs of that basin
 
@@ -138,8 +160,16 @@ eez_spp_pxls_long_sov <- left_join(spp_eez_pxl_count %>% filter(MRGID %in% eez_2
 ```
 
 ```{r}
+# Find MRGID_TER1 for seas of interest
 eez_simple_seaofjapan <- eez_simple %>% 
     filter(MRGID %in% c(8328, 8327, 8487, 5690, 48955))
+
+eez_simple_baltic <- eez_simple %>% 
+   filter(MRGID %in% c(5694, 5690, 5684, 5683, 5675, 5676, 5669, 5687, 5674))
+
+eez_simple_blacksea <- eez_simple %>% 
+  filter(MRGID %in% c(5697, 5695, 5690, 5689, 5672, 5678))
+  
 ```
 
 ```{r}
@@ -147,6 +177,25 @@ eez_simple_seaofjapan <- eez_simple %>%
 # Add contested Liancourt Rocks to Sea of Japan (48955) now 104 species
 sea_japan_entry_spp <- eez_spp_pxls_long_sov %>% 
   filter(MRGID_TER1 %in% c(8601, 2121, 8600, 2240, 48935)) %>%
+  filter(scenario == "RCP45_2050") %>% 
+  filter(spp_change == "entry into new") 
+
+```
+
+```{r}
+# 14 species entering the Baltic Sea EEZ (MRGID 5694, 5690, 5684, 5683, 5675, 5676, 5669, 5687, 5674) under RCP4.5 in 2050 (tricky with Russia being such a large EEZ)
+baltic_entry_spp <- eez_spp_pxls_long_sov %>% 
+  filter(MRGID_TER1 %in% c(2110, 2106, 2180, 2156, 2101, 2157, 2132, 2244, 2240)) %>%
+  filter(MRGID_TER1 != 2240) %>% # remove russia (doesn't look like there are any species entries on map)
+  filter(scenario == "RCP45_2050") %>% 
+  filter(spp_change == "entry into new") 
+
+```
+
+```{r}
+# 34 species entering the Black Sea EEZ (MRGID 25206, 25205, 25201, 25203, 25202, 25204) 
+black_sea_entry_spp <- eez_spp_pxls_long_sov %>% 
+  filter(MRGID_TER1 %in% c(2102, 2213, 2174, 2196, 2241, 2240)) %>%
   filter(scenario == "RCP45_2050") %>% 
   filter(spp_change == "entry into new") 
 
@@ -181,7 +230,7 @@ df <- data.frame(f = spp_fs) %>%
 Plot the current range of the species entering the Sea of Japan region
 
 ```{r}
-# Get aphiaids for the reef building corals entering Sea of Japan
+# Get aphiaids for the species entering Sea of Japan
 sea_japan_aphiaid <- unique(sea_japan_entry_spp$aphiaid)
 ```
 
@@ -201,8 +250,8 @@ source(here( "common_fxns.R"))
 ```{r}
 # 86 seconds
 system.time({
-  sea_japan_pxl_rcp45_2050_list <- parallel::mclapply(sea_japan_aphiaid, 
-                                       FUN = extract_all_exit_pixels_df_db, 
+  sea_japan_new_pxl_rcp45_2050_list <- parallel::mclapply(sea_japan_aphiaid, 
+                                       FUN = extract_all_entry_pixels_df_db, 
                                        df = df_sea_japan, 
                                        s = "RCP45_2050",
                                        mc.cores = 5)
@@ -210,18 +259,239 @@ system.time({
 ```
 
 ```{r}
-exit_rcp45_df <- bind_rows(spp_exit_pxl_rcp45_2050_list) %>% 
+japan_entry_rcp45_df <- bind_rows(sea_japan_new_pxl_rcp45_2050_list) %>% 
   # drop entry = 0 (no entry pixels for aphiaid)
-  filter(exit == 1)
+  filter(entry == 1)
 ```
 
 ```{r}
 # Sum by XY cell, using collapse
 system.time({
-exit_rcp45_sum_df <- exit_rcp45_df %>% 
+japan_entry_rcp45_sum_df <- japan_entry_rcp45_df %>% 
   fgroup_by(x, y) %>% 
   fcount() %>% 
   mutate(scenario = "RCP45_2050") %>% 
-  rename(n_exit_pxls = N)
+  rename(n_entry_pxls = N)
 })
 ```
+
+```{r}
+# Join with pixel raster dataframe to only plot pixels in EEZ
+japan_entry_rcp45_sum_df_crop <- inner_join((eez_raster_df %>% dplyr::select(x, y)), japan_entry_rcp45_sum_df)
+```
+
+```{r}
+sea_of_japan_plot <- ggplot() +
+  geom_sf(data = eez_simple_sf, fill = "#f4f4f4", color = NA) +
+  geom_sf(data = eez_contested_sf, fill = "#f4f4f4", color = NA) +
+  geom_tile(data = japan_entry_rcp45_sum_df_crop, aes(x = x, y = y, fill = n_entry_pxls)) +
+  scale_y_continuous(limits = c(29, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(119, 148), expand = c(0,0)) +
+  scale_fill_viridis_c(option = "mako",
+direction = 1,
+                      limits = c(1, 26),
+                      trans = "sqrt",
+                      breaks = c(1, 6, 12, 26),
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  geom_sf(data = eez_simple_sf, color = "yellow", size = 0.2, fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.2, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(title = "Sea of Japan",
+       fill = "new species count", 
+       x = "",
+       y = "") +
+  theme_void() +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+## Black Sea - entry species 
+Plot the current range of the species entering the Black Sea region
+
+```{r}
+# Get aphiaids for the species entering Black Sea
+black_sea_aphiaid <- unique(black_sea_entry_spp$aphiaid)
+```
+
+```{r}
+df_black_sea <- df %>% 
+  filter(aphiaid %in% black_sea_aphiaid)
+
+```
+
+We can use the function for new species pixels to map the range change for the species entering the EEZs of the Black Sea
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+```{r}
+# 86 seconds
+system.time({
+  black_sea_new_pxl_rcp45_2050_list <- parallel::mclapply(black_sea_aphiaid, 
+                                       FUN = extract_all_entry_pixels_df_db, 
+                                       df = df_black_sea, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 5)
+})
+```
+
+```{r}
+black_sea_entry_rcp45_df <- bind_rows(black_sea_new_pxl_rcp45_2050_list) %>% 
+  # drop entry = 0 (no entry pixels for aphiaid)
+  filter(entry == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+black_sea_entry_rcp45_sum_df <- black_sea_entry_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  rename(n_entry_pxls = N)
+})
+```
+
+```{r}
+# Join with pixel raster dataframe to only plot pixels in EEZ
+black_sea_entry_rcp45_sum_df_crop <- inner_join((eez_raster_df %>% dplyr::select(x, y)), black_sea_entry_rcp45_sum_df)
+```
+
+```{r}
+black_sea_plot <- ggplot() +
+  geom_sf(data = eez_simple_sf, fill = "#f4f4f4", color = NA) +
+  geom_sf(data = eez_contested_sf, fill = "#f4f4f4", color = NA) +
+  geom_tile(data = black_sea_entry_rcp45_sum_df_crop, aes(x = x, y = y, fill = n_entry_pxls)) +
+  scale_y_continuous(limits = c(38, 48), expand = c(0,0)) +
+  scale_x_continuous(limits = c(25, 43), expand = c(0,0)) +
+  scale_fill_viridis_c(option = "mako",
+direction = 1,
+                      limits = c(1, 13),
+                      trans = "sqrt",
+                      breaks = c(1, 3, 6, 13),
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  geom_sf(data = eez_simple_sf, color = "yellow", size = 0.2, fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.2, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(title = "Black Sea",
+       fill = "new species count", 
+       x = "",
+       y = "") +
+  theme_void() +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+## Baltic - entry species 
+Plot the current range of the species entering the baltic region
+
+```{r}
+# Get aphiaids for the species entering baltic
+baltic_aphiaid <- unique(baltic_entry_spp$aphiaid)
+```
+
+```{r}
+df_baltic <- df %>% 
+  filter(aphiaid %in% baltic_aphiaid)
+
+```
+
+We can use the function for new species pixels to map the range change for the species entering the EEZs of the Baltic
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+```{r}
+# 86 seconds
+system.time({
+  baltic_new_pxl_rcp45_2050_list <- parallel::mclapply(baltic_aphiaid, 
+                                       FUN = extract_all_entry_pixels_df_db, 
+                                       df = df_baltic, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 5)
+})
+```
+
+```{r}
+baltic_entry_rcp45_df <- bind_rows(baltic_new_pxl_rcp45_2050_list) %>% 
+  # drop entry = 0 (no entry pixels for aphiaid)
+  filter(entry == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+baltic_entry_rcp45_sum_df <- baltic_entry_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  rename(n_entry_pxls = N)
+})
+```
+
+```{r}
+# Join with pixel raster dataframe to only plot pixels in EEZ
+baltic_entry_rcp45_sum_df_crop <- inner_join((eez_raster_df %>% dplyr::select(x, y)), baltic_entry_rcp45_sum_df)
+```
+
+```{r}
+baltic_plot <- ggplot() +
+  geom_sf(data = eez_simple_sf, fill = "#f4f4f4", color = NA) +
+  geom_sf(data = eez_contested_sf, fill = "#f4f4f4", color = NA) +
+  geom_tile(data = baltic_entry_rcp45_sum_df_crop, aes(x = x, y = y, fill = n_entry_pxls)) +
+  scale_y_continuous(limits = c(53.5, 66), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(1, 29), expand = c(0, 0)) +
+  scale_fill_viridis_c(option = "mako",
+direction = 1,
+                      limits = c(1, 13),
+                      trans = "sqrt",
+                      breaks = c(1, 3, 6, 13),
+                      guide = guide_colorbar(
+                      #barwidth  = unit(5, "cm"),   # wide bar for bottom placement
+                      #barheight = unit(0.4, "cm"),
+                      ticks = TRUE,
+                      ticks.colour = "white",
+                      ticks.linewidth = 0.8
+  )) +
+  geom_sf(data = eez_simple_sf, color = "yellow", size = 0.2, fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", size = 0.2, fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  labs(title = "Baltic Sea",
+       fill = "new species count", 
+       x = "",
+       y = "") +
+  theme_void() +
+  theme(legend.position = "bottom",
+        plot.margin = margin(l = 5)) 
+```
+
+# Combine and save plots
+
+```{r}
+sea_all <- baltic_plot + black_sea_plot + sea_of_japan_plot + 
+  #plot_annotation(title = "Species entry hotspots, SSP2-4.5 2050") +
+  plot_layout(ncol = 3,
+              axis_titles = "collect") &
+  theme(legend.position = "bottom")
+```
+
+```{r}
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_basins_range_change_101426.png"), sea_all, width = 10, height = 5, dpi = 300)
+```
+
