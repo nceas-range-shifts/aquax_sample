@@ -1,0 +1,227 @@
+---
+title: "Hotspots - RCP 4.5 2050 & 1 pxl"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(patchwork)
+library(cowplot)
+library(collapse)
+```
+
+This document creates some more focused plots for the data calculated in 01_iucn_aquax_eez_overlap_db.qmd and 02_iucn_aquax_rangearea.qmd. It saves figures for RCP 4.5 2050 and the 1 pixel threshold data.
+
+## Read in threatened species data
+
+```{r}
+# Spp in EEZs
+spp_eez_pxl_count <- read_csv(here("data/iucn_threatened_spp_eez_pxls_061626.csv"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels (EEZ regions)
+spp_entry_pxls <- read_rds(here("data/iucn_atrisk_1pxlthres_entry_pxls_091626.rds"))
+spp_exit_pxls <- read_rds(here("data/iucn_atrisk_1pxlthres_exit_pxls_091626.rds"))
+```
+
+```{r}
+# Spp EEZ entry/exit pixels (EEZ territories)
+spp_entry_ter_pxls <- read_rds(here("data/iucn_atrisk_rcp452050_1pxlthres_ter_entry_pxls_101426.rds"))
+spp_exit_ter_pxls <- read_rds(here("data/iucn_atrisk_rcp452050_1pxlthres_ter_exit_pxls_101426.rds"))
+```
+
+```{r}
+# Spp EEZ new and loss species by pixel 
+new_spp_pxls <- read_rds(here("data/iucn_atrisk_new_spp_pxls_rcp45_2050_101226.rds"))
+lost_spp_pxls <- read_rds(here("data/iucn_atrisk_lost_spp_pxls_rcp45_2050_101226.rds"))
+```
+
+```{r}
+# Species range area
+area_df <- read_csv(here("data/iucn_threatened_spp_range_area_061826.csv"))
+```
+
+```{r}
+spp_entry_pxls_45_2050 <- spp_entry_pxls %>% 
+  filter(scenario == "RCP45_2050") 
+```
+
+## EEZs
+
+```{r}
+library(rnaturalearth)
+globe <- ne_countries(scale = "large", returnclass = "sf")
+```
+
+```{r}
+eez <- st_read('/home/shares/usgs-cap-rangeshifts/spatial/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+eez <- st_read('/Users/abowd/World_EEZ_v12_20231025_gpkg/eez_v12.gpkg')
+```
+
+```{r}
+# Get list of EEZ IDs that are not overlapping claims (i.e., POL_TYPE = 200NM)
+eez_200nm_list <- eez %>% 
+  filter(POL_TYPE == "200NM") %>% 
+  pull(MRGID)
+
+# Add Ukraine to list
+eez_200nm_list <- c(eez_200nm_list, 5695)
+```
+
+```{r}
+# Get list of EEZs that are not POL_TYPE = 200NM
+eez_contested_list <- eez %>% 
+  filter(POL_TYPE != "200NM") %>%
+  # Remove Ukraine from this list
+  filter(MRGID != 5695) %>% 
+  pull(MRGID)
+```
+
+```{r}
+eez_simple <- eez %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1, MRGID_SOV1, MRGID_TER1) %>% 
+  st_drop_geometry() %>% 
+  filter(MRGID %in% eez_200nm_list) %>% 
+  # For the territories that don't have ISO or IDs (like HI and AK), assign to SOV 
+  mutate(MRGID_TER1 = ifelse(is.na(ISO_TER1), MRGID_SOV1, MRGID_TER1),
+        ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1))
+
+eez_simple_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_200nm_list)
+```
+
+```{r}
+eez_contested_sf <- eez %>% 
+  dplyr::select(MRGID, GEONAME) %>% 
+  filter(MRGID %in% eez_contested_list)
+```
+
+## Future - Current species (new species per pixel)
+Only for the species entering the EEZs of that basin
+
+```{r}
+# Try applying species entries / exits by territories and sovereign EEZ
+eez_spp_pxls_long_sov <- left_join(spp_eez_pxl_count %>% filter(MRGID %in% eez_200nm_list), eez_simple) %>% 
+  pivot_longer(cols = starts_with("n_RCP"),
+               names_to = "scenario",
+               values_to = "pxl_count") %>% 
+  mutate(scenario = str_remove(scenario, "n_")) %>% 
+  # Replace NA with 0, otherwise will be assigned to "continued presence"
+  mutate(pxl_count = replace_na(pxl_count, 0),
+         n_current = replace_na(n_current, 0)) %>% 
+  # Group by territory and sovereign EEZ to calcualte species entry and exit
+  group_by(ISO_TER1, MRGID_TER1, ISO_SOV1, scenario, aphiaid) %>% 
+  summarize(sum_n_current = sum(n_current),
+            sum_pxl_count = sum(pxl_count)) %>% 
+  ungroup() %>% 
+  mutate(spp_change = case_when(sum_n_current < 1 &  sum_pxl_count >= 1 ~ 'entry into new',
+                            sum_n_current >= 1  & sum_pxl_count < 1 ~ 'exit from historical',
+                            sum_n_current < 1  & sum_pxl_count < 1 ~ 'no presence',
+                            TRUE ~ 'continued presence'))
+```
+
+```{r}
+eez_simple_seaofjapan <- eez_simple %>% 
+    filter(MRGID %in% c(8328, 8327, 8487, 5690, 48955))
+```
+
+```{r}
+# Sea of Japan EEZs (MRGID 8328, 8327, 8487, 5690) under RCP4.5 in 2050 (tricky with Russia being such a large EEZ)
+# Add contested Liancourt Rocks to Sea of Japan (48955) now 104 species
+sea_japan_entry_spp <- eez_spp_pxls_long_sov %>% 
+  filter(MRGID_TER1 %in% c(8601, 2121, 8600, 2240, 48935)) %>%
+  filter(scenario == "RCP45_2050") %>% 
+  filter(spp_change == "entry into new") 
+
+```
+
+# Read in AquaX files 
+
+```{r}
+# read in meta data on the aquax species
+load("/home/shares/data-aquax/META_02122025.Rdata")
+```
+
+```{r}
+meta_clean <- META %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+## Sea of Japan - entry species 
+Plot the current range of the species entering the Sea of Japan region
+
+```{r}
+# Get aphiaids for the reef building corals entering Sea of Japan
+sea_japan_aphiaid <- unique(sea_japan_entry_spp$aphiaid)
+```
+
+```{r}
+df_sea_japan <- df %>% 
+  filter(aphiaid %in% sea_japan_aphiaid)
+
+```
+
+We can use the function for new species pixels to map the range change for the species entering the EEZs of the Sea of Japan
+
+```{r}
+# Load functions for processing AquaX data
+source(here( "common_fxns.R"))
+```
+
+```{r}
+# 86 seconds
+system.time({
+  sea_japan_pxl_rcp45_2050_list <- parallel::mclapply(sea_japan_aphiaid, 
+                                       FUN = extract_all_exit_pixels_df_db, 
+                                       df = df_sea_japan, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 5)
+})
+```
+
+```{r}
+exit_rcp45_df <- bind_rows(spp_exit_pxl_rcp45_2050_list) %>% 
+  # drop entry = 0 (no entry pixels for aphiaid)
+  filter(exit == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse
+system.time({
+exit_rcp45_sum_df <- exit_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  rename(n_exit_pxls = N)
+})
+```
