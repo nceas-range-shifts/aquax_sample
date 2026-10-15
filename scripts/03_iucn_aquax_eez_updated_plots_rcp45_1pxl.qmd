@@ -710,7 +710,19 @@ spp_eez_exit_count_sov <- eez_spp_pxls_long_sov %>%
   ungroup()
 ```
 
-Now, France, North Korea, United Kingdom, Russia, and United Kingdom are the top five for species entry. France is also at the top of the list for species exits with 227 species exits (for France, across their EEZ subparts there are 227 instances of species entirely leaving EEZ regions - pretty interesting). In comparision, there are 11 species exits for France if you dissolve the subparts of their EEZ. 
+```{r}
+# For the seven species projected to go extinct, how many EEZs do they exit?
+extinct_rcp45_2050 <- area_df %>% 
+  filter(scenario == "RCP45_2050",
+         area_change == "spp range loss")
+
+extinct_rcp45_2050_aphiaid <- extinct_rcp45_2050$aphiaid
+
+extinct_eez_exit <- spp_eez_exit_count_sov %>%
+  filter(scenario == "RCP45_2050") %>% 
+  filter(aphiaid %in% extinct_rcp45_2050_aphiaid)
+```
+
 
 ```{r}
 # Get counts of entry into new, exit from historical etc. by  EEZ region
