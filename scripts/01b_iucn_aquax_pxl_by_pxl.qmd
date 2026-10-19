@@ -319,7 +319,7 @@ pxl_entry_map <- ggplot() +
                       ticks.linewidth = 0.8
   )) +
   scale_y_continuous(limits = c(-90, 90)) +
-  geom_sf(data = eez_simple_sf %>% filter(MRGID %in% eez_200nm_list), size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_simple_sf %>% filter(MRGID %in% eez_200nm_list), color = "gray", fill = "NA") +
   geom_sf(data = globe, fill = "cornsilk", color = "black") +
   theme_void() + 
   labs(fill = "new species count",
@@ -392,7 +392,7 @@ pxl_exit_map <- ggplot() +
                       ticks.linewidth = 0.8
   )) +
   scale_y_continuous(limits = c(-90, 90)) +
-  geom_sf(data = eez_simple_sf %>% filter(MRGID %in% eez_200nm_list), size = 0.01, color = "yellow", fill = "NA") +
+  geom_sf(data = eez_simple_sf %>% filter(MRGID %in% eez_200nm_list), color = "gray", fill = "NA") +
   geom_sf(data = globe, fill = "cornsilk", color = "black")+
   theme_void() + 
   labs(fill = "lost species count",
@@ -425,10 +425,10 @@ labels = c("A", "B"), rel_heights = c(1,1))
 
 ```{r}
 # Save arranged maps
-ggsave(here("figures/rcp45_2050/iucn_atrisk_new_lost_spp_pxl_map_rcp45_101626.pdf"), 
+#ggsave(here("figures/rcp45_2050/iucn_atrisk_new_lost_spp_pxl_map_rcp45_101626.pdf"), 
   pxl_map, width = 6, height = 8, dpi = 300, units = "in")
 
 ggsave(here("figures/rcp45_2050/iucn_atrisk_new_lost_spp_pxl_map_rcp45_101626.png"), 
-  pxl_map, width = 6, height = 8, dpi = 300, units = "in")
+  pxl_map, width = 6, height = 8, dpi = 600, units = "in")
 
 ```
