@@ -794,9 +794,9 @@ eez_entries_sf <- left_join(eez_entry_count_sov , eez_terr_sov_sf, by = c("ISO_T
 
 ```{r}
 entry_sum_plot <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk")+  
-  geom_sf(data = eez_simple_sf, fill = "lightgray") +
-  geom_sf(data = eez_entries_sf, aes(fill = spp_change_count, geometry = geom)) +
+  #geom_sf(data = globe, fill = "cornsilk")+  
+  geom_sf(data = eez_simple_sf, fill = "#e8e8e8", color = "gray") +
+  geom_sf(data = eez_entries_sf, aes(fill = spp_change_count, geometry = geom), color = "gray") +
   coord_sf(expand = FALSE) + 
   scale_fill_viridis_c(limits = c(1, 47), 
                       breaks = c(1, 2, 4, 8, 16, 28, 47),
@@ -809,6 +809,7 @@ entry_sum_plot <- ggplot() +
                       ticks = TRUE,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8)) +
+  geom_sf(data = globe, fill = "cornsilk", color = "black") +
   theme_void() + 
   labs(fill = "species entry count",
        color = "species entry count",
@@ -832,9 +833,9 @@ eez_exits_sf <- left_join(eez_exit_count_sov , eez_terr_sov_sf, by = c("ISO_TER1
 
 ```{r}
 exit_sum_plot <- ggplot() +
-  geom_sf(data = globe, fill = "cornsilk")+  
-  geom_sf(data = eez_simple_sf, fill = "lightgray") +
-  geom_sf(data = eez_exits_sf, aes(fill = spp_change_count, geometry = geom)) +
+  #geom_sf(data = globe, fill = "cornsilk")+  
+  geom_sf(data = eez_simple_sf, fill = "#e8e8e8", color = "gray") +
+  geom_sf(data = eez_exits_sf, aes(fill = spp_change_count, geometry = geom), color = "gray") +
   coord_sf(expand = FALSE) + 
   scale_fill_viridis_c(limits = c(1, 47), 
                       breaks = c(1, 2, 4, 8, 16, 28, 47),
@@ -847,6 +848,7 @@ exit_sum_plot <- ggplot() +
                       ticks = TRUE,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8)) +
+  geom_sf(data = globe, fill = "cornsilk", color = "black") +
   theme_void() + 
   labs(fill = "species exit count",
        color = "species exit count",
@@ -861,6 +863,20 @@ exit_sum_plot <- ggplot() +
 # Save entry and exit maps
 ggsave(here("figures/rcp45_2050/iucn_atrisk_total_spp_entry_1pxl_map_rcp45_100826.png"), entry_sum_plot, width = 10, height = 5, dpi = 300)
 ggsave(here("figures/rcp45_2050/iucn_atrisk_total_spp_exit_1pxl_map_rcp45_100826.png"), exit_sum_plot, width = 10, height = 5, dpi = 300)
+```
+
+## Arrange maps
+
+```{r}
+eez_sum_map <- plot_grid(entry_sum_plot, exit_sum_plot, ncol = 1, align = "v",
+labels = c("A", "B"), rel_heights = c(1,1))
+```
+
+```{r}
+# Save arranged maps
+ggsave(here("figures/rcp45_2050/iucn_atrisk_total_spp_entry_exit_1pxl_map_rcp45_101926.png"), 
+  eez_sum_map, width = 6, height = 8, dpi = 600, units = "in")
+
 ```
 
 ## Bivariate plot
