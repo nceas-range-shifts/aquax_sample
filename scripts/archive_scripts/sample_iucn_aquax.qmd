@@ -1,0 +1,172 @@
+---
+title: "Aquax - duckdb functions"
+format: 
+  html:
+    toc: true
+    number-sections: true
+    embed-resources: true
+execute:
+    message: false
+    warning: false
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(terra)
+library(arrow)
+library(collapse)
+```
+
+This document uses functions that utilize duckdb's ability to filter the SDM data before it is read into R for efficiency improvements. 
+
+This document uses the IUCN lookup and threat category data created in the chi repository. It connects IUCN status to AquaX data using the Aphia ID, which is a unique identifier for marine species in the World Register of Marine Species (WoRMS). github: https://github.com/nceas-range-shifts/chi_shifts/tree/main/_data/iucn_redlist_2026 
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/ab9cd09931a4ce5c12d0bcd2984595d6522ed158/_data/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_new_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data/iucn_redlist_2026/iucn_species_assessments.csv")
+```
+
+
+# IUCN threatened species
+
+```{r}
+# Filter the iucn_lookup for species with an SDM
+iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
+```
+
+```{r}
+# Filter iucn categories for threatened species (CR, EN, VU) and near threatened (NT) species
+iucn_threatened <- iucn_new_cat %>% 
+  filter(redlist_category %in% c("CR","EN", "VU", "NT"))
+```
+
+```{r}
+# Merge in the iucn_lookup_sdm to get the AphiaID for the threatened species
+aphiaid_threatened <- inner_join(iucn_lookup_sdm, iucn_threatened, by = c("iucn_assessment_id" = "assessment_id")) 
+```
+
+```{r}
+# Get aphiaids for the threatened species
+aphiaid_threat <- unique(aphiaid_threatened$aphia_id)
+```
+
+## Prep AquaX data
+We'll be working with the 1,323 at-risk aphiaids
+
+```{r}
+# read in meta data on the aquax species
+load("/home/shares/data-aquax/META_02122025.Rdata")
+```
+
+```{r}
+meta_clean <- META %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+spp_fs <- list.files('/home/shares/data-aquax/SDM',
+                     full.names = TRUE)
+
+df <- data.frame(f = spp_fs) %>%
+    mutate(fsize = file.size(f),
+           aphiaid = str_extract(basename(f), '[0-9]+') %>% as.integer()) %>%
+    left_join(META, by = c('aphiaid' = 'AphiaID'))
+```
+
+```{r}
+# Filter for the AphiaID of the threatend species - get 1,047 threatened species and 276 non-threatened species with SDMs
+df_threatened <- df %>% 
+  filter(aphiaid %in% aphiaid_threat)
+```
+
+```{r}
+test_f <- read_parquet("/home/shares/data-aquax/SDM/FINAL_EMSDM_EMMEAN_SP_1017389.parquet")
+```
+
+# Run full sample for entry pixels
+
+```{r}
+# Function for pixels that were not present in the current time period and are present in climate scenario (entry to pixel)
+# Juliette - you could probably just get rid of the "AND Current < cutoff" statement that filters for only species that were not present in the current time period
+# You would still want the flag to later sum up the number of pixels that are in that cell (could change to binary = 1 instead of entry = 1)
+
+# Get all entry pixels (pixel by pixel) using duckdb to filter first
+extract_all_entry_pixels_df_db <- function(id, df, s) {
+    spp_filter <- df %>% filter(aphiaid == id)
+  
+    if (nrow(spp_filter) == 0) {
+      warning("No rows found for aphiaid: ", id)
+      return(NULL)
+  }
+
+  # Create database connection
+  con <- DBI::dbConnect(duckdb::duckdb())
+  # Ensure connection is closed 
+  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  # Write query to round x and y to 3 decimal places and filter for scenario pixels at or above cutoff threshold
+   query_str <- paste0("SELECT ROUND(x, 3) AS x, ROUND(y, 3) AS y, ", paste(s, collapse = ", "), 
+                      " FROM read_parquet('", spp_filter$f, "')",
+                      " WHERE ", paste(s, collapse = ", "), " >= cutoff AND Current < cutoff")
+
+ # Run query and filter for scenario pixels below current cutoff threshold and above cutoff threshold
+    spp_entry <- DBI::dbGetQuery(con, query_str) 
+
+  # Set option for if there are no pixels below current cutoff threshold and above the cutoff threshold
+    if (nrow(spp_entry) == 0) {
+        warning("No entry pixels for aphiaid: ", id)
+        # Return NA to track no pixels above threshold
+      return(data.frame(x = NA, y = NA, MRGID = NA, entry = 0))
+    } else {
+  
+  # Flag the pixels for entry
+    spp_entry_pxls <- spp_entry %>% 
+      mutate(entry = 1) 
+  
+  return(spp_entry_pxls)
+  }
+}
+
+```
+
+```{r}
+# 185 seconds
+system.time({
+  spp_entry_pxl_rcp45_2050_list <- parallel::mclapply(aphiaid_threat, FUN = extract_all_entry_pixels_df_db, 
+                                       df = df_threatened, 
+                                       s = "RCP45_2050",
+                                       mc.cores = 30)
+})
+```
+
+```{r}
+entry_rcp45_df <- bind_rows(spp_entry_pxl_rcp45_2050_list) %>% 
+  # drop entry = 0 (no entry pixels for aphiaid)
+  filter(entry == 1)
+```
+
+```{r}
+# Sum by XY cell, using collapse (counting the number of species in a pixel)
+system.time({
+entry_rcp45_sum_df <- entry_rcp45_df %>% 
+  fgroup_by(x, y) %>% 
+  fcount() %>% 
+  mutate(scenario = "RCP45_2050") %>% 
+  rename(n_entry_pxls = N)
+})
+```
+
+```{r}
+# Plot
+ggplot() +
+  geom_tile(data = entry_rcp45_sum_df, aes(x = x, y = y, fill = n_entry_pxls)) 
+```
+
