@@ -1013,28 +1013,41 @@ bivariate_map <- ggdraw() +
 
 ```{r}
 biplot_density <-ggplot() +
-  geom_density(data = spp_exit_pxls_ter, aes(x = y),fill = "#be64ac", color = "#be64ac", alpha = 0.5, size = 1) +
-  geom_density(data = spp_entry_pxls_ter, aes(x = y),fill = "#5698b9", color = "#5698b9", alpha = 0.5, size = 1) +
+  geom_density(data = spp_exit_pxls_ter, aes(x = y, y = after_stat(scaled)),fill = "#be64ac", color = "#be64ac", alpha = 0.5, size = 1) +
+  geom_density(data = spp_entry_pxls_ter, aes(x = y, y = after_stat(scaled)),fill = "#5698b9", color = "#5698b9", alpha = 0.5, size = 1) +
   coord_flip() +
   scale_x_continuous(limits = c(-90, 90)) +
   theme_minimal() +
   labs(x = "",
-       y = "") +
-  theme(plot.margin = margin(0, 0, 0, 0))
+       y = "density") +
+  theme(plot.margin = margin(0, 0, 0, 0),
+  axis.text.y = element_blank(),
+  axis.ticks.y = element_blank())
+```
+
+```{r}
+inset_bbox_df <- tribble(
+  ~xmin,   ~xmax,  ~ymin,  ~ymax, ~loc,
+ 155,  180, -35, -10, 'new caldonia',
+ 46,  67, -27, -12, 'reunion',
+ -70, -60, 27, 37, 'bermuda'
+ )
 ```
 
 ```{r}
 biplot_2 <- ggplot() +
-  geom_sf(data = globe, fill = "white", color = "black")+
-  geom_sf(data = eez_simple_sf, fill = "#f4f4f4") +
+  geom_sf(data = eez_simple_sf, fill = "#f4f4f4", color = "gray") +
   coord_sf(expand = FALSE) +
   geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
                                               fill = label,
                                               color = label)) +
-  scale_fill_manual(values = bivar_colors, na.value = "white") +
-  scale_color_manual(values = bivar_colors, na.value = "white") +
+  scale_fill_manual(values = bivar_colors, na.value = "#f4f4f4") +
+  scale_color_manual(values = bivar_colors, na.value = "#f4f4f4") +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "gray") +
+  geom_sf(data = globe, fill = "white", color = "black")+
+  geom_rect(data = inset_bbox_df, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), fill = NA, color = "black", linewidth = 0.25)+
   scale_y_continuous(limits = c(-90, 90)) +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "none",
         plot.margin = margin(0, 0, 0, 0),
         panel.spacing = unit(0, "pt")) +
@@ -1056,12 +1069,12 @@ biplot_and_density <- biplot_2 + biplot_density +
 biplot_all <- ggdraw() +
   draw_plot(biplot_and_density,    0,    0,    1,    1) +
   #draw_plot(legend_biplot, 0.6, 0.8, 0.2, 0.2)
-  draw_plot(legend_biplot, 0.06, 0.15, 0.18, 0.18)
+  draw_plot(legend_biplot, 0.05, 0.15, 0.18, 0.18)
 ```
 
 ```{r}
 # Save entry and exit maps
-ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_ter_density_1pxl_map_rcp45_101226.png"), biplot_all, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_ter_density_1pxl_map_rcp45_101926.png"), biplot_all, width = 10, height = 5, dpi = 300)
 ```
 
 ## Bivariate panels
