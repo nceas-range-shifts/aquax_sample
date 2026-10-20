@@ -992,12 +992,14 @@ legend_biplot <- ggplot(legend_df, aes(x = entries, y = exits, fill = label)) +
   scale_fill_manual(values = bivar_colors) +
   scale_x_continuous(breaks = 1:4, labels = c("0", "1", "2", "3+")) +
   scale_y_continuous(breaks = 1:4, labels = c("0", "1", "2", "3+")) +
+  coord_equal() + 
   labs(x = "Entries →", y = "Exits →") +
   theme_minimal() +
   theme(
     legend.position = "none",
-    axis.text       = element_text(size = 8),
-    axis.title      = element_text(size = 9)
+    panel.grid = element_blank(), 
+    axis.text       = element_text(size = 7),
+    axis.title      = element_text(size = 7)
   )
 ```
 
@@ -1013,14 +1015,16 @@ bivariate_map <- ggdraw() +
 
 ```{r}
 biplot_density <-ggplot() +
-  geom_density(data = spp_exit_pxls_ter, aes(x = y, y = after_stat(scaled)),fill = "#be64ac", color = "#be64ac", alpha = 0.5, size = 1) +
-  geom_density(data = spp_entry_pxls_ter, aes(x = y, y = after_stat(scaled)),fill = "#5698b9", color = "#5698b9", alpha = 0.5, size = 1) +
+  geom_density(data = spp_exit_pxls_ter, aes(x = y, y = after_stat(scaled)),fill = "#be64ac", color = "#be64ac", alpha = 0.5) +
+  geom_density(data = spp_entry_pxls_ter, aes(x = y, y = after_stat(scaled)),fill = "#5698b9", color = "#5698b9", alpha = 0.5) +
   coord_flip() +
   scale_x_continuous(limits = c(-90, 90)) +
+  scale_y_continuous(breaks = c(0, 0.5, 1), labels = c("0", "0.5", "1")) +
   theme_minimal() +
   labs(x = "",
        y = "density") +
   theme(plot.margin = margin(0, 0, 0, 0),
+  axis.title.x = element_text(size = 9),
   axis.text.y = element_blank(),
   axis.ticks.y = element_blank())
 ```
@@ -1029,7 +1033,7 @@ biplot_density <-ggplot() +
 inset_bbox_df <- tribble(
   ~xmin,   ~xmax,  ~ymin,  ~ymax, ~loc,
  155,  180, -35, -10, 'new caldonia',
- 46,  67, -27, -12, 'reunion',
+ 46,  67, -30, -8, 'reunion',
  -70, -60, 27, 37, 'bermuda'
  )
 ```
@@ -1081,7 +1085,7 @@ ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_ter_density_1pxl_map_
 
 ```{r}
 # New Caldonia (and Norfolk island to south east)
-ggplot() +
+nc <- ggplot() +
   geom_sf(data = globe, fill = "white", color = "black") +
   geom_sf(data = eez_terr_sov_sf, fill = "#f4f4f4") +
   geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
@@ -1089,10 +1093,10 @@ ggplot() +
                                               color = label)) +
   scale_fill_manual(values = bivar_colors, na.value = "white") +
   scale_color_manual(values = bivar_colors, na.value = "white") +
-  scale_y_continuous(limits = c(-35, -10), expand = c(0,0)) +
+  scale_y_continuous(limits = c(-33, -11), expand = c(0,0)) +
   scale_x_continuous(limits = c(155, 180), expand = c(0,0)) +
-  #coord_sf(xlim = c(0, 360), expand = FALSE) +
-  theme_minimal() +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "gray") +
+  theme_void() +
   theme(legend.position = "none",
         panel.grid = element_blank()) +
   labs(x = "", y = "")
@@ -1100,7 +1104,7 @@ ggplot() +
 
 ```{r}
 # Reunion (contested region to north and Mauritius to east)
-ggplot() +
+reunion <- ggplot() +
   geom_sf(data = globe, fill = "white", color = "black") +
   geom_sf(data = eez_terr_sov_sf, fill = "#f4f4f4") +
   geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
@@ -1108,10 +1112,10 @@ ggplot() +
                                               color = label)) +
   scale_fill_manual(values = bivar_colors, na.value = "white") +
   scale_color_manual(values = bivar_colors, na.value = "white") +
-  scale_y_continuous(limits = c(-27, -12), expand = c(0,0)) +
+  scale_y_continuous(limits = c(-30, -8), expand = c(0,0)) +
   scale_x_continuous(limits = c(46, 67), expand = c(0,0)) +
-  #coord_sf(xlim = c(0, 360), expand = FALSE) +
-  theme_minimal() +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "gray") +
+  theme_void() +
   theme(legend.position = "none",
         panel.grid = element_blank()) +
   labs(x = "", y = "")
@@ -1119,7 +1123,7 @@ ggplot() +
 
 ```{r}
 # Bermuda
-ggplot() +
+bermuda <- ggplot() +
   geom_sf(data = globe, fill = "white", color = "black") +
   geom_sf(data = eez_terr_sov_sf, fill = "#f4f4f4") +
   geom_tile(data = spp_entry_exit_cat_45_2050, aes(x = x, y = y,
@@ -1129,9 +1133,39 @@ ggplot() +
   scale_color_manual(values = bivar_colors, na.value = "white") +
   scale_y_continuous(limits = c(27, 37), expand = c(0,0)) +
   scale_x_continuous(limits = c(-70, -60), expand = c(0,0)) +
-  #coord_sf(xlim = c(0, 360), expand = FALSE) +
-  theme_minimal() +
+  geom_sf(data = eez_simple_sf, fill = NA, color = "gray") +
+  theme_void() +
   theme(legend.position = "none",
         panel.grid = element_blank()) +
   labs(x = "", y = "")
+```
+
+```{r}
+panels <- bermuda + plot_spacer() + reunion + plot_spacer() + nc +
+  plot_layout(widths = c(1, 0.1, 1, 0.1, 1),
+              axis_titles = "collect",
+              guides = "collect") &
+  plot_annotation(title = "") &
+  theme(legend.position = "none") 
+```
+
+```{r}
+# Best layout
+all_plots <- ggdraw() +
+  draw_plot(biplot_and_density, x = 0, y = 0.25, height = 0.75, width = 1) +
+  draw_plot(legend_biplot, x = 0.0, y = 0, height = 0.25, width = 0.25) +
+  #draw_plot(legend_biplot, x = 0, y = 0, height = 0.25, width = 0.25) +
+  #draw_plot(panels, x = 0.25, y = 0, height = 0.25, width = 0.75) +
+  draw_plot(bermuda, x = 0.25, y = 0, height = 0.25, width = 0.25) +
+  draw_plot(reunion, x = 0.5, y = 0, height = 0.25, width = 0.25) +
+  draw_plot(nc, x = 0.75, y = 0, height = 0.25, width = 0.25) +
+  draw_plot_label(label = c("A", "B", "C", "D"), 
+                  x = c(0.05, 0.24, 0.49, 0.73), 
+                  y = c(0.85, 0.25, 0.25, 0.25), 
+                  size = 12)
+```
+
+```{r}
+# Save entry and exit maps
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_exit_ter_all_panels_1pxl_map_rcp45_102026.png"), all_plots, width = 5, height = 4, dpi = 600)
 ```
