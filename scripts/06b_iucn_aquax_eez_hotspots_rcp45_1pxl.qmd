@@ -299,9 +299,9 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  geom_sf(data = eez_simple_sf, color = "yellow", size = 0.2, fill = "NA") +
-  geom_sf(data = eez_contested_sf, color = "red", size = 0.2, fill = "NA") +
-  geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
+  geom_sf(data = eez_simple_sf, color = "gray", fill = "NA") +
+  geom_sf(data = eez_contested_sf, color = "red", fill = "NA") +
+  geom_sf(data = globe, fill = "cornsilk2", color = "black")+
   labs(title = "Sea of Japan",
        fill = "new species count", 
        x = "",
@@ -384,7 +384,7 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  geom_sf(data = eez_simple_sf, color = "yellow", size = 0.2, fill = "NA") +
+  geom_sf(data = eez_simple_sf, color = "gray", size = 0.2, fill = "NA") +
   geom_sf(data = eez_contested_sf, color = "red", size = 0.2, fill = "NA") +
   geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   labs(title = "Black Sea",
@@ -469,7 +469,7 @@ direction = 1,
                       ticks.colour = "white",
                       ticks.linewidth = 0.8
   )) +
-  geom_sf(data = eez_simple_sf, color = "yellow", size = 0.2, fill = "NA") +
+  geom_sf(data = eez_simple_sf, color = "gray", size = 0.2, fill = "NA") +
   geom_sf(data = eez_contested_sf, color = "red", size = 0.2, fill = "NA") +
   geom_sf(data = globe, fill = "cornsilk2", size = 0.1, color = "black")+
   labs(title = "Baltic Sea",
@@ -492,6 +492,6 @@ sea_all <- baltic_plot + black_sea_plot + sea_of_japan_plot +
 ```
 
 ```{r}
-ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_basins_range_change_101426.png"), sea_all, width = 10, height = 5, dpi = 300)
+ggsave(here("figures/rcp45_2050/iucn_atrisk_spp_entry_basins_range_change_102026.png"), sea_all, width = 10, height = 5, dpi = 600)
 ```
 
