@@ -334,3 +334,64 @@ eez_sov_c_f_clean <- eez_sov_c_f %>%
 ```{r}
 write_csv(eez_sov_c_f_clean, here("data/iucn_eez_spp_change_table_rcp45_2050_102126.csv"))
 ```
+
+## At-risk species list 
+
+```{r}
+iucn_lookup <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/ab9cd09931a4ce5c12d0bcd2984595d6522ed158/_data/iucn_redlist_2026/iucn_worms_aphia_id_complete.csv")
+```
+
+```{r}
+iucn_cat <- read_csv("https://raw.githubusercontent.com/nceas-range-shifts/chi_shifts/refs/heads/main/_data/iucn_redlist_2026/iucn_species_assessments.csv")
+```
+
+```{r}
+# Filter the iucn_lookup for species with an SDM
+iucn_lookup_sdm <- iucn_lookup %>% filter(aquax == "SDM")
+```
+
+```{r}
+# Filter iucn categories for threatened species (CR, EN, VU) and near threatened (NT) species
+iucn_threatened <- iucn_cat %>% 
+  filter(redlist_category %in% c("CR","EN", "VU", "NT"))
+```
+
+```{r}
+# Merge in the iucn_lookup_sdm to get the AphiaID for the threatened species
+aphiaid_threatened <- inner_join(iucn_lookup_sdm, iucn_threatened, by = c("iucn_assessment_id" = "assessment_id")) 
+```
+
+```{r}
+# Merge in iucn_cat to get group for each species
+spp_eez_pxl_count_group <- left_join(spp_eez_pxl_count, iucn_cat_aphiaid)
+```
+
+ ```{r}
+# read in meta data on the aquax species to get groups
+load("/home/shares/data-aquax/META_02122025.Rdata")
+```
+
+```{r}
+meta_clean <- META %>% 
+  mutate(worms_name = tolower(ScientificName)) %>% 
+  select(!ScientificName) %>% 
+  # simplify for now for easier viewing
+  select(AphiaID, SPID, worms_name, GROUP, phylum, class, family, HAB, NR_CR, range_pixels, SDM)
+```
+
+```{r}
+aphiaid_threatened_group <- left_join(aphiaid_threatened, meta_clean, by = c("aphia_id" = "AphiaID")) %>% 
+    mutate(general_group = case_when(group %in% c("sharks_and_rays")~ "FISH: sharks & rays",
+                                   group %in% c("tunas_and_billfishes") ~ "FISH: tunas & billfishes",
+                                   TRUE ~ GROUP))
+```
+
+
+```{r}
+aphiaid_threatened_group_clean <- aphiaid_threatened_group %>% 
+  dplyr::select(iucn_sciname, worms_valid_sciname, iucn_assessment_id, aphia_id, redlist_category, group, GROUP, general_group)
+```
+
+```{r}
+write_csv(aphiaid_threatened_group_clean, here("data/iucn_atrisk_spp_table_102126.csv"))
+```

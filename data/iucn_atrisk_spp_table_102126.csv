@@ -1,0 +1,1324 @@
+iucn_sciname,worms_valid_sciname,iucn_assessment_id,aphia_id,redlist_category,group,GROUP,general_group
+hexanchus griseus,hexanchus griseus,495630,105833,NT,sharks_and_rays,FISH,FISH: sharks & rays
+lamna nasus,lamna nasus,500969,105841,VU,sharks_and_rays,FISH,FISH: sharks & rays
+lutjanus cyanopterus,lutjanus cyanopterus,506633,159796,VU,not comprehensively assessed,FISH,FISH
+sciades parkeri,sciades parkeri,722547,712442,VU,not comprehensively assessed,FISH,FISH
+pseudobatos percellens,pseudobatos percellens,887217,1043607,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus acronotus,carcharhinus acronotus,887542,158508,EN,sharks_and_rays,FISH,FISH: sharks & rays
+somniosus pacificus,somniosus pacificus,887942,271654,NT,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis goodei,myliobatis goodei,888243,271487,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus norrisi,mustelus norrisi,890179,271392,NT,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus isodon,carcharhinus isodon,890428,105791,NT,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus altimus,carcharhinus altimus,890724,105787,NT,sharks_and_rays,FISH,FISH: sharks & rays
+alopias superciliosus,alopias superciliosus,894216,105835,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos lentiginosus,pseudobatos lentiginosus,896981,1043479,VU,sharks_and_rays,FISH,FISH: sharks & rays
+opisthoteuthis mero,opisthoteuthis mero,953097,342098,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+opisthoteuthis massyae,opisthoteuthis massyae,976478,153060,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+octopus kaharoa,octopus kaharoa,1000039,341987,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+verasper variegatus,verasper variegatus,1157918,283142,VU,not comprehensively assessed,FISH,FISH
+palinurus elephas,palinurus elephas,1281221,107703,VU,lobsters,ARTHROPODA,ARTHROPODA
+dentex angolensis,dentex angolensis,1283985,273958,NT,seabreams_porgies_picarels,FISH,FISH
+stenotomus chrysops,stenotomus chrysops,1286359,159811,NT,seabreams_porgies_picarels,FISH,FISH
+acanthopagrus chinshira,acanthopagrus chinshira,1288183,398543,NT,seabreams_porgies_picarels,FISH,FISH
+acanthopagrus sivicolus,acanthopagrus sivicolus,1292034,279074,VU,seabreams_porgies_picarels,FISH,FISH
+pagellus bogaraveo,pagellus bogaraveo,1300216,127059,NT,seabreams_porgies_picarels,FISH,FISH
+dentex dentex,dentex dentex,1300534,273962,VU,seabreams_porgies_picarels,FISH,FISH
+phocarctos hookeri,phocarctos hookeri,1306343,231422,EN,mammals,MAMMALS,MAMMALS
+acanthurus chronixis,acanthurus chronixis,1505213,272959,VU,surgeonfishes,FISH,FISH
+enneanectes smithi,enneanectes smithi,1550291,280684,VU,blennies,FISH,FISH
+clinus latipennis,clinus latipennis,1557506,219195,EN,blennies,FISH,FISH
+springeratus polyporatus,springeratus polyporatus,1567515,282848,EN,blennies,FISH,FISH
+stichopus herrmanni,stichopus herrmanni,1604460,210906,VU,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+holothuria scabra,holothuria scabra,1606648,1672770,EN,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+actinopyga miliaris,actinopyga miliaris,1607822,208949,VU,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+actinopyga mauritiana,actinopyga mauritiana,1616879,208956,VU,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+apostichopus parvimensis,apostichopus parvimensis,1621102,529435,VU,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+isostichopus fuscus,isostichopus fuscus,1621878,529516,EN,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+apostichopus japonicus,apostichopus japonicus,1629389,241776,EN,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+holothuria whitmaei,holothuria whitmaei,1630988,1672780,EN,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+thelenota ananas,thelenota ananas,1636021,210916,EN,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+actinopyga echinites,actinopyga echinites,1642310,208947,VU,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+scartella poiti,scartella poiti,1772180,273144,VU,blennies,FISH,FISH
+tigrigobius redimiculus,tigrigobius redimiculus,1787687,713732,VU,not comprehensively assessed,FISH,FISH
+coryphopterus thrix,coryphopterus thrix,1793815,276434,VU,not comprehensively assessed,FISH,FISH
+coryphopterus eidolon,coryphopterus eidolon,1794029,276426,VU,not comprehensively assessed,FISH,FISH
+coryphopterus tortugae,coryphopterus tortugae,1794160,309494,VU,not comprehensively assessed,FISH,FISH
+coryphopterus venezuelae,coryphopterus venezuelae,1794260,276436,VU,not comprehensively assessed,FISH,FISH
+coryphopterus lipernes,coryphopterus lipernes,1794593,276431,VU,not comprehensively assessed,FISH,FISH
+coryphopterus personatus,coryphopterus personatus,1794928,276432,VU,not comprehensively assessed,FISH,FISH
+elacatinus prochilos,elacatinus prochilos,1798139,280619,VU,not comprehensively assessed,FISH,FISH
+halichoeres burekae,halichoeres burekae,1826968,398572,EN,wrasses_and_parrotfishes,FISH,FISH
+cheiloprion labiatus,cheiloprion labiatus,1865331,280136,VU,not comprehensively assessed,FISH,FISH
+pomacentrus lepidogenys,pomacentrus lepidogenys,1867359,277155,NT,not comprehensively assessed,FISH,FISH
+chrysiptera hemicyanea,chrysiptera hemicyanea,1870440,276832,VU,not comprehensively assessed,FISH,FISH
+amphiprion mccullochi,amphiprion mccullochi,1884312,278397,VU,not comprehensively assessed,FISH,FISH
+amblyglyphidodon ternatensis,amblyglyphidodon ternatensis,1890998,277601,VU,not comprehensively assessed,FISH,FISH
+plectroglyphidodon dickii,plectroglyphidodon dickii,1893824,212855,NT,not comprehensively assessed,FISH,FISH
+enneapterygius leucopunctatus,enneapterygius leucopunctatus,1935825,310593,NT,blennies,FISH,FISH
+rhomboplites aurorubens,rhomboplites aurorubens,1941553,159807,VU,not comprehensively assessed,FISH,FISH
+elacatinus figaro,elacatinus figaro,1963299,280602,VU,not comprehensively assessed,FISH,FISH
+conus explorator,conus explorator,2061717,426495,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus gauguini,conus gauguini,2063916,428982,NT,cone_snails,MOLLUSCA,MOLLUSCA
+profundiconus jeanmartini,profundiconus jeanmartini,2071407,581034,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+conus nielsenae,conus nielsenae,2093934,428947,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus compressus,conus compressus,2094934,429368,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus mercator,conus mercator,2104168,224287,EN,cone_snails,MOLLUSCA,MOLLUSCA
+conus allaryi,conus allaryi,2124378,428418,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus guinaicus,conus guinaicus,2127915,224280,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus anabathrum,conus anabathrum,2140922,420200,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus melvilli,conus melvilli,2148017,428205,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus ardisiaceus,conus ardisiaceus,2174430,426361,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus cardinalis,conus cardinalis,2177911,426444,NT,cone_snails,MOLLUSCA,MOLLUSCA
+bryaninops natans,bryaninops natans,2215219,219393,NT,not comprehensively assessed,FISH,FISH
+takifugu vermicularis,takifugu vermicularis,2245386,278431,NT,pufferfishes,FISH,FISH
+takifugu chinensis,takifugu chinensis,2246312,278414,CR,pufferfishes,FISH,FISH
+takifugu rubripes,takifugu rubripes,2247747,278428,NT,pufferfishes,FISH,FISH
+takifugu plagiocellatus,takifugu plagiocellatus,2254725,398704,EN,pufferfishes,FISH,FISH
+takifugu flavidus,takifugu flavidus,2256783,278418,NT,pufferfishes,FISH,FISH
+balistes punctatus,balistes punctatus,2262650,127396,VU,not comprehensively assessed,FISH,FISH
+canthigaster marquesensis,canthigaster marquesensis,2263506,275259,VU,pufferfishes,FISH,FISH
+chelonodontops pleurospilus,chelonodontops pleurospilus,2268868,1605273,EN,pufferfishes,FISH,FISH
+canthigaster cyanetron,canthigaster cyanetron,2271548,275250,EN,pufferfishes,FISH,FISH
+arothron inconditus,arothron inconditus,2276701,219923,VU,pufferfishes,FISH,FISH
+canthigaster sanctaehelenae,canthigaster sanctaehelenae,2279300,127412,EN,pufferfishes,FISH,FISH
+albula vulpes,albula vulpes,2310733,212256,NT,not comprehensively assessed,FISH,FISH
+lutjanus synagris,lutjanus synagris,2317059,159800,NT,not comprehensively assessed,FISH,FISH
+brachydeuterus auritus,brachydeuterus auritus,2333329,126943,NT,not comprehensively assessed,FISH,FISH
+rhynchobatus palpebratus,rhynchobatus palpebratus,2382420,398283,NT,sharks_and_rays,FISH,FISH: sharks & rays
+gymnothorax parini,gymnothorax parini,2415851,271867,EN,not comprehensively assessed,FISH,FISH
+elacatinus lobeli,elacatinus lobeli,2428639,475011,NT,not comprehensively assessed,FISH,FISH
+diastobranchus capensis,diastobranchus capensis,2561032,158656,VU,not comprehensively assessed,FISH,FISH
+bathymodiolus septemdierum,bathymodiolus septemdierum,2690611,505971,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+alosa aestivalis,alosa aestivalis,2730890,158667,VU,not comprehensively assessed,FISH,FISH
+cynoglossus macrostomus,cynoglossus macrostomus,2732189,274211,VU,not comprehensively assessed,FISH,FISH
+totoaba macdonaldi,totoaba macdonaldi,2780880,283019,VU,not comprehensively assessed,FISH,FISH
+acipenser oxyrinchus,acipenser oxyrinchus,2785934,151802,VU,sturgeons,FISH,FISH
+canthigaster rapaensis,canthigaster rapaensis,2867119,275265,EN,pufferfishes,FISH,FISH
+carcharhinus limbatus,carcharhinus limbatus,2870736,105793,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus obscurus,carcharhinus obscurus,2872747,105796,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus plumbeus,carcharhinus plumbeus,2874370,105797,EN,sharks_and_rays,FISH,FISH: sharks & rays
+squatina occulta,squatina occulta,2899669,271672,CR,sharks_and_rays,FISH,FISH: sharks & rays
+isurus oxyrinchus,isurus oxyrinchus,2903170,105839,EN,sharks_and_rays,FISH,FISH: sharks & rays
+galeorhinus galeus,galeorhinus galeus,2907336,105820,CR,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus canis,mustelus canis,2908200,158518,NT,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus brevipinna,carcharhinus brevipinna,2908817,105788,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus leucas,carcharhinus leucas,2910670,105792,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus longimanus,carcharhinus longimanus,2911619,105794,CR,sharks_and_rays,FISH,FISH: sharks & rays
+galeocerdo cuvier,galeocerdo cuvier,2913541,105799,NT,sharks_and_rays,FISH,FISH: sharks & rays
+negaprion brevirostris,negaprion brevirostris,2915472,105800,VU,sharks_and_rays,FISH,FISH: sharks & rays
+prionace glauca,prionace glauca,2915850,105801,NT,sharks_and_rays,FISH,FISH: sharks & rays
+sphyrna lewini,sphyrna lewini,2918526,105816,CR,sharks_and_rays,FISH,FISH: sharks & rays
+sphyrna mokarran,sphyrna mokarran,2920499,105817,CR,sharks_and_rays,FISH,FISH: sharks & rays
+sphyrna zygaena,sphyrna zygaena,2921825,105819,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos horkelii,pseudobatos horkelii,2951089,1043490,CR,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus brachyurus,carcharhinus brachyurus,2954522,217341,VU,sharks_and_rays,FISH,FISH: sharks & rays
+echinorhinus brucus,echinorhinus brucus,2956075,105922,EN,sharks_and_rays,FISH,FISH: sharks & rays
+heptranchias perlo,heptranchias perlo,2956343,105832,NT,sharks_and_rays,FISH,FISH: sharks & rays
+squalus mitsukurii,squalus mitsukurii,2957982,217371,EN,sharks_and_rays,FISH,FISH: sharks & rays
+benthobatis kreffti,benthobatis kreffti,2995521,279902,VU,sharks_and_rays,FISH,FISH: sharks & rays
+galeus mincaronei,galeus mincaronei,2995648,271361,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus fasciatus,mustelus fasciatus,2995765,271383,CR,sharks_and_rays,FISH,FISH: sharks & rays
+schroederichthys saurisqualus,schroederichthys saurisqualus,2996520,282687,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhinoptera brasiliensis,rhinoptera brasiliensis,2997621,271495,VU,sharks_and_rays,FISH,FISH: sharks & rays
+sympterygia bonapartii,sympterygia bonapartii,2997866,282917,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon microphthalmum,urotrygon microphthalmum,2998129,283117,CR,sharks_and_rays,FISH,FISH: sharks & rays
+sympterygia acuta,sympterygia acuta,2998643,282916,CR,sharks_and_rays,FISH,FISH: sharks & rays
+gurgesiella dorsalifera,gurgesiella dorsalifera,2999132,280950,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhizoprionodon lalandii,rhizoprionodon lalandii,2999242,271326,VU,sharks_and_rays,FISH,FISH: sharks & rays
+conus cepasi,conus cepasi,3014172,405000,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus zebroides,conus zebroides,3014429,224487,NT,cone_snails,MOLLUSCA,MOLLUSCA
+gymnura micrura,gymnura micrura,3088090,158529,NT,sharks_and_rays,FISH,FISH: sharks & rays
+rhinoptera bonasus,rhinoptera bonasus,3088381,158544,VU,sharks_and_rays,FISH,FISH: sharks & rays
+tetronarce puelcha,tetronarce puelcha,3088651,321912,CR,sharks_and_rays,FISH,FISH: sharks & rays
+dasyatis hypostigma,dasyatis hypostigma,3090027,271436,EN,sharks_and_rays,FISH,FISH: sharks & rays
+hypanus say,hypanus say,3090316,1042865,NT,sharks_and_rays,FISH,FISH: sharks & rays
+styracura schmardae,styracura schmardae,3090840,1297575,EN,sharks_and_rays,FISH,FISH: sharks & rays
+sphyrna media,sphyrna media,3091753,271379,CR,sharks_and_rays,FISH,FISH: sharks & rays
+sphyrna tudes,sphyrna tudes,3091946,105818,CR,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus schmitti,mustelus schmitti,3092243,271393,CR,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus higmani,mustelus higmani,3092518,271387,EN,sharks_and_rays,FISH,FISH: sharks & rays
+isogomphodon oxyrhynchus,isogomphodon oxyrhynchus,3094144,281186,CR,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus signatus,carcharhinus signatus,3094326,105798,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus porosus,carcharhinus porosus,3094594,217342,CR,sharks_and_rays,FISH,FISH: sharks & rays
+ginglymostoma cirratum,ginglymostoma cirratum,3095153,105846,VU,sharks_and_rays,FISH,FISH: sharks & rays
+isurus paucus,isurus paucus,3095898,105840,EN,sharks_and_rays,FISH,FISH: sharks & rays
+atlantoraja cyclophora,atlantoraja cyclophora,3103491,279817,EN,sharks_and_rays,FISH,FISH: sharks & rays
+rhizoprionodon porosus,rhizoprionodon porosus,3103881,271328,VU,sharks_and_rays,FISH,FISH: sharks & rays
+zapteryx brevirostris,zapteryx brevirostris,3104442,283212,EN,sharks_and_rays,FISH,FISH: sharks & rays
+dalatias licha,dalatias licha,3111662,105910,VU,sharks_and_rays,FISH,FISH: sharks & rays
+callorhinchus callorynchus,callorhinchus callorynchus,3117894,278468,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rioraja agassizii,rioraja agassizii,3118640,282619,VU,sharks_and_rays,FISH,FISH: sharks & rays
+atlantoraja platana,atlantoraja platana,3118881,279818,EN,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus mennii,dipturus mennii,3120930,271554,CR,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja multispinis,bathyraja multispinis,3121878,271525,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hydrolagus matallanasi,hydrolagus matallanasi,3122699,271412,VU,sharks_and_rays,FISH,FISH: sharks & rays
+bathytoshia centroura,bathytoshia centroura,3122808,1017389,VU,sharks_and_rays,FISH,FISH: sharks & rays
+gymnura altavela,gymnura altavela,3123409,105856,EN,sharks_and_rays,FISH,FISH: sharks & rays
+narcine brasiliensis,narcine brasiliensis,3124169,157866,NT,sharks_and_rays,FISH,FISH: sharks & rays
+alosa alabamae,alosa alabamae,3149565,272248,NT,not comprehensively assessed,FISH,FISH
+latimeria chalumnae,latimeria chalumnae,3274618,217438,CR,not comprehensively assessed,FISH,FISH
+lepidochelys olivacea,lepidochelys olivacea,3292503,220293,VU,marine_turtles,REPTILES,REPTILES
+melanogrammus aeglefinus,melanogrammus aeglefinus,3406968,126437,VU,not comprehensively assessed,FISH,FISH
+enneapterygius namarrgon,enneapterygius namarrgon,4610380,277322,EN,blennies,FISH,FISH
+axoclinus multicinctus,axoclinus multicinctus,4628251,279848,VU,blennies,FISH,FISH
+hypsoblennius striatus,hypsoblennius striatus,4676936,276333,NT,blennies,FISH,FISH
+paraclinus magdalenae,paraclinus magdalenae,4683552,282026,EN,blennies,FISH,FISH
+prognathodes carlhubbsi,prognathodes carlhubbsi,6083175,273372,NT,butterfly_fishes,FISH,FISH
+chaetodon trifascialis,chaetodon trifascialis,6098323,218719,NT,butterfly_fishes,FISH,FISH
+chaetodon rainfordi,chaetodon rainfordi,6100594,273358,NT,butterfly_fishes,FISH,FISH
+centropyge nahackyi,centropyge nahackyi,6141860,278844,NT,angelfishes,FISH,FISH
+holacanthus limbaughi,holacanthus limbaughi,6144988,276015,NT,angelfishes,FISH,FISH
+holacanthus clarionensis,holacanthus clarionensis,6151012,276013,VU,angelfishes,FISH,FISH
+chaetodontoplus vanderloosi,chaetodontoplus vanderloosi,6666175,388572,EN,angelfishes,FISH,FISH
+palinurus charlestoni,palinurus charlestoni,6720146,241297,NT,lobsters,ARTHROPODA,ARTHROPODA
+hydrophis pacificus,hydrophis pacificus,7288420,344070,NT,seasnakes,REPTILES,REPTILES
+ecsenius kurti,ecsenius kurti,7644580,277661,VU,blennies,FISH,FISH
+leuresthes sardina,leuresthes sardina,8083578,281343,NT,not comprehensively assessed,FISH,FISH
+hypsoblennius proteus,hypsoblennius proteus,8101797,276330,VU,blennies,FISH,FISH
+gillellus chathamensis,gillellus chathamensis,8105636,280842,VU,blennies,FISH,FISH
+prionotus teaguei,prionotus teaguei,8110954,276292,VU,not comprehensively assessed,FISH,FISH
+lepidonectes bimaculatus,lepidonectes bimaculatus,8111778,712815,VU,blennies,FISH,FISH
+halichoeres salmofasciatus,halichoeres salmofasciatus,8112889,275797,VU,wrasses_and_parrotfishes,FISH,FISH
+thalassoma virens,thalassoma virens,8119480,273593,VU,wrasses_and_parrotfishes,FISH,FISH
+paraclinus fehlmanni,paraclinus fehlmanni,8126101,282022,VU,blennies,FISH,FISH
+halichoeres malpelo,halichoeres malpelo,8127170,275773,VU,wrasses_and_parrotfishes,FISH,FISH
+acanthemblemaria mangognatha,acanthemblemaria mangognatha,8128490,279456,VU,blennies,FISH,FISH
+mccoskerichthys sandae,mccoskerichthys sandae,8130400,281538,NT,blennies,FISH,FISH
+halichoeres discolor,halichoeres discolor,8139248,275762,VU,wrasses_and_parrotfishes,FISH,FISH
+acanthemblemaria atrata,acanthemblemaria atrata,8139402,279444,VU,blennies,FISH,FISH
+rypticus courtenayi,rypticus courtenayi,8146180,275960,VU,not comprehensively assessed,FISH,FISH
+halichoeres insularis,halichoeres insularis,8146890,275767,VU,wrasses_and_parrotfishes,FISH,FISH
+cratinus agassizii,cratinus agassizii,8153285,280421,NT,not comprehensively assessed,FISH,FISH
+platygillellus bussingi,platygillellus bussingi,8159991,282273,NT,blennies,FISH,FISH
+platygillellus altivelis,platygillellus altivelis,8161529,282271,NT,blennies,FISH,FISH
+halichoeres adustus,halichoeres adustus,8174095,275747,VU,wrasses_and_parrotfishes,FISH,FISH
+azurina hirundo,azurina hirundo,8174674,279852,NT,not comprehensively assessed,FISH,FISH
+paraletharchus opercularis,paraletharchus opercularis,8183733,282061,VU,not comprehensively assessed,FISH,FISH
+axoclinus cocoensis,axoclinus cocoensis,8189147,279846,VU,blennies,FISH,FISH
+daector reticulata,daector reticulata,8189509,280480,VU,not comprehensively assessed,FISH,FISH
+paraclinus walkeri,paraclinus walkeri,8196215,282037,CR,blennies,FISH,FISH
+pisodonophis daspilotus,pisodonophis daspilotus,8207094,271994,NT,not comprehensively assessed,FISH,FISH
+stegastes leucorus,stegastes leucorus,8207287,276673,VU,not comprehensively assessed,FISH,FISH
+acanthemblemaria stephensi,acanthemblemaria stephensi,8208246,279461,VU,blennies,FISH,FISH
+labrisomus socorroensis,labrisomus socorroensis,8214213,281263,VU,blennies,FISH,FISH
+coris bulbifrons,coris bulbifrons,8522703,273551,VU,wrasses_and_parrotfishes,FISH,FISH
+conniella apterygia,conniella apterygia,8532529,280384,VU,wrasses_and_parrotfishes,FISH,FISH
+tautoga onitis,tautoga onitis,8547027,158830,VU,wrasses_and_parrotfishes,FISH,FISH
+bodianus scrofa,bodianus scrofa,8551178,126958,VU,wrasses_and_parrotfishes,FISH,FISH
+bodianus frenchii,bodianus frenchii,8553413,273531,NT,wrasses_and_parrotfishes,FISH,FISH
+achoerodus gouldii,achoerodus gouldii,8556943,279497,VU,wrasses_and_parrotfishes,FISH,FISH
+achoerodus viridis,achoerodus viridis,8572139,279498,NT,wrasses_and_parrotfishes,FISH,FISH
+labrus viridis,labrus viridis,8591882,126968,VU,wrasses_and_parrotfishes,FISH,FISH
+eptatretus burgeri,eptatretus burgeri,8992245,279272,NT,hagfishes,FISH,FISH
+myxine garmani,myxine garmani,8999221,271303,VU,hagfishes,FISH,FISH
+sebastes fasciatus,sebastes fasciatus,9144739,127252,EN,not comprehensively assessed,FISH,FISH
+sebastes paucispinis,sebastes paucispinis,9144801,274833,CR,not comprehensively assessed,FISH,FISH
+stereolepis gigas,stereolepis gigas,9230697,282884,CR,not comprehensively assessed,FISH,FISH
+sebastolobus alascanus,sebastolobus alascanus,9504511,282740,EN,not comprehensively assessed,FISH,FISH
+epinephelides armatus,epinephelides armatus,10923317,280694,NT,not comprehensively assessed,FISH,FISH
+choerodon schoenleinii,choerodon schoenleinii,10933431,218951,NT,wrasses_and_parrotfishes,FISH,FISH
+eretmochelys imbricata,eretmochelys imbricata,12881238,137207,CR,marine_turtles,REPTILES,REPTILES
+eunicella verrucosa,eunicella verrucosa,12903486,125366,VU,not comprehensively assessed,CNIDARIA,CNIDARIA
+gadus morhua,gadus morhua,12931575,126436,VU,not comprehensively assessed,FISH,FISH
+dipturus canutus,dipturus canutus,14134317,398291,EN,sharks_and_rays,FISH,FISH: sharks & rays
+ursus maritimus,ursus maritimus,14871490,137085,VU,mammals,MAMMALS,MAMMALS
+alosa alosa,alosa alosa,15541267,126413,CR,not comprehensively assessed,FISH,FISH
+sardinella maderensis,sardinella maderensis,15543624,126423,VU,not comprehensively assessed,FISH,FISH
+coryphaenoides rupestris,coryphaenoides rupestris,15603540,158960,CR,not comprehensively assessed,FISH,FISH
+merluccius senegalensis,merluccius senegalensis,15603615,126485,EN,not comprehensively assessed,FISH,FISH
+cynoglossus canariensis,cynoglossus canariensis,15604015,274196,NT,not comprehensively assessed,FISH,FISH
+cynoglossus monodi,cynoglossus monodi,15604025,274214,NT,not comprehensively assessed,FISH,FISH
+cynoglossus senegalensis,cynoglossus senegalensis,15604030,274226,NT,not comprehensively assessed,FISH,FISH
+heteromycteris capensis,heteromycteris capensis,15623347,219826,NT,not comprehensively assessed,FISH,FISH
+merluccius bilinearis,merluccius bilinearis,16509787,158962,NT,not comprehensively assessed,FISH,FISH
+raja radula,raja radula,16527984,105889,EN,sharks_and_rays,FISH,FISH: sharks & rays
+lopholatilus chamaeleonticeps,lopholatilus chamaeleonticeps,16546277,159406,EN,not comprehensively assessed,FISH,FISH
+sanopus splendidus,sanopus splendidus,16643913,282662,EN,not comprehensively assessed,FISH,FISH
+hippocampus kuda,hippocampus kuda,16664386,212237,VU,not comprehensively assessed,FISH,FISH
+lethrinus mahsena,lethrinus mahsena,16722325,212075,EN,not comprehensively assessed,FISH,FISH
+hippocampus reidi,hippocampus reidi,17025021,159446,NT,not comprehensively assessed,FISH,FISH
+hippocampus trimaculatus,hippocampus trimaculatus,17252219,212232,VU,not comprehensively assessed,FISH,FISH
+scarus guacamaia,scarus guacamaia,17627624,276049,NT,wrasses_and_parrotfishes,FISH,FISH
+scarus hypselopterus,scarus hypselopterus,17775293,276051,NT,wrasses_and_parrotfishes,FISH,FISH
+scarus trispinosus,scarus trispinosus,17786694,276063,EN,wrasses_and_parrotfishes,FISH,FISH
+chlorurus bowersi,chlorurus bowersi,17796625,277505,NT,wrasses_and_parrotfishes,FISH,FISH
+stenodus leucichthys,stenodus leucichthys,18231118,127189,NT,not comprehensively assessed,FISH,FISH
+vladichthys gloverensis,vladichthys gloverensis,18755794,283159,VU,not comprehensively assessed,FISH,FISH
+hippocampus erectus,hippocampus erectus,20191442,159445,VU,not comprehensively assessed,FISH,FISH
+chelon labrosus,chelon labrosus,21910140,126977,NT,not comprehensively assessed,FISH,FISH
+chelon auratus,chelon auratus,21910530,1044127,NT,not comprehensively assessed,FISH,FISH
+chelon ramada,chelon ramada,21910870,1042830,NT,not comprehensively assessed,FISH,FISH
+dicentrarchus labrax,dicentrarchus labrax,21912674,126975,NT,not comprehensively assessed,FISH,FISH
+galeoides decadactylus,galeoides decadactylus,42691739,126997,NT,not comprehensively assessed,FISH,FISH
+mycteroperca fusca,mycteroperca fusca,42691809,127038,VU,groupers,FISH,FISH
+pentanemus quinquarius,pentanemus quinquarius,42691844,282202,VU,not comprehensively assessed,FISH,FISH
+pseudupeneus prayensis,pseudupeneus prayensis,42691864,126987,VU,not comprehensively assessed,FISH,FISH
+trachurus trachurus,trachurus trachurus,43157137,126822,VU,not comprehensively assessed,FISH,FISH
+dermochelys coriacea,dermochelys coriacea,43526147,137209,VU,marine_turtles,REPTILES,REPTILES
+trichechus manatus,trichechus manatus,43792740,159509,VU,mammals,MAMMALS,MAMMALS
+cephalorhynchus hectori,cephalorhynchus hectori,44199757,254979,EN,mammals,MAMMALS,MAMMALS
+arctocephalus galapagoensis,arctocephalus galapagoensis,45223722,255008,EN,mammals,MAMMALS,MAMMALS
+callorhinus ursinus,callorhinus ursinus,45224953,254997,VU,mammals,MAMMALS,MAMMALS
+eumetopias jubatus,eumetopias jubatus,45225749,254999,NT,mammals,MAMMALS,MAMMALS
+zalophus wollebaeki,zalophus wollebaeki,45230540,255005,EN,mammals,MAMMALS,MAMMALS
+acanthemblemaria castroi,acanthemblemaria castroi,46235356,279447,VU,blennies,FISH,FISH
+xiphias gladius,xiphias gladius,46625751,127094,NT,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+scomberomorus commerson,scomberomorus commerson,46647677,127024,NT,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+istiophorus platypterus,istiophorus platypterus,46649664,158812,VU,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+trachurus indicus,trachurus indicus,46664154,218443,VU,not comprehensively assessed,FISH,FISH
+gobiodon reticulatus,gobiodon reticulatus,46664619,219480,VU,not comprehensively assessed,FISH,FISH
+hippocampus whitei,hippocampus whitei,46721312,212235,EN,not comprehensively assessed,FISH,FISH
+hyporthodus nigritus,hyporthodus nigritus,46909320,475100,NT,groupers,FISH,FISH
+hyporthodus niveatus,hyporthodus niveatus,46909546,475101,VU,groupers,FISH,FISH
+epinephelus striatus,epinephelus striatus,46909843,159222,CR,groupers,FISH,FISH
+mycteroperca microlepis,mycteroperca microlepis,46910927,273880,VU,groupers,FISH,FISH
+thunnus obesus,thunnus obesus,46912402,127028,VU,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+epinephelus morio,epinephelus morio,46914636,159354,VU,groupers,FISH,FISH
+mycteroperca venenosa,mycteroperca venenosa,46915269,273885,NT,groupers,FISH,FISH
+hyporthodus flavolimbatus,hyporthodus flavolimbatus,46915591,475077,VU,groupers,FISH,FISH
+mycteroperca interstitialis,mycteroperca interstitialis,46915949,273878,VU,groupers,FISH,FISH
+mycteroperca bonaci,mycteroperca bonaci,46916253,159231,NT,groupers,FISH,FISH
+anchoa choerostoma,anchoa choerostoma,46921747,275510,EN,not comprehensively assessed,FISH,FISH
+cynoscion acoupa,cynoscion acoupa,46924613,276074,VU,not comprehensively assessed,FISH,FISH
+coryphopterus hyalinus,coryphopterus hyalinus,46926198,276429,VU,not comprehensively assessed,FISH,FISH
+makaira nigricans,makaira nigricans,46936155,126950,VU,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+halichoeres socialis,halichoeres socialis,46944387,275800,EN,wrasses_and_parrotfishes,FISH,FISH
+paralichthys lethostigma,paralichthys lethostigma,46958684,158829,NT,not comprehensively assessed,FISH,FISH
+omobranchus mekranensis,omobranchus mekranensis,48345801,219321,VU,blennies,FISH,FISH
+omobranchus smithi,omobranchus smithi,48353451,278023,VU,blennies,FISH,FISH
+meiacanthus naevius,meiacanthus naevius,48358271,279315,VU,blennies,FISH,FISH
+parablennius serratolineatus,parablennius serratolineatus,48360743,273136,VU,blennies,FISH,FISH
+entomacrodus chapmani,entomacrodus chapmani,48360830,277242,VU,blennies,FISH,FISH
+medusablennius chani,medusablennius chani,48361770,1043435,VU,blennies,FISH,FISH
+ecsenius tigris,ecsenius tigris,48367923,277689,VU,blennies,FISH,FISH
+oman ypsilon,oman ypsilon,48376255,281876,VU,blennies,FISH,FISH
+omobranchus aurosplendidus,omobranchus aurosplendidus,48379168,278013,VU,blennies,FISH,FISH
+dactyloscopus insulatus,dactyloscopus insulatus,48380215,712828,VU,blennies,FISH,FISH
+omobranchus hikkaduwensis,omobranchus hikkaduwensis,48395222,278017,VU,blennies,FISH,FISH
+praealticus natalis,praealticus natalis,48398267,282335,VU,blennies,FISH,FISH
+ecsenius randalli,ecsenius randalli,48398474,277681,VU,blennies,FISH,FISH
+ecsenius tricolor,ecsenius tricolor,48398755,277690,VU,blennies,FISH,FISH
+parablennius lodosus,parablennius lodosus,48399254,219323,VU,blennies,FISH,FISH
+mimoblennius lineathorax,mimoblennius lineathorax,48406732,277720,VU,blennies,FISH,FISH
+raja maderensis,raja maderensis,48939762,105884,VU,sharks_and_rays,FISH,FISH: sharks & rays
+cynoscion regalis,cynoscion regalis,49226925,159313,EN,not comprehensively assessed,FISH,FISH
+protonibea diacanthus,protonibea diacanthus,49227587,282382,NT,not comprehensively assessed,FISH,FISH
+argyrosomus japonicus,argyrosomus japonicus,49234015,218633,EN,not comprehensively assessed,FISH,FISH
+argyrosomus inodorus,argyrosomus inodorus,49234949,218630,VU,not comprehensively assessed,FISH,FISH
+larimichthys crocea,larimichthys crocea,49239394,281271,CR,not comprehensively assessed,FISH,FISH
+argyrosomus thorpei,argyrosomus thorpei,49239702,218629,EN,not comprehensively assessed,FISH,FISH
+rhinoptera marginata,rhinoptera marginata,49318282,105862,CR,sharks_and_rays,FISH,FISH: sharks & rays
+balaenoptera physalus,balaenoptera physalus,50349982,137091,VU,mammals,MAMMALS,MAMMALS
+balaenoptera bonaerensis,balaenoptera bonaerensis,50350661,231405,NT,mammals,MAMMALS,MAMMALS
+cephalorhynchus heavisidii,cephalorhynchus heavisidii,50352086,254978,NT,mammals,MAMMALS,MAMMALS
+hyperoodon ampullatus,hyperoodon ampullatus,50357742,343899,NT,mammals,MAMMALS,MAMMALS
+mesoplodon stejnegeri,mesoplodon stejnegeri,50367496,254991,NT,mammals,MAMMALS,MAMMALS
+phocoena spinipinnis,phocoena spinipinnis,50370481,343898,NT,mammals,MAMMALS,MAMMALS
+eubalaena japonica,eubalaena japonica,50380694,254974,EN,mammals,MAMMALS,MAMMALS
+tursiops aduncus,tursiops aduncus,50381127,254983,NT,mammals,MAMMALS,MAMMALS
+physeter macrocephalus,physeter macrocephalus,50382216,137119,VU,mammals,MAMMALS,MAMMALS
+mesoplodon perrini,mesoplodon perrini,50383813,254992,EN,mammals,MAMMALS,MAMMALS
+neophocaena phocaenoides,neophocaena phocaenoides,50386795,254985,VU,mammals,MAMMALS,MAMMALS
+hippocampus capensis,hippocampus capensis,54903534,212234,EN,not comprehensively assessed,FISH,FISH
+hippocampus histrix,hippocampus histrix,54905206,212239,VU,not comprehensively assessed,FISH,FISH
+hippocampus ingens,hippocampus ingens,54905720,275197,VU,not comprehensively assessed,FISH,FISH
+hippocampus spinosissimus,hippocampus spinosissimus,54906372,275210,VU,not comprehensively assessed,FISH,FISH
+hippocampus barbouri,hippocampus barbouri,54906903,275186,VU,not comprehensively assessed,FISH,FISH
+hippocampus mohnikei,hippocampus mohnikei,54907304,275202,VU,not comprehensively assessed,FISH,FISH
+hippocampus algiricus,hippocampus algiricus,54907846,275184,VU,not comprehensively assessed,FISH,FISH
+hippocampus kelloggi,hippocampus kelloggi,54908593,212236,VU,not comprehensively assessed,FISH,FISH
+hippocampus patagonicus,hippocampus patagonicus,54909767,275205,VU,not comprehensively assessed,FISH,FISH
+calamus taurinus,calamus taurinus,57206002,275974,NT,seabreams_porgies_picarels,FISH,FISH
+carcharhinus melanopterus,carcharhinus melanopterus,58303674,105795,VU,sharks_and_rays,FISH,FISH: sharks & rays
+anoxypristis cuspidata,anoxypristis cuspidata,58304073,217374,CR,sharks_and_rays,FISH,FISH: sharks & rays
+pristis zijsron,pristis zijsron,58304631,217375,CR,sharks_and_rays,FISH,FISH: sharks & rays
+evynnis cardinalis,evynnis cardinalis,59034995,280766,EN,seabreams_porgies_picarels,FISH,FISH
+salmo salar,salmo salar,67373433,127186,NT,not comprehensively assessed,FISH,FISH
+trachurus japonicus,trachurus japonicus,67871570,273302,NT,not comprehensively assessed,FISH,FISH
+pseudocaranx chilensis,pseudocaranx chilensis,67871620,273281,VU,not comprehensively assessed,FISH,FISH
+emblemariopsis pricei,emblemariopsis pricei,67953846,280663,VU,blennies,FISH,FISH
+elacatinus cayman,elacatinus cayman,68309096,835177,EN,not comprehensively assessed,FISH,FISH
+gobiodon erythrospilus,gobiodon erythrospilus,68333739,309999,VU,not comprehensively assessed,FISH,FISH
+aetomylaeus nichofii,aetomylaeus nichofii,68607458,278475,VU,sharks_and_rays,FISH,FISH: sharks & rays
+alopias pelagicus,alopias pelagicus,68607857,220019,EN,sharks_and_rays,FISH,FISH: sharks & rays
+aptychotrema timorensis,aptychotrema timorensis,68609203,279674,VU,sharks_and_rays,FISH,FISH: sharks & rays
+brachaelurus colcloughi,brachaelurus colcloughi,68610594,313932,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus amblyrhynchoides,carcharhinus amblyrhynchoides,68611625,217350,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus dussumieri,carcharhinus dussumieri,68612632,217347,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus sealei,carcharhinus sealei,68613628,217336,VU,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus harrissoni,centrophorus harrissoni,68614118,271617,EN,sharks_and_rays,FISH,FISH: sharks & rays
+centroscymnus owstonii,centroscymnus owstonii,68615392,299089,VU,sharks_and_rays,FISH,FISH: sharks & rays
+centroselachus crepidater,centroselachus crepidater,68615502,280071,NT,sharks_and_rays,FISH,FISH: sharks & rays
+cephaloscyllium albipinnum,cephaloscyllium albipinnum,68615830,398241,CR,sharks_and_rays,FISH,FISH: sharks & rays
+cephaloscyllium variegatum,cephaloscyllium variegatum,68616530,398249,NT,sharks_and_rays,FISH,FISH: sharks & rays
+chimaera phantasma,chimaera phantasma,68617625,271401,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dentiraja australis,dentiraja australis,68620350,1019871,NT,sharks_and_rays,FISH,FISH: sharks & rays
+dentiraja cerva,dentiraja cerva,68620560,1014949,NT,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus gudgeri,dipturus gudgeri,68621107,271548,NT,sharks_and_rays,FISH,FISH: sharks & rays
+glaucostegus typus,glaucostegus typus,68623995,280875,CR,sharks_and_rays,FISH,FISH: sharks & rays
+glyphis garricki,glyphis garricki,68624151,398263,VU,sharks_and_rays,FISH,FISH: sharks & rays
+glyphis glyphis,glyphis glyphis,68624306,277184,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hexanchus nakamurai,hexanchus nakamurai,68626047,105834,NT,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis hamlyni,myliobatis hamlyni,68634957,271488,NT,sharks_and_rays,FISH,FISH: sharks & rays
+oxynotus bruniensis,oxynotus bruniensis,68639645,271648,NT,sharks_and_rays,FISH,FISH: sharks & rays
+pristis clavata,pristis clavata,68641215,271422,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhizoprionodon acutus,rhizoprionodon acutus,68642326,105802,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhynchobatus australiae,rhynchobatus australiae,68643043,278217,CR,sharks_and_rays,FISH,FISH: sharks & rays
+spiniraja whitleyi,spiniraja whitleyi,68643826,712958,VU,sharks_and_rays,FISH,FISH: sharks & rays
+squalus chloroculus,squalus chloroculus,68644464,398269,EN,sharks_and_rays,FISH,FISH: sharks & rays
+squalus edmundsi,squalus edmundsi,68644689,398270,NT,sharks_and_rays,FISH,FISH: sharks & rays
+squalus grahami,squalus grahami,68644862,398271,NT,sharks_and_rays,FISH,FISH: sharks & rays
+squalus montalbani,squalus montalbani,68645208,299184,VU,sharks_and_rays,FISH,FISH: sharks & rays
+squalus nasutus,squalus nasutus,68645393,398273,NT,sharks_and_rays,FISH,FISH: sharks & rays
+squatina albipunctata,squatina albipunctata,68645549,398277,VU,sharks_and_rays,FISH,FISH: sharks & rays
+trygonoptera testacea,trygonoptera testacea,68648424,283063,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urolophus bucculentus,urolophus bucculentus,68649040,283094,VU,sharks_and_rays,FISH,FISH: sharks & rays
+urolophus kapalensis,urolophus kapalensis,68649607,390271,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urolophus orarius,urolophus orarius,68649829,283106,EN,sharks_and_rays,FISH,FISH: sharks & rays
+urolophus sufflavus,urolophus sufflavus,68650134,283110,VU,sharks_and_rays,FISH,FISH: sharks & rays
+urolophus viridis,urolophus viridis,68650230,283111,VU,sharks_and_rays,FISH,FISH: sharks & rays
+caracanthus typicus,caracanthus typicus,69800907,277038,NT,not comprehensively assessed,FISH,FISH
+sebastapistes coniorta,sebastapistes coniorta,70010020,274759,NT,not comprehensively assessed,FISH,FISH
+carcharhinus tjutjot,carcharhinus tjutjot,70680983,217348,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dentiraja confusa,dentiraja confusa,70688281,1043487,CR,sharks_and_rays,FISH,FISH: sharks & rays
+hemiscyllium hallstromi,hemiscyllium hallstromi,70709453,281036,VU,sharks_and_rays,FISH,FISH: sharks & rays
+harpadon nehereus,harpadon nehereus,75144431,217661,NT,not comprehensively assessed,FISH,FISH
+haliotis brazieri,haliotis brazieri,78772403,445303,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis corrugata,haliotis corrugata,78772418,445308,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis discus,haliotis discus,78772433,397082,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis drogini,haliotis drogini,78772448,596237,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis fulgens,haliotis fulgens,78772463,445325,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis geigeri,haliotis geigeri,78772468,769036,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis laevigata,haliotis laevigata,78772493,445335,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis mariae,haliotis mariae,78772503,207664,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis melculus,haliotis melculus,78772513,445378,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis midae,haliotis midae,78772518,207660,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis roei,haliotis roei,78772558,445351,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis rubra,haliotis rubra,78772568,445354,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis rufescens,haliotis rufescens,78772573,445357,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis sorenseni,haliotis sorenseni,78772593,445362,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis stomatiaeformis,haliotis stomatiaeformis,78772613,180882,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis tuberculata,haliotis tuberculata,78772628,140059,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis walallensis,haliotis walallensis,78772648,445374,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis kamtschatkana,haliotis kamtschatkana,78775083,405014,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+haliotis cracherodii,haliotis cracherodii,78775277,405012,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+oxymonacanthus halli,oxymonacanthus halli,79802692,220064,VU,not comprehensively assessed,FISH,FISH
+hypanus dipterurus,hypanus dipterurus,80677563,1042857,VU,sharks_and_rays,FISH,FISH: sharks & rays
+sousa sahulensis,sousa sahulensis,82031671,816452,VU,mammals,MAMMALS,MAMMALS
+ophioblennius clippertonensis,ophioblennius clippertonensis,85698327,712843,VU,blennies,FISH,FISH
+thalassoma robertsoni,thalassoma robertsoni,85698513,273589,VU,wrasses_and_parrotfishes,FISH,FISH
+xyrichtys wellingtoni,xyrichtys wellingtoni,85698736,273614,VU,wrasses_and_parrotfishes,FISH,FISH
+acipenser medirostris,acipenser medirostris,97433481,271695,EN,sturgeons,FISH,FISH
+acipenser brevirostrum,acipenser brevirostrum,97439806,157869,VU,sturgeons,FISH,FISH
+acipenser transmontanus,acipenser transmontanus,97440736,238345,VU,sturgeons,FISH,FISH
+balistes capriscus,balistes capriscus,97662794,154721,VU,not comprehensively assessed,FISH,FISH
+balistes vetula,balistes vetula,97664057,127397,NT,not comprehensively assessed,FISH,FISH
+mola mola,mola mola,97667070,127405,VU,not comprehensively assessed,FISH,FISH
+epinephelus aeneus,epinephelus aeneus,100459597,127032,NT,groupers,FISH,FISH
+epinephelus akaara,epinephelus akaara,100459934,273833,EN,groupers,FISH,FISH
+epinephelus daemelii,epinephelus daemelii,100465433,273846,NT,groupers,FISH,FISH
+mycteroperca jordani,mycteroperca jordani,100466315,273879,EN,groupers,FISH,FISH
+epinephelus fuscoguttatus,epinephelus fuscoguttatus,100468078,218218,VU,groupers,FISH,FISH
+epinephelus polyphekadion,epinephelus polyphekadion,100553967,218197,VU,groupers,FISH,FISH
+hyporthodus acanthistius,hyporthodus acanthistius,100569342,475097,VU,groupers,FISH,FISH
+hyporthodus ergastularius,hyporthodus ergastularius,100569671,475076,NT,groupers,FISH,FISH
+epinephelus bruneus,epinephelus bruneus,100573599,273840,VU,groupers,FISH,FISH
+acroteriobatus zanzibarensis,acroteriobatus zanzibarensis,103930955,1016263,NT,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos borneensis,rhinobatos borneensis,103933139,1022438,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos productus,pseudobatos productus,104004394,1043469,NT,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos schlegelii,rhinobatos schlegelii,104006031,213640,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos whitei,rhinobatos whitei,104007215,835214,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhynchobatus immaculatus,rhynchobatus immaculatus,104020006,835233,CR,sharks_and_rays,FISH,FISH: sharks & rays
+aetobatus laticeps,aetobatus laticeps,104021771,712980,VU,sharks_and_rays,FISH,FISH: sharks & rays
+aetobatus narutobiei,aetobatus narutobiei,104021988,835222,VU,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis ridens,myliobatis ridens,104025749,835027,CR,sharks_and_rays,FISH,FISH: sharks & rays
+glaucostegus cemiculus,glaucostegus cemiculus,104057239,1016062,CR,sharks_and_rays,FISH,FISH: sharks & rays
+bathytoshia lata,bathytoshia lata,104072486,1018707,VU,sharks_and_rays,FISH,FISH: sharks & rays
+telatrygon zugei,telatrygon zugei,104086760,1013687,VU,sharks_and_rays,FISH,FISH: sharks & rays
+telatrygon crozieri,telatrygon crozieri,104087837,1526035,EN,sharks_and_rays,FISH,FISH: sharks & rays
+hemitrygon longicauda,hemitrygon longicauda,104112674,1042851,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemitrygon akajei,hemitrygon akajei,104113935,1042845,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hypanus americanus,hypanus americanus,104123787,1042856,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hypanus guttatus,hypanus guttatus,104125629,1042858,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hypanus marianae,hypanus marianae,104130004,1042862,EN,sharks_and_rays,FISH,FISH: sharks & rays
+neotrygon australiae,neotrygon australiae,104166982,1382142,NT,sharks_and_rays,FISH,FISH: sharks & rays
+fontitrygon colarensis,fontitrygon colarensis,104170822,1042836,CR,sharks_and_rays,FISH,FISH: sharks & rays
+fontitrygon geijskesi,fontitrygon geijskesi,104172152,1042837,CR,sharks_and_rays,FISH,FISH: sharks & rays
+fontitrygon margarita,fontitrygon margarita,104172843,1042838,VU,sharks_and_rays,FISH,FISH: sharks & rays
+brevitrygon heterura,brevitrygon heterura,104179599,1042822,VU,sharks_and_rays,FISH,FISH: sharks & rays
+brevitrygon javaensis,brevitrygon javaensis,104180287,1042825,EN,sharks_and_rays,FISH,FISH: sharks & rays
+maculabatis macrura,maculabatis macrura,104189052,1468723,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pastinachus gracilicaudus,pastinachus gracilicaudus,104306117,712404,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus leiodon,carcharhinus leiodon,109876922,271323,EN,sharks_and_rays,FISH,FISH: sharks & rays
+torpedo adenensis,torpedo adenensis,109897319,271676,EN,sharks_and_rays,FISH,FISH: sharks & rays
+acroteriobatus salalah,acroteriobatus salalah,109899000,1043598,NT,sharks_and_rays,FISH,FISH: sharks & rays
+chiloscyllium arabicum,chiloscyllium arabicum,109902537,277827,NT,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos punctifer,rhinobatos punctifer,109904426,213641,NT,sharks_and_rays,FISH,FISH: sharks & rays
+acroteriobatus variegatus,acroteriobatus variegatus,109905030,1012968,CR,sharks_and_rays,FISH,FISH: sharks & rays
+halaelurus boesemani,halaelurus boesemani,109905403,217638,VU,sharks_and_rays,FISH,FISH: sharks & rays
+brevitrygon imbricata,brevitrygon imbricata,109916824,1042823,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pastinachus sephen,pastinachus sephen,109922153,217419,NT,sharks_and_rays,FISH,FISH: sharks & rays
+aetomylaeus milvus,aetomylaeus milvus,109922492,278474,EN,sharks_and_rays,FISH,FISH: sharks & rays
+maculabatis arabica,maculabatis arabica,109922508,1042747,CR,sharks_and_rays,FISH,FISH: sharks & rays
+acropora abrolhosensis,acropora abrolhosensis,110517562,288182,EN,reef_building_corals,CNIDARIA,CNIDARIA
+brevitrygon walga,brevitrygon walga,111015783,1042826,NT,sharks_and_rays,FISH,FISH: sharks & rays
+orbiraja jensenae,orbiraja jensenae,112949852,1043486,NT,sharks_and_rays,FISH,FISH: sharks & rays
+squatina africana,squatina africana,113073072,217373,NT,sharks_and_rays,FISH,FISH: sharks & rays
+lophius vomerinus,lophius vomerinus,115229991,217839,NT,not comprehensively assessed,FISH,FISH
+nemipterus virgatus,nemipterus virgatus,115250542,278133,VU,not comprehensively assessed,FISH,FISH
+pomatomus saltatrix,pomatomus saltatrix,115314064,151482,VU,not comprehensively assessed,FISH,FISH
+lutjanus campechanus,lutjanus campechanus,115334224,159795,VU,not comprehensively assessed,FISH,FISH
+cosmocampus balli,cosmocampus balli,115417503,278057,VU,not comprehensively assessed,FISH,FISH
+parupeneus porphyreus,parupeneus porphyreus,115462012,218662,NT,not comprehensively assessed,FISH,FISH
+siganus niger,siganus niger,115470334,273918,VU,not comprehensively assessed,FISH,FISH
+siganus uspi,siganus uspi,115471770,273926,NT,not comprehensively assessed,FISH,FISH
+oxymonacanthus longirostris,oxymonacanthus longirostris,115476659,220063,VU,not comprehensively assessed,FISH,FISH
+carcharhinus obsoletus,carcharhinus obsoletus,115696628,1523902,CR,sharks_and_rays,FISH,FISH: sharks & rays
+scymnodon ringens,scymnodon ringens,116739828,105918,VU,sharks_and_rays,FISH,FISH: sharks & rays
+squatina aculeata,squatina aculeata,116768915,105926,CR,sharks_and_rays,FISH,FISH: sharks & rays
+squatina oculata,squatina oculata,116782036,105927,CR,sharks_and_rays,FISH,FISH: sharks & rays
+squatina armata,squatina armata,116831653,271665,CR,sharks_and_rays,FISH,FISH: sharks & rays
+squatina argentina,squatina argentina,116841596,271664,CR,sharks_and_rays,FISH,FISH: sharks & rays
+telatrygon biasa,telatrygon biasa,116856055,1043626,VU,sharks_and_rays,FISH,FISH: sharks & rays
+squatina david,squatina david,116880434,1043608,NT,sharks_and_rays,FISH,FISH: sharks & rays
+squalus rancureli,squalus rancureli,117123341,271663,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hippopus hippopus,hippopus hippopus,117405498,216411,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+meiacanthus abruptus,meiacanthus abruptus,117479864,712829,VU,blennies,FISH,FISH
+squatina squatina,squatina squatina,117498371,105928,CR,sharks_and_rays,FISH,FISH: sharks & rays
+plectropomus marisrubri,plectropomus marisrubri,118360410,1577317,VU,groupers,FISH,FISH
+tridacna derasa,tridacna derasa,119167048,382205,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+tridacna gigas,tridacna gigas,119167161,207670,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+caretta caretta,caretta caretta,119333622,137205,VU,marine_turtles,REPTILES,REPTILES
+rhynchobatus djiddensis,rhynchobatus djiddensis,121035795,217378,CR,sharks_and_rays,FISH,FISH: sharks & rays
+brachionichthys hirsutus,brachionichthys hirsutus,121210485,279954,CR,not comprehensively assessed,FISH,FISH
+sillago parvisquamis,sillago parvisquamis,122055694,273951,EN,not comprehensively assessed,FISH,FISH
+centroberyx affinis,centroberyx affinis,123356632,276891,VU,not comprehensively assessed,FISH,FISH
+gobiodon fulvus,gobiodon fulvus,123494792,219482,VU,not comprehensively assessed,FISH,FISH
+orcaella brevirostris,orcaella brevirostris,123790805,148732,EN,mammals,MAMMALS,MAMMALS
+pontoporia blainvillei,pontoporia blainvillei,123792204,254964,VU,mammals,MAMMALS,MAMMALS
+orcaella heinsohni,orcaella heinsohni,123793740,343990,VU,mammals,MAMMALS,MAMMALS
+sousa chinensis,sousa chinensis,123794774,220226,VU,mammals,MAMMALS,MAMMALS
+glyphis gangeticus,glyphis gangeticus,124398647,277183,CR,sharks_and_rays,FISH,FISH: sharks & rays
+squatina californica,squatina californica,124401300,271667,VU,sharks_and_rays,FISH,FISH: sharks & rays
+haploblepharus edwardsii,haploblepharus edwardsii,124403633,217646,EN,sharks_and_rays,FISH,FISH: sharks & rays
+haploblepharus fuscus,haploblepharus fuscus,124403821,217644,VU,sharks_and_rays,FISH,FISH: sharks & rays
+scyliorhinus capensis,scyliorhinus capensis,124404210,217652,NT,sharks_and_rays,FISH,FISH: sharks & rays
+leptocharias smithii,leptocharias smithii,124404329,105804,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hemitriakis leucoperiptera,hemitriakis leucoperiptera,124404742,281043,CR,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus asterias,mustelus asterias,124405496,105821,NT,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus mustelus,mustelus mustelus,124405881,105822,EN,sharks_and_rays,FISH,FISH: sharks & rays
+scylliogaleus quecketti,scylliogaleus quecketti,124406361,220022,VU,sharks_and_rays,FISH,FISH: sharks & rays
+triakis acutipinna,triakis acutipinna,124406514,279057,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus borneensis,carcharhinus borneensis,124407121,271319,CR,sharks_and_rays,FISH,FISH: sharks & rays
+urogymnus asperrimus,urogymnus asperrimus,124411670,217424,EN,sharks_and_rays,FISH,FISH: sharks & rays
+atelomycterus marmoratus,atelomycterus marmoratus,124414963,279790,NT,sharks_and_rays,FISH,FISH: sharks & rays
+chiloscyllium indicum,chiloscyllium indicum,124416590,367212,VU,sharks_and_rays,FISH,FISH: sharks & rays
+chiloscyllium griseum,chiloscyllium griseum,124416752,277829,VU,sharks_and_rays,FISH,FISH: sharks & rays
+eusphyra blochii,eusphyra blochii,124417935,280757,CR,sharks_and_rays,FISH,FISH: sharks & rays
+hemigaleus microstoma,hemigaleus microstoma,124418711,281024,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhina ancylostomus,rhina ancylostomus,124421912,148846,CR,sharks_and_rays,FISH,FISH: sharks & rays
+chiloscyllium punctatum,chiloscyllium punctatum,124423551,277833,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemipristis elongata,hemipristis elongata,124424011,277427,EN,sharks_and_rays,FISH,FISH: sharks & rays
+odontaspis ferox,odontaspis ferox,124424595,105844,EN,sharks_and_rays,FISH,FISH: sharks & rays
+stegostoma tigrinum,stegostoma tigrinum,124425292,313100,EN,sharks_and_rays,FISH,FISH: sharks & rays
+oxynotus japonicus,oxynotus japonicus,124429948,271650,VU,sharks_and_rays,FISH,FISH: sharks & rays
+centroscyllium granulatum,centroscyllium granulatum,124432959,271621,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus dorsalis,mustelus dorsalis,124433729,271382,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos planiceps,pseudobatos planiceps,124433864,1043480,VU,sharks_and_rays,FISH,FISH: sharks & rays
+sphyrna corona,sphyrna corona,124434064,271377,CR,sharks_and_rays,FISH,FISH: sharks & rays
+sympterygia brevicaudata,sympterygia brevicaudata,124434224,315723,NT,sharks_and_rays,FISH,FISH: sharks & rays
+anacanthobatis marmorata,anacanthobatis marmorata,124434445,1016599,NT,sharks_and_rays,FISH,FISH: sharks & rays
+cephaloscyllium sufflans,cephaloscyllium sufflans,124434871,217637,NT,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus campbelli,dipturus campbelli,124434963,217393,NT,sharks_and_rays,FISH,FISH: sharks & rays
+halaelurus natalensis,halaelurus natalensis,124435463,217643,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pseudoginglymostoma brevicaudatum,pseudoginglymostoma brevicaudatum,124435749,220031,CR,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon chilensis,urotrygon chilensis,124436667,283115,NT,sharks_and_rays,FISH,FISH: sharks & rays
+galeus polli,galeus polli,124436806,271364,VU,sharks_and_rays,FISH,FISH: sharks & rays
+amblyraja frerichsi,amblyraja frerichsi,124437250,271501,VU,sharks_and_rays,FISH,FISH: sharks & rays
+aculeola nigra,aculeola nigra,124437350,279502,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urolophus aurantiacus,urolophus aurantiacus,124438082,283093,VU,sharks_and_rays,FISH,FISH: sharks & rays
+gymnura zonura,gymnura zonura,124439689,298792,EN,sharks_and_rays,FISH,FISH: sharks & rays
+gymnura poecilura,gymnura poecilura,124440205,215611,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus crosnieri,dipturus crosnieri,124440461,217388,VU,sharks_and_rays,FISH,FISH: sharks & rays
+aetobatus flagellum,aetobatus flagellum,124440562,278241,EN,sharks_and_rays,FISH,FISH: sharks & rays
+aetomylaeus maculatus,aetomylaeus maculatus,124440727,217428,EN,sharks_and_rays,FISH,FISH: sharks & rays
+aetomylaeus vespertilio,aetomylaeus vespertilio,124440895,217427,CR,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis chilensis,myliobatis chilensis,124441181,271486,VU,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis longirostris,myliobatis longirostris,124441508,271489,VU,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis peruvianus,myliobatis peruvianus,124441708,271490,VU,sharks_and_rays,FISH,FISH: sharks & rays
+aetomylaeus bovinus,aetomylaeus bovinus,124441812,871951,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhinoptera javanica,rhinoptera javanica,124442197,217429,EN,sharks_and_rays,FISH,FISH: sharks & rays
+rhinoptera steindachneri,rhinoptera steindachneri,124442442,271498,NT,sharks_and_rays,FISH,FISH: sharks & rays
+torpedo panthera,torpedo panthera,124442830,217381,EN,sharks_and_rays,FISH,FISH: sharks & rays
+neoharriotta carri,neoharriotta carri,124443945,276731,NT,sharks_and_rays,FISH,FISH: sharks & rays
+neoharriotta pinnata,neoharriotta pinnata,124444054,221461,NT,sharks_and_rays,FISH,FISH: sharks & rays
+telatrygon acutirostra,telatrygon acutirostra,124444795,1011795,VU,sharks_and_rays,FISH,FISH: sharks & rays
+neotrygon annotata,neotrygon annotata,124444889,398329,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemitrygon izuensis,hemitrygon izuensis,124445088,1042848,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hypanus longus,hypanus longus,124445324,1042860,VU,sharks_and_rays,FISH,FISH: sharks & rays
+taeniurops meyeni,taeniurops meyeni,124445924,712972,VU,sharks_and_rays,FISH,FISH: sharks & rays
+acroteriobatus annulatus,acroteriobatus annulatus,124446397,871953,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos hynnicephalus,rhinobatos hynnicephalus,124446775,271598,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos leucorhynchus,pseudobatos leucorhynchus,124446908,1043484,VU,sharks_and_rays,FISH,FISH: sharks & rays
+zapteryx exasperata,zapteryx exasperata,124448093,283213,VU,sharks_and_rays,FISH,FISH: sharks & rays
+zapteryx xyster,zapteryx xyster,124448370,283214,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhynchobatus luebberti,rhynchobatus luebberti,124448712,278219,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhynchobatus springeri,rhynchobatus springeri,124448942,712388,CR,sharks_and_rays,FISH,FISH: sharks & rays
+hydrolagus mitsukurii,hydrolagus mitsukurii,124450319,271414,NT,sharks_and_rays,FISH,FISH: sharks & rays
+chimaera ogilbyi,chimaera ogilbyi,124450455,298552,NT,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus minicanis,mustelus minicanis,124452001,271391,EN,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus tessellatus,centrophorus tessellatus,124452245,271619,EN,sharks_and_rays,FISH,FISH: sharks & rays
+somniosus microcephalus,somniosus microcephalus,124452872,105919,VU,sharks_and_rays,FISH,FISH: sharks & rays
+chiloscyllium plagiosum,chiloscyllium plagiosum,124453319,277832,NT,sharks_and_rays,FISH,FISH: sharks & rays
+bythaelurus canescens,bythaelurus canescens,124456465,316762,VU,sharks_and_rays,FISH,FISH: sharks & rays
+diplobatis colombiensis,diplobatis colombiensis,124456571,280549,VU,sharks_and_rays,FISH,FISH: sharks & rays
+diplobatis guamachensis,diplobatis guamachensis,124456675,280550,VU,sharks_and_rays,FISH,FISH: sharks & rays
+leucoraja melitensis,leucoraja melitensis,124456941,105875,CR,sharks_and_rays,FISH,FISH: sharks & rays
+narcine brevilabiata,narcine brevilabiata,124456946,275387,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus oxyrinchus,dipturus oxyrinchus,124458320,105872,VU,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja albomaculata,bathyraja albomaculata,124458655,271505,VU,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja griseocauda,bathyraja griseocauda,124459226,234586,EN,sharks_and_rays,FISH,FISH: sharks & rays
+chimaera monstrosa,chimaera monstrosa,124459382,105824,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus whitneyi,mustelus whitneyi,124461599,271395,CR,sharks_and_rays,FISH,FISH: sharks & rays
+triakis maculata,triakis maculata,124461743,279058,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos rhinobatos,rhinobatos rhinobatos,124461877,105898,CR,sharks_and_rays,FISH,FISH: sharks & rays
+urobatis tumbesensis,urobatis tumbesensis,124462289,283089,VU,sharks_and_rays,FISH,FISH: sharks & rays
+oxynotus centrina,oxynotus centrina,124462573,105914,EN,sharks_and_rays,FISH,FISH: sharks & rays
+galeus atlanticus,galeus atlanticus,124463343,105811,NT,sharks_and_rays,FISH,FISH: sharks & rays
+narcine leoparda,narcine leoparda,124463476,275393,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rostroraja cervigoni,rostroraja cervigoni,124463568,1667997,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon venezuelae,urotrygon venezuelae,124463656,283125,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos prahli,pseudobatos prahli,124463727,1043465,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos penggali,rhinobatos penggali,124464201,390099,EN,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos jimbaranensis,rhinobatos jimbaranensis,124464321,390098,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos albomaculatus,rhinobatos albomaculatus,124465045,271593,CR,sharks_and_rays,FISH,FISH: sharks & rays
+torpedo marmorata,torpedo marmorata,124466265,271684,VU,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon rogersi,urotrygon rogersi,124467453,283122,NT,sharks_and_rays,FISH,FISH: sharks & rays
+rostroraja velezi,rostroraja velezi,124469210,1605277,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus tengu,dipturus tengu,124470688,271561,NT,sharks_and_rays,FISH,FISH: sharks & rays
+nasolamia velox,nasolamia velox,124470861,281637,EN,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis tobijei,myliobatis tobijei,124471213,271492,VU,sharks_and_rays,FISH,FISH: sharks & rays
+oxynotus paradoxus,oxynotus paradoxus,124471790,105915,VU,sharks_and_rays,FISH,FISH: sharks & rays
+scymnodon ichiharai,scymnodon ichiharai,124472202,299099,VU,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja spinicauda,bathyraja spinicauda,124472535,105868,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemitriakis complicofasciata,hemitriakis complicofasciata,124472961,389060,VU,sharks_and_rays,FISH,FISH: sharks & rays
+etmopterus spinax,etmopterus spinax,124475610,105913,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus gigas,dipturus gigas,124476574,271547,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon simulatrix,urotrygon simulatrix,124476746,283124,VU,sharks_and_rays,FISH,FISH: sharks & rays
+triakis scyllium,triakis scyllium,124476903,279059,EN,sharks_and_rays,FISH,FISH: sharks & rays
+torpedo torpedo,torpedo torpedo,124477382,271691,VU,sharks_and_rays,FISH,FISH: sharks & rays
+glaucostegus halavi,glaucostegus halavi,124479984,280874,CR,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos irvinei,rhinobatos irvinei,124479989,271599,CR,sharks_and_rays,FISH,FISH: sharks & rays
+squalus hemipinnis,squalus hemipinnis,124480327,398272,VU,sharks_and_rays,FISH,FISH: sharks & rays
+torpedo mackayana,torpedo mackayana,124480497,271682,EN,sharks_and_rays,FISH,FISH: sharks & rays
+urogymnus granulatus,urogymnus granulatus,124484009,989371,EN,sharks_and_rays,FISH,FISH: sharks & rays
+squalus japonicus,squalus japonicus,124484752,271661,EN,sharks_and_rays,FISH,FISH: sharks & rays
+squalus brevirostris,squalus brevirostris,124485434,271658,EN,sharks_and_rays,FISH,FISH: sharks & rays
+dasyatis pastinaca,dasyatis pastinaca,124488102,105851,VU,sharks_and_rays,FISH,FISH: sharks & rays
+leucoraja fullonica,leucoraja fullonica,124489576,105874,VU,sharks_and_rays,FISH,FISH: sharks & rays
+leucoraja circularis,leucoraja circularis,124490090,105873,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pastinachus solocirostris,pastinachus solocirostris,124490382,278252,EN,sharks_and_rays,FISH,FISH: sharks & rays
+malacoraja senta,malacoraja senta,124492029,158554,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos annandalei,rhinobatos annandalei,124492224,271594,CR,sharks_and_rays,FISH,FISH: sharks & rays
+scyliorhinus stellaris,scyliorhinus stellaris,124493465,105815,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus punctulatus,mustelus punctulatus,124493853,105823,VU,sharks_and_rays,FISH,FISH: sharks & rays
+okamejei meerdervoortii,okamejei meerdervoortii,124494332,279185,VU,sharks_and_rays,FISH,FISH: sharks & rays
+leucoraja wallacei,leucoraja wallacei,124495127,217396,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hemitriakis japanica,hemitriakis japanica,124497048,281042,EN,sharks_and_rays,FISH,FISH: sharks & rays
+taeniurops grabatus,taeniurops grabatus,124497651,1605275,NT,sharks_and_rays,FISH,FISH: sharks & rays
+gymnura tentaculata,gymnura tentaculata,124498408,298791,CR,sharks_and_rays,FISH,FISH: sharks & rays
+zanobatus schoenleinii,zanobatus schoenleinii,124498548,283210,VU,sharks_and_rays,FISH,FISH: sharks & rays
+fontitrygon margaritella,fontitrygon margaritella,124498844,1042839,NT,sharks_and_rays,FISH,FISH: sharks & rays
+narcine lingula,narcine lingula,124499677,275394,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus albimarginatus,carcharhinus albimarginatus,124499982,217352,VU,sharks_and_rays,FISH,FISH: sharks & rays
+okamejei hollandi,okamejei hollandi,124501466,279182,VU,sharks_and_rays,FISH,FISH: sharks & rays
+maculabatis pastinacoides,maculabatis pastinacoides,124503092,1042868,EN,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon reticulata,urotrygon reticulata,124503331,283121,CR,sharks_and_rays,FISH,FISH: sharks & rays
+amblyraja radiata,amblyraja radiata,124503504,105865,VU,sharks_and_rays,FISH,FISH: sharks & rays
+paragaleus tengi,paragaleus tengi,124503842,271331,EN,sharks_and_rays,FISH,FISH: sharks & rays
+urogymnus lobistoma,urogymnus lobistoma,124504854,1043414,EN,sharks_and_rays,FISH,FISH: sharks & rays
+orbiraja powelli,orbiraja powelli,124505306,1042877,NT,sharks_and_rays,FISH,FISH: sharks & rays
+acroteriobatus leucospilus,acroteriobatus leucospilus,124505883,1016293,EN,sharks_and_rays,FISH,FISH: sharks & rays
+narcine maculata,narcine maculata,124506650,367293,VU,sharks_and_rays,FISH,FISH: sharks & rays
+torpedo bauchotae,torpedo bauchotae,124507087,271679,EN,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis aquila,myliobatis aquila,124508353,105860,CR,sharks_and_rays,FISH,FISH: sharks & rays
+lamiopsis temminckii,lamiopsis temminckii,124508850,281270,EN,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus widodoi,mustelus widodoi,124509147,390092,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhinoraja longicauda,rhinoraja longicauda,124509549,282592,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemitrygon sinensis,hemitrygon sinensis,124509727,1042854,EN,sharks_and_rays,FISH,FISH: sharks & rays
+raja straeleni,raja straeleni,124510972,217400,NT,sharks_and_rays,FISH,FISH: sharks & rays
+platyrhina sinensis,platyrhina sinensis,124511558,282279,EN,sharks_and_rays,FISH,FISH: sharks & rays
+cephaloscyllium silasi,cephaloscyllium silasi,124511862,277103,CR,sharks_and_rays,FISH,FISH: sharks & rays
+pateobatis hortlei,pateobatis hortlei,124512513,1043417,NT,sharks_and_rays,FISH,FISH: sharks & rays
+narke dipterygia,narke dipterygia,124514068,278821,VU,sharks_and_rays,FISH,FISH: sharks & rays
+tetronarce formosa,tetronarce formosa,124514399,845705,NT,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja smirnovi,bathyraja smirnovi,124514790,271535,NT,sharks_and_rays,FISH,FISH: sharks & rays
+pateobatis fai,pateobatis fai,124515272,1043416,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hemitrygon laevigata,hemitrygon laevigata,124516086,1042850,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hypanus rudis,hypanus rudis,124516434,1042863,CR,sharks_and_rays,FISH,FISH: sharks & rays
+himantura undulata,himantura undulata,124516589,217413,EN,sharks_and_rays,FISH,FISH: sharks & rays
+leucoraja naevus,leucoraja naevus,124517373,105876,NT,sharks_and_rays,FISH,FISH: sharks & rays
+gymnura japonica,gymnura japonica,124518082,215609,VU,sharks_and_rays,FISH,FISH: sharks & rays
+leucoraja ocellata,leucoraja ocellata,124518400,158553,EN,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus manazo,mustelus manazo,124518703,214561,EN,sharks_and_rays,FISH,FISH: sharks & rays
+okamejei acutispina,okamejei acutispina,124519140,279178,VU,sharks_and_rays,FISH,FISH: sharks & rays
+paragaleus leucolomatus,paragaleus leucolomatus,124519483,220025,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus lunulatus,mustelus lunulatus,124519657,271389,NT,sharks_and_rays,FISH,FISH: sharks & rays
+dasyatis chrysonota,dasyatis chrysonota,124520303,212250,NT,sharks_and_rays,FISH,FISH: sharks & rays
+halaelurus maculosus,halaelurus maculosus,124520542,398253,NT,sharks_and_rays,FISH,FISH: sharks & rays
+okamejei kenojei,okamejei kenojei,124520681,279183,VU,sharks_and_rays,FISH,FISH: sharks & rays
+holohalaelurus favus,holohalaelurus favus,124522141,390077,EN,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja irrasa,bathyraja irrasa,124523337,234785,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhizoprionodon longurio,rhizoprionodon longurio,124524022,271327,VU,sharks_and_rays,FISH,FISH: sharks & rays
+haploblepharus kistnasamyi,haploblepharus kistnasamyi,124524866,295747,VU,sharks_and_rays,FISH,FISH: sharks & rays
+beringraja pulchra,beringraja pulchra,124525206,1015739,EN,sharks_and_rays,FISH,FISH: sharks & rays
+holohalaelurus punctatus,holohalaelurus punctatus,124526498,217647,EN,sharks_and_rays,FISH,FISH: sharks & rays
+cirrhoscyllium formosanum,cirrhoscyllium formosanum,124527280,280194,VU,sharks_and_rays,FISH,FISH: sharks & rays
+halaelurus buergeri,halaelurus buergeri,124527450,278697,EN,sharks_and_rays,FISH,FISH: sharks & rays
+leucoraja leucosticta,leucoraja leucosticta,124528025,271565,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon aspidura,urotrygon aspidura,124528276,283113,NT,sharks_and_rays,FISH,FISH: sharks & rays
+himantura uarnak,himantura uarnak,124528737,105854,EN,sharks_and_rays,FISH,FISH: sharks & rays
+rostroraja equatorialis,rostroraja equatorialis,124529489,1670924,VU,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja trachouros,bathyraja trachouros,124530553,271537,NT,sharks_and_rays,FISH,FISH: sharks & rays
+paragaleus pectoralis,paragaleus pectoralis,124531152,105803,EN,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus griseus,mustelus griseus,124532728,271384,EN,sharks_and_rays,FISH,FISH: sharks & rays
+narcine entemedor,narcine entemedor,124532986,275389,VU,sharks_and_rays,FISH,FISH: sharks & rays
+cephaloscyllium umbratile,cephaloscyllium umbratile,124533854,277104,NT,sharks_and_rays,FISH,FISH: sharks & rays
+okamejei schmidti,okamejei schmidti,124534082,279188,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus nidarosiensis,dipturus nidarosiensis,124534517,105871,EN,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon munda,urotrygon munda,124534743,283118,NT,sharks_and_rays,FISH,FISH: sharks & rays
+proscyllium habereri,proscyllium habereri,124535240,282368,VU,sharks_and_rays,FISH,FISH: sharks & rays
+okamejei boesemani,okamejei boesemani,124535644,279180,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus macrocauda,dipturus macrocauda,124536099,271553,NT,sharks_and_rays,FISH,FISH: sharks & rays
+centroscyllium excelsum,centroscyllium excelsum,124536451,271620,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemitrygon navarrae,hemitrygon navarrae,124536575,1042852,VU,sharks_and_rays,FISH,FISH: sharks & rays
+temera hardwickii,temera hardwickii,124537356,282938,VU,sharks_and_rays,FISH,FISH: sharks & rays
+heteronarce garmani,heteronarce garmani,124537558,220971,NT,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon nana,urotrygon nana,124537770,283119,NT,sharks_and_rays,FISH,FISH: sharks & rays
+dasyatis marmorata,dasyatis marmorata,124537991,271445,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemitrygon parvonigra,hemitrygon parvonigra,124543000,1042853,VU,sharks_and_rays,FISH,FISH: sharks & rays
+maculabatis astra,maculabatis astra,124544792,1042866,NT,sharks_and_rays,FISH,FISH: sharks & rays
+himantura leoparda,himantura leoparda,124545011,398328,EN,sharks_and_rays,FISH,FISH: sharks & rays
+gymnura marmorata,gymnura marmorata,124548901,271479,NT,sharks_and_rays,FISH,FISH: sharks & rays
+gymnura crebripunctata,gymnura crebripunctata,124549206,271476,NT,sharks_and_rays,FISH,FISH: sharks & rays
+aetobatus ocellatus,aetobatus ocellatus,124549514,278243,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pastinachus ater,pastinachus ater,124550583,1019891,VU,sharks_and_rays,FISH,FISH: sharks & rays
+squalus acanthias,squalus acanthias,124551959,105923,VU,sharks_and_rays,FISH,FISH: sharks & rays
+raja ocellifera,raja ocellifera,124552547,1470546,EN,sharks_and_rays,FISH,FISH: sharks & rays
+lachnolaimus maximus,lachnolaimus maximus,124708500,158822,VU,wrasses_and_parrotfishes,FISH,FISH
+rhincodon typus,rhincodon typus,126673248,105847,EN,sharks_and_rays,FISH,FISH: sharks & rays
+hippocampus comes,hippocampus comes,128958172,275191,VU,not comprehensively assessed,FISH,FISH
+ctenella chagius,ctenella chagius,129471211,211419,CR,not comprehensively assessed,CNIDARIA,CNIDARIA
+mussismilia harttii,mussismilia harttii,129471526,290422,EN,reef_building_corals,CNIDARIA,CNIDARIA
+anguilla rostrata,anguilla rostrata,129638652,158562,EN,not comprehensively assessed,FISH,FISH
+dendrogyra cylindrus,dendrogyra cylindrus,129721366,418865,CR,reef_building_corals,CNIDARIA,CNIDARIA
+bahaba taipingensis,bahaba taipingensis,130105307,279858,CR,not comprehensively assessed,FISH,FISH
+sciaena umbra,sciaena umbra,130230194,127010,NT,not comprehensively assessed,FISH,FISH
+squatina guggenheim,squatina guggenheim,130393975,271669,EN,sharks_and_rays,FISH,FISH: sharks & rays
+balaenoptera borealis,balaenoptera borealis,130482064,137088,EN,mammals,MAMMALS,MAMMALS
+cynoscion othonopterus,cynoscion othonopterus,130934237,276084,VU,not comprehensively assessed,FISH,FISH
+pentheroscion mbizi,pentheroscion mbizi,131071220,282214,NT,not comprehensively assessed,FISH,FISH
+pseudotolithus senegalensis,pseudotolithus senegalensis,131073889,127008,EN,not comprehensively assessed,FISH,FISH
+pseudotolithus senegallus,pseudotolithus senegallus,131074272,273787,VU,not comprehensively assessed,FISH,FISH
+sciaena callaensis,sciaena callaensis,131075850,273789,CR,not comprehensively assessed,FISH,FISH
+umbrina cirrosa,umbrina cirrosa,131127681,127012,VU,not comprehensively assessed,FISH,FISH
+genypterus blacodes,genypterus blacodes,132965869,278702,VU,not comprehensively assessed,FISH,FISH
+squatina formosa,squatina formosa,134193368,271668,EN,sharks_and_rays,FISH,FISH: sharks & rays
+squatina nebulosa,squatina nebulosa,134193576,271671,EN,sharks_and_rays,FISH,FISH: sharks & rays
+squatina tergocellatoides,squatina tergocellatoides,134193835,271675,EN,sharks_and_rays,FISH,FISH: sharks & rays
+squatina japonica,squatina japonica,134194013,271670,CR,sharks_and_rays,FISH,FISH: sharks & rays
+acipenser naccarii,acipenser naccarii,135061929,126276,CR,sturgeons,FISH,FISH
+acipenser stellatus,acipenser stellatus,135062806,126278,CR,sturgeons,FISH,FISH
+acipenser gueldenstaedtii,acipenser gueldenstaedtii,135063140,126275,CR,sturgeons,FISH,FISH
+huso huso,huso huso,135087846,126280,CR,sturgeons,FISH,FISH
+lampetra fluviatilis,lampetra fluviatilis,135088436,101172,NT,not comprehensively assessed,FISH,FISH
+alosa algeriensis,alosa algeriensis,137217617,474902,EN,not comprehensively assessed,FISH,FISH
+chelon saliens,chelon saliens,137347404,1042832,NT,not comprehensively assessed,FISH,FISH
+aliger gigas,aliger gigas,138190717,1429769,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+bythaelurus hispidus,bythaelurus hispidus,139172409,316765,NT,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus mosis,mustelus mosis,139617441,214558,NT,sharks_and_rays,FISH,FISH: sharks & rays
+maculabatis ambigua,maculabatis ambigua,139653368,1042728,NT,sharks_and_rays,FISH,FISH: sharks & rays
+tenualosa toli,tenualosa toli,143832449,217454,VU,not comprehensively assessed,FISH,FISH
+sardinella lemuru,sardinella lemuru,143836046,272273,NT,not comprehensively assessed,FISH,FISH
+tenualosa macrura,tenualosa macrura,143840186,278569,NT,not comprehensively assessed,FISH,FISH
+coilia mystus,coilia mystus,143840543,279082,EN,not comprehensively assessed,FISH,FISH
+coilia nasus,coilia nasus,143840780,279083,EN,not comprehensively assessed,FISH,FISH
+neoopisthopterus cubanus,neoopisthopterus cubanus,143863981,281695,VU,not comprehensively assessed,FISH,FISH
+carcharhinus cerdale,carcharhinus cerdale,144137594,298424,CR,sharks_and_rays,FISH,FISH: sharks & rays
+ginglymostoma unami,ginglymostoma unami,144151864,1006832,EN,sharks_and_rays,FISH,FISH: sharks & rays
+styracura pacifica,styracura pacifica,144164959,1297576,VU,sharks_and_rays,FISH,FISH: sharks & rays
+sotalia guianensis,sotalia guianensis,144232542,344009,NT,mammals,MAMMALS,MAMMALS
+epinephelus itajara,epinephelus itajara,145206345,159353,VU,groupers,FISH,FISH
+pseudorca crassidens,pseudorca crassidens,145357488,137104,NT,mammals,MAMMALS,MAMMALS
+ifremeria nautilei,ifremeria nautilei,145380604,449966,EN,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+huso dauricus,huso dauricus,146104292,271700,CR,sturgeons,FISH,FISH
+hippoglossus hippoglossus,hippoglossus hippoglossus,148035632,127138,NT,not comprehensively assessed,FISH,FISH
+reinhardtius hippoglossoides,reinhardtius hippoglossoides,148037259,127144,NT,not comprehensively assessed,FISH,FISH
+tachypleus tridentatus,tachypleus tridentatus,149768986,238270,EN,not comprehensively assessed,ARTHROPODA,ARTHROPODA
+mycteroperca olfax,mycteroperca olfax,150898663,273881,EN,groupers,FISH,FISH
+rhynchobatus cooki,rhynchobatus cooki,151858712,1022441,CR,sharks_and_rays,FISH,FISH: sharks & rays
+atlantoraja castelnaui,atlantoraja castelnaui,152015479,279816,CR,sharks_and_rays,FISH,FISH: sharks & rays
+parmaturus angelae,parmaturus angelae,152501317,1493960,VU,sharks_and_rays,FISH,FISH: sharks & rays
+anguilla anguilla,anguilla anguilla,152845178,126281,CR,not comprehensively assessed,FISH,FISH
+anguilla australis,anguilla australis,154801652,293541,NT,not comprehensively assessed,FISH,FISH
+anguilla dieffenbachii,anguilla dieffenbachii,154802213,271703,EN,not comprehensively assessed,FISH,FISH
+lepidochelys kempii,lepidochelys kempii,155057916,137208,CR,marine_turtles,REPTILES,REPTILES
+balaenoptera musculus,balaenoptera musculus,156923585,137090,EN,mammals,MAMMALS,MAMMALS
+haliotis arabiensis,haliotis arabiensis,157247867,875064,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+depressigyra globulus,depressigyra globulus,157861794,413442,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+eulepetopsis vitrea,eulepetopsis vitrea,157867093,449958,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+lepetodrilus cristatus,lepetodrilus cristatus,157867450,449970,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+lepetodrilus elevatus,lepetodrilus elevatus,157867455,449971,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+lepetodrilus ovalis,lepetodrilus ovalis,157867470,449977,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+lepetodrilus pustulosus,lepetodrilus pustulosus,157867475,449978,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+provanna ios,provanna ios,157910309,450004,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+lepetodrilus fucensis,lepetodrilus fucensis,157910503,449972,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+clidoderma asperrimum,clidoderma asperrimum,158637941,280216,VU,not comprehensively assessed,FISH,FISH
+eopsetta grigorjewi,eopsetta grigorjewi,158637956,280689,VU,not comprehensively assessed,FISH,FISH
+platichthys bicoloratus,platichthys bicoloratus,158638006,305689,VU,not comprehensively assessed,FISH,FISH
+pseudopleuronectes yokohamae,pseudopleuronectes yokohamae,158638126,275360,NT,not comprehensively assessed,FISH,FISH
+glyptocephalus kitaharae,glyptocephalus kitaharae,158638131,1605268,NT,not comprehensively assessed,FISH,FISH
+verasper moseri,verasper moseri,158638136,283141,VU,not comprehensively assessed,FISH,FISH
+sebastes caurinus,sebastes caurinus,158883863,274780,NT,not comprehensively assessed,FISH,FISH
+lopholatilus villarii,lopholatilus villarii,159100855,276219,VU,not comprehensively assessed,FISH,FISH
+champsocephalus esox,champsocephalus esox,159404825,234719,VU,not comprehensively assessed,FISH,FISH
+pinna nobilis,pinna nobilis,160081499,140780,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+dugong dugon,dugong dugon,160756767,220227,VU,mammals,MAMMALS,MAMMALS
+lutjanus analis,lutjanus analis,161245983,159792,NT,not comprehensively assessed,FISH,FISH
+pristiophorus lanae,pristiophorus lanae,162209852,835218,NT,sharks_and_rays,FISH,FISH: sharks & rays
+glyptocephalus cynoglossus,glyptocephalus cynoglossus,162704857,127136,VU,not comprehensively assessed,FISH,FISH
+hippoglossoides platessoides,hippoglossoides platessoides,162705101,127137,EN,not comprehensively assessed,FISH,FISH
+myzopsetta ferruginea,myzopsetta ferruginea,162705687,1571969,VU,not comprehensively assessed,FISH,FISH
+atractoscion aequidens,atractoscion aequidens,162709367,218634,NT,not comprehensively assessed,FISH,FISH
+cephaloscyllium fasciatum,cephaloscyllium fasciatum,162870102,277100,CR,sharks_and_rays,FISH,FISH: sharks & rays
+paralichthys patagonicus,paralichthys patagonicus,165017727,275818,VU,not comprehensively assessed,FISH,FISH
+goniopora tantillus,goniopora tantillus,165602178,764222,EN,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora japonica,alveopora japonica,165604003,289257,CR,reef_building_corals,CNIDARIA,CNIDARIA
+montipora angulata,montipora angulata,165604370,287691,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora florida,acropora florida,165605719,207058,EN,reef_building_corals,CNIDARIA,CNIDARIA
+scolymia lacera,scolymia lacera,165608221,287853,CR,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora kelleheri,pocillopora kelleheri,165608701,289251,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora japonica,acropora japonica,165612189,288213,CR,reef_building_corals,CNIDARIA,CNIDARIA
+colpophyllia natans,colpophyllia natans,165613226,289697,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora secale,acropora secale,165615514,207080,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora hodgsoni,montipora hodgsoni,165617520,287712,EN,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora marionensis,alveopora marionensis,165619481,289258,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pavona minuta,pavona minuta,165623343,207317,VU,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora catalai,alveopora catalai,165623860,289254,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora turaki,acropora turaki,165625869,288261,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora divaricata,acropora divaricata,165626293,207106,EN,reef_building_corals,CNIDARIA,CNIDARIA
+enigmopora darveliensis,enigmopora darveliensis,165627743,289896,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora rudis,acropora rudis,165628045,288241,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora stoddarti,acropora stoddarti,165630875,288249,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites branneri,porites branneri,165631742,288892,NT,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora woodjonesi,pocillopora woodjonesi,165632860,289252,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pachyseris gemmae,pachyseris gemmae,165633450,288721,VU,not comprehensively assessed,CNIDARIA,CNIDARIA
+pectinia lactuca,pectinia lactuca,165634982,207378,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora gaimardi,montipora gaimardi,165636075,287708,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora willisae,acropora willisae,165636494,288266,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora orientalis,montipora orientalis,165637028,287720,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora carduus,acropora carduus,165637500,288189,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora tanegashimensis,acropora tanegashimensis,165638004,288253,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora plumosa,acropora plumosa,165638309,288233,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora spathulata,acropora spathulata,165639490,430654,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites evermanni,porites evermanni,165639808,288900,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora acuminata,acropora acuminata,165640708,207020,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora patula,montipora patula,165641665,207149,CR,reef_building_corals,CNIDARIA,CNIDARIA
+stylophora madagascarensis,stylophora madagascarensis,165641988,287777,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora nodosa,montipora nodosa,165642301,287719,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites colonensis,porites colonensis,165642934,288893,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora granulosa,acropora granulosa,165644153,207093,VU,reef_building_corals,CNIDARIA,CNIDARIA
+pectinia alcicornis,pectinia alcicornis,165647817,288403,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora capitata,pocillopora capitata,165648805,289246,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites desilveri,porites desilveri,165649275,288898,VU,reef_building_corals,CNIDARIA,CNIDARIA
+boninastrea boninensis,boninastrea boninensis,165651626,289527,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora listeri,acropora listeri,165653423,207057,EN,reef_building_corals,CNIDARIA,CNIDARIA
+agaricia lamarcki,agaricia lamarcki,165654031,287915,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora tumida,acropora tumida,165654536,288260,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora paniculata,acropora paniculata,165654932,207008,EN,reef_building_corals,CNIDARIA,CNIDARIA
+anacropora matthaii,anacropora matthaii,165655511,289240,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora loripes,acropora loripes,165656362,207074,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora stilosa,montipora stilosa,165657060,287727,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora hemprichii,acropora hemprichii,165659729,288207,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora derawanensis,acropora derawanensis,165661203,288196,EN,reef_building_corals,CNIDARIA,CNIDARIA
+lithophyllon repanda,lithophyllon repanda,165662053,716653,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora longicyathus,acropora longicyathus,165663454,207114,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora multiacuta,acropora multiacuta,165664392,288225,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora humilis,acropora humilis,165665320,207094,EN,reef_building_corals,CNIDARIA,CNIDARIA
+favites valenciennesii,favites valenciennesii,165668021,763525,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora samoensis,acropora samoensis,165668656,207055,EN,reef_building_corals,CNIDARIA,CNIDARIA
+seriatopora stellata,seriatopora stellata,165670311,206974,EN,reef_building_corals,CNIDARIA,CNIDARIA
+anacropora spumosa,anacropora spumosa,165671676,289245,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora palmata,acropora palmata,165672016,288227,CR,reef_building_corals,CNIDARIA,CNIDARIA
+montipora malampaya,montipora malampaya,165672515,287717,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora elseyi,acropora elseyi,165673689,207113,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora ankeli,pocillopora ankeli,165674276,430671,EN,reef_building_corals,CNIDARIA,CNIDARIA
+orbicella franksi,orbicella franksi,165674689,758262,NT,reef_building_corals,CNIDARIA,CNIDARIA
+acropora grandis,acropora grandis,165675210,207031,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora millepora,montipora millepora,165676294,207190,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora tenuis,acropora tenuis,165678669,207105,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora microphthalma,acropora microphthalma,165679447,207046,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora niugini,montipora niugini,165680173,287718,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites lichen,porites lichen,165680666,207228,VU,reef_building_corals,CNIDARIA,CNIDARIA
+merulina scabricula,merulina scabricula,165681375,289198,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora vaughani,acropora vaughani,165681978,288262,EN,reef_building_corals,CNIDARIA,CNIDARIA
+seriatopora caliendrum,seriatopora caliendrum,165683704,206969,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora effusa,montipora effusa,165685629,207169,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora pulchra,acropora pulchra,165686669,207015,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora ligulata,pocillopora ligulata,165692786,206959,EN,reef_building_corals,CNIDARIA,CNIDARIA
+anacropora spinosa,anacropora spinosa,165693190,289244,EN,reef_building_corals,CNIDARIA,CNIDARIA
+astreopora suggesta,astreopora suggesta,165694150,287948,EN,reef_building_corals,CNIDARIA,CNIDARIA
+scolymia cubensis,scolymia cubensis,165696681,287852,CR,reef_building_corals,CNIDARIA,CNIDARIA
+montipora spongiosa,montipora spongiosa,165698564,207168,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora florida,montipora florida,165702608,287706,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora informis,montipora informis,165703003,207186,EN,reef_building_corals,CNIDARIA,CNIDARIA
+astreopora cucullata,astreopora cucullata,165704867,287943,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora foliosa,montipora foliosa,165705966,207182,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora echinata,montipora echinata,165706737,287705,EN,reef_building_corals,CNIDARIA,CNIDARIA
+lobophyllia robusta,lobophyllia robusta,165708290,288104,VU,not comprehensively assessed,CNIDARIA,CNIDARIA
+montipora maeandrina,montipora maeandrina,165709672,207188,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora selago,acropora selago,165710104,207040,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora kirstyae,acropora kirstyae,165710754,288215,EN,reef_building_corals,CNIDARIA,CNIDARIA
+ctenactis albitentaculata,ctenactis albitentaculata,165712038,288874,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora subglabra,acropora subglabra,165713957,288250,EN,reef_building_corals,CNIDARIA,CNIDARIA
+echinopora lamellosa,echinopora lamellosa,165714474,207421,VU,reef_building_corals,CNIDARIA,CNIDARIA
+astreopora incrustans,astreopora incrustans,165717174,207131,EN,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora daedalea,alveopora daedalea,165717596,207200,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora meandrina,pocillopora meandrina,165718756,206964,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora elegans,pocillopora elegans,165720916,206956,EN,reef_building_corals,CNIDARIA,CNIDARIA
+dichocoenia stokesii,dichocoenia stokesii,165722422,289807,VU,reef_building_corals,CNIDARIA,CNIDARIA
+porites attenuata,porites attenuata,165725082,288890,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora saudii,montipora saudii,165726862,287725,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora caroliniana,acropora caroliniana,165727222,288190,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora cactus,montipora cactus,165727645,287694,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora retusa,acropora retusa,165728440,430653,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora lobulata,montipora lobulata,165729527,207141,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora latistella,acropora latistella,165730834,207039,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora fenneri,acropora fenneri,165732581,288203,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora pruinosa,acropora pruinosa,165734114,288237,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora friabilis,montipora friabilis,165735311,207165,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora aspera,acropora aspera,165735814,207011,EN,reef_building_corals,CNIDARIA,CNIDARIA
+orbicella annularis,orbicella annularis,165736431,758260,EN,reef_building_corals,CNIDARIA,CNIDARIA
+isopora palifera,isopora palifera,165738739,730686,EN,reef_building_corals,CNIDARIA,CNIDARIA
+cladocora caespitosa,cladocora caespitosa,165739749,135146,EN,not comprehensively assessed,CNIDARIA,CNIDARIA
+pseudodiploria strigosa,pseudodiploria strigosa,165745174,718718,CR,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora verrilliana,alveopora verrilliana,165745706,207201,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora austera,acropora austera,165747988,207052,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora russelli,acropora russelli,165749986,288243,NT,reef_building_corals,CNIDARIA,CNIDARIA
+pavona gigantea,pavona gigantea,165752260,289201,NT,reef_building_corals,CNIDARIA,CNIDARIA
+stylophora mamillata,stylophora mamillata,165752586,206984,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora dilatata,montipora dilatata,165752937,411235,VU,reef_building_corals,CNIDARIA,CNIDARIA
+astreopora moretonensis,astreopora moretonensis,165755091,287947,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora efflorescens,montipora efflorescens,165755570,207163,EN,reef_building_corals,CNIDARIA,CNIDARIA
+isopora brueggemanni,isopora brueggemanni,165759263,730688,EN,reef_building_corals,CNIDARIA,CNIDARIA
+mussismilia hispida,mussismilia hispida,165760474,290423,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora calcarea,montipora calcarea,165760768,287695,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora floweri,montipora floweri,165761359,287707,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites arnaudi,porites arnaudi,165762016,288888,NT,reef_building_corals,CNIDARIA,CNIDARIA
+montipora vietnamensis,montipora vietnamensis,165763432,287733,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora digitata,montipora digitata,165764784,207185,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora incrassata,montipora incrassata,165765776,287714,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora verrucosa,pocillopora verrucosa,165766340,206954,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora aspergillus,montipora aspergillus,165767649,287692,EN,reef_building_corals,CNIDARIA,CNIDARIA
+oulophyllia crispa,oulophyllia crispa,165767969,207485,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora hemispherica,montipora hemispherica,165769373,287710,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora roseni,acropora roseni,165771027,288240,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora clathrata,acropora clathrata,165771425,207075,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora caliculata,montipora caliculata,165778853,287696,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora damicornis,pocillopora damicornis,165779794,206953,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora donei,acropora donei,165780624,288198,EN,reef_building_corals,CNIDARIA,CNIDARIA
+meandrina meandrites,meandrina meandrites,165781180,289232,CR,reef_building_corals,CNIDARIA,CNIDARIA
+lobophyllia serrata,lobophyllia serrata,165782131,763793,EN,not comprehensively assessed,CNIDARIA,CNIDARIA
+astreopora expansa,astreopora expansa,165782523,207129,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora flabellata,montipora flabellata,165783544,207174,NT,reef_building_corals,CNIDARIA,CNIDARIA
+acropora kimbeensis,acropora kimbeensis,165785672,288214,EN,reef_building_corals,CNIDARIA,CNIDARIA
+stylophora danae,stylophora danae,165786112,206976,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora hispida,montipora hispida,165787902,207164,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora nasuta,acropora nasuta,165788565,207009,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora spongodes,montipora spongodes,165792388,207135,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora pharaonis,acropora pharaonis,165793790,207059,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora robusta,acropora robusta,165794325,207000,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora digitifera,acropora digitifera,165795607,207045,EN,reef_building_corals,CNIDARIA,CNIDARIA
+stylophora wellsi,stylophora wellsi,165796339,206977,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora tortuosa,acropora tortuosa,165796730,288259,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora suharsonoi,acropora suharsonoi,165797724,288251,EN,reef_building_corals,CNIDARIA,CNIDARIA
+agaricia humilis,agaricia humilis,165798056,287914,CR,reef_building_corals,CNIDARIA,CNIDARIA
+diploria labyrinthiformis,diploria labyrinthiformis,165799250,289826,CR,reef_building_corals,CNIDARIA,CNIDARIA
+montipora stellata,montipora stellata,165800471,207179,EN,reef_building_corals,CNIDARIA,CNIDARIA
+astreopora listeri,astreopora listeri,165804470,207125,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora sarmentosa,acropora sarmentosa,165806333,288244,EN,reef_building_corals,CNIDARIA,CNIDARIA
+madracis formosa,madracis formosa,165810746,287108,NT,reef_building_corals,CNIDARIA,CNIDARIA
+montipora kellyi,montipora kellyi,165811223,287715,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora batunai,acropora batunai,165811526,288187,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora palawanensis,montipora palawanensis,165812738,287722,EN,reef_building_corals,CNIDARIA,CNIDARIA
+agaricia grahamae,agaricia grahamae,165813918,287913,NT,reef_building_corals,CNIDARIA,CNIDARIA
+acropora striata,acropora striata,165815669,207081,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora valida,acropora valida,165816927,207072,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora lokani,acropora lokani,165817711,288219,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora turgescens,montipora turgescens,165819304,207142,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora lutkeni,acropora lutkeni,165821593,206994,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora verrilli,montipora verrilli,165822856,207136,VU,reef_building_corals,CNIDARIA,CNIDARIA
+astreopora macrostoma,astreopora macrostoma,165823210,287946,EN,reef_building_corals,CNIDARIA,CNIDARIA
+danafungia scruposa,danafungia scruposa,165824266,716609,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora halmaherae,acropora halmaherae,165825770,288206,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora cytherea,acropora cytherea,165826487,207095,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora aequituberculata,montipora aequituberculata,165827190,207144,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora monticulosa,acropora monticulosa,165827961,207103,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora horrida,acropora horrida,165829820,207006,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora solitaryensis,acropora solitaryensis,165830562,288248,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora dendrum,acropora dendrum,165831606,288195,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora gemmifera,acropora gemmifera,165832731,207097,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora lovelli,acropora lovelli,165834566,740834,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites stephensoni,porites stephensoni,165835390,288915,EN,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora allingi,alveopora allingi,165836622,207192,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora speciosa,acropora speciosa,165839718,430655,VU,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora ocellata,alveopora ocellata,165840219,207202,EN,reef_building_corals,CNIDARIA,CNIDARIA
+australophyllia wilsoni,australophyllia wilsoni,165840645,886935,VU,not comprehensively assessed,CNIDARIA,CNIDARIA
+anacropora forbesi,anacropora forbesi,165840972,212177,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora tuberculosa,montipora tuberculosa,165843018,207156,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora variolosa,acropora variolosa,165844477,430657,EN,reef_building_corals,CNIDARIA,CNIDARIA
+mycetophyllia ferox,mycetophyllia ferox,165848265,290426,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora microclados,acropora microclados,165849704,207101,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora setosa,montipora setosa,165850939,287726,EN,reef_building_corals,CNIDARIA,CNIDARIA
+micromussa lordhowensis,micromussa lordhowensis,165852855,886929,EN,not comprehensively assessed,CNIDARIA,CNIDARIA
+montipora confusa,montipora confusa,165853431,287700,EN,reef_building_corals,CNIDARIA,CNIDARIA
+orbicella faveolata,orbicella faveolata,165855828,758261,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora corbettensis,montipora corbettensis,165856842,287701,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pseudodiploria clivosa,pseudodiploria clivosa,165857974,828326,NT,reef_building_corals,CNIDARIA,CNIDARIA
+acropora cervicornis,acropora cervicornis,165860142,206989,CR,reef_building_corals,CNIDARIA,CNIDARIA
+cantharellus noumeae,cantharellus noumeae,165861904,289570,VU,reef_building_corals,CNIDARIA,CNIDARIA
+siderastrea siderea,siderastrea siderea,165863977,207516,CR,reef_building_corals,CNIDARIA,CNIDARIA
+seriatopora hystrix,seriatopora hystrix,165864447,206973,VU,reef_building_corals,CNIDARIA,CNIDARIA
+dipsastraea laxa,dipsastraea laxa,165865677,758235,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora loisetteae,acropora loisetteae,165866808,288218,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora desalwii,acropora desalwii,165867805,288197,VU,reef_building_corals,CNIDARIA,CNIDARIA
+eusmilia fastigiata,eusmilia fastigiata,165869793,289939,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora hoeksemai,acropora hoeksemai,165870296,288208,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora squarrosa,acropora squarrosa,165870722,207053,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora samarensis,montipora samarensis,165871806,287724,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora verruculosa,montipora verruculosa,165875049,763794,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora circumvallata,montipora circumvallata,165879022,207150,EN,reef_building_corals,CNIDARIA,CNIDARIA
+lithophyllon concinna,lithophyllon concinna,165879990,716645,EN,reef_building_corals,CNIDARIA,CNIDARIA
+lobophyllia hemprichii,lobophyllia hemprichii,165880675,207392,EN,not comprehensively assessed,CNIDARIA,CNIDARIA
+montipora grisea,montipora grisea,165881406,287709,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora capricornis,montipora capricornis,165882264,287698,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites heronensis,porites heronensis,165886797,288905,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora spicifera,acropora spicifera,165887620,207087,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora crassituberculata,montipora crassituberculata,165888181,287702,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora mactanensis,montipora mactanensis,165888706,287716,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora foveolata,montipora foveolata,165890614,207133,EN,reef_building_corals,CNIDARIA,CNIDARIA
+agaricia tenuifolia,agaricia tenuifolia,165891280,287916,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora walindii,acropora walindii,165892366,288264,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora australiensis,montipora australiensis,165893439,287693,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora turtlensis,montipora turtlensis,165896700,287731,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora danae,montipora danae,165897161,207152,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora pachytuberculata,montipora pachytuberculata,165899212,287721,EN,reef_building_corals,CNIDARIA,CNIDARIA
+mussa angulosa,mussa angulosa,165900464,216135,NT,reef_building_corals,CNIDARIA,CNIDARIA
+montipora cocosensis,montipora cocosensis,165902415,430667,EN,reef_building_corals,CNIDARIA,CNIDARIA
+meandrina brasiliensis,meandrina brasiliensis,165902902,430665,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora rongelapensis,acropora rongelapensis,165903212,288239,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora aculeus,acropora aculeus,165903510,206991,EN,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora excelsa,alveopora excelsa,165904170,289255,VU,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora minuta,alveopora minuta,165904877,289259,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora downingi,acropora downingi,165906044,288199,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora bushyensis,acropora bushyensis,165906998,206999,EN,reef_building_corals,CNIDARIA,CNIDARIA
+isopora crateriformis,isopora crateriformis,165907396,730691,EN,reef_building_corals,CNIDARIA,CNIDARIA
+mussismilia leptophylla,mussismilia leptophylla,165909854,1344208,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora hyacinthus,acropora hyacinthus,165910938,207044,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora chesterfieldensis,acropora chesterfieldensis,165912070,288191,EN,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora spongiosa,alveopora spongiosa,165912495,207198,VU,reef_building_corals,CNIDARIA,CNIDARIA
+astreopora randalli,astreopora randalli,165914197,207127,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites horizontalata,porites horizontalata,165914709,207237,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora delicatula,montipora delicatula,165915941,287704,EN,reef_building_corals,CNIDARIA,CNIDARIA
+sclerophyllia maxima,sclerophyllia maxima,165916345,834701,VU,not comprehensively assessed,CNIDARIA,CNIDARIA
+acropora papillare,acropora papillare,165918560,430650,EN,reef_building_corals,CNIDARIA,CNIDARIA
+caulastraea echinulata,caulastraea echinulata,165920165,289576,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora kosurini,acropora kosurini,165921753,288216,EN,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora gigas,alveopora gigas,165922148,289256,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora taiwanensis,montipora taiwanensis,165924603,287729,EN,reef_building_corals,CNIDARIA,CNIDARIA
+dipsastraea lizardensis,dipsastraea lizardensis,165926708,758225,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites sverdrupi,porites sverdrupi,165927357,288916,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora anthocercis,acropora anthocercis,165927627,207024,EN,reef_building_corals,CNIDARIA,CNIDARIA
+mycetophyllia danaana,mycetophyllia danaana,165930262,290425,CR,reef_building_corals,CNIDARIA,CNIDARIA
+pavona chiriquiensis,pavona chiriquiensis,165930746,289200,VU,reef_building_corals,CNIDARIA,CNIDARIA
+stephanocoenia intersepta,stephanocoenia intersepta,165931015,291119,NT,reef_building_corals,CNIDARIA,CNIDARIA
+helioseris cucullata,helioseris cucullata,165931505,290083,CR,reef_building_corals,CNIDARIA,CNIDARIA
+alveopora fenestrata,alveopora fenestrata,165931994,207196,EN,reef_building_corals,CNIDARIA,CNIDARIA
+anacropora pillai,anacropora pillai,165932643,289241,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora monasteriata,montipora monasteriata,165933017,207153,VU,reef_building_corals,CNIDARIA,CNIDARIA
+seriatopora aculeata,seriatopora aculeata,165933739,430679,EN,reef_building_corals,CNIDARIA,CNIDARIA
+stylophora subseriata,stylophora subseriata,165935170,206980,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora palmerae,acropora palmerae,165935749,207049,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora verweyi,acropora verweyi,165936343,288263,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora zelli,pocillopora zelli,165937264,289253,EN,reef_building_corals,CNIDARIA,CNIDARIA
+agaricia agaricites,agaricia agaricites,165937610,287911,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora yongei,acropora yongei,165942828,207032,EN,reef_building_corals,CNIDARIA,CNIDARIA
+porites panamensis,porites panamensis,165944097,288912,NT,reef_building_corals,CNIDARIA,CNIDARIA
+acropora glauca,acropora glauca,165944388,207017,EN,reef_building_corals,CNIDARIA,CNIDARIA
+lobophyllia corymbosa,lobophyllia corymbosa,165944911,207391,VU,not comprehensively assessed,CNIDARIA,CNIDARIA
+pocillopora fungiformis,pocillopora fungiformis,165945595,289248,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora spumosa,montipora spumosa,165946810,207138,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pavona cactus,pavona cactus,165948083,207312,VU,reef_building_corals,CNIDARIA,CNIDARIA
+montipora peltiformis,montipora peltiformis,165950846,207180,EN,reef_building_corals,CNIDARIA,CNIDARIA
+lobophyllia dentata,lobophyllia dentata,165952004,763791,EN,not comprehensively assessed,CNIDARIA,CNIDARIA
+homophyllia australis,homophyllia australis,165952413,550314,VU,not comprehensively assessed,CNIDARIA,CNIDARIA
+alveopora viridis,alveopora viridis,165952872,207203,VU,reef_building_corals,CNIDARIA,CNIDARIA
+dipsastraea favus,dipsastraea favus,165953718,718748,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora cerealis,acropora cerealis,165957417,207016,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora molokensis,pocillopora molokensis,165959060,411253,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora awi,acropora awi,165960779,288185,EN,reef_building_corals,CNIDARIA,CNIDARIA
+mussismilia braziliensis,mussismilia braziliensis,165962303,290421,CR,reef_building_corals,CNIDARIA,CNIDARIA
+acropora proximalis,acropora proximalis,165967972,288236,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora undata,montipora undata,165968337,207167,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora indonesia,acropora indonesia,165968946,288210,EN,reef_building_corals,CNIDARIA,CNIDARIA
+isopora togianensis,isopora togianensis,165970008,730689,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora arabensis,acropora arabensis,165970329,288184,EN,reef_building_corals,CNIDARIA,CNIDARIA
+scolymia wellsii,scolymia wellsii,165970711,287854,VU,reef_building_corals,CNIDARIA,CNIDARIA
+seriatopora guttata,seriatopora guttata,165974960,763800,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora jacquelineae,acropora jacquelineae,165976712,288212,VU,reef_building_corals,CNIDARIA,CNIDARIA
+lobophyllia diminuta,lobophyllia diminuta,165977631,207389,EN,not comprehensively assessed,CNIDARIA,CNIDARIA
+acropora valenciennesi,acropora valenciennesi,165978585,206995,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora capitata,montipora capitata,165979277,287697,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora cebuensis,montipora cebuensis,165979810,287699,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora venosa,montipora venosa,165985544,207139,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pocillopora indiania,pocillopora indiania,165986859,289249,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora verrucosa,montipora verrucosa,165991842,207146,VU,reef_building_corals,CNIDARIA,CNIDARIA
+acropora polystoma,acropora polystoma,165992609,207050,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora abrotanoides,acropora abrotanoides,165994001,207083,EN,reef_building_corals,CNIDARIA,CNIDARIA
+stylophora kuehlmanni,stylophora kuehlmanni,165999492,206985,VU,reef_building_corals,CNIDARIA,CNIDARIA
+isopora cuneata,isopora cuneata,165999850,730687,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora echinata,acropora echinata,166000487,207069,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora millepora,acropora millepora,166002970,207023,EN,reef_building_corals,CNIDARIA,CNIDARIA
+pleuractis paumotensis,pleuractis paumotensis,166006326,716547,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora mollis,montipora mollis,166006972,207137,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora subulata,acropora subulata,166011138,368478,EN,reef_building_corals,CNIDARIA,CNIDARIA
+stylophora pistillata,stylophora pistillata,166012479,206982,NT,reef_building_corals,CNIDARIA,CNIDARIA
+anacropora reticulata,anacropora reticulata,166014493,289243,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora altasepta,montipora altasepta,166017474,287690,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora nana,acropora nana,166018690,207100,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora filiformis,acropora filiformis,166019286,288204,EN,reef_building_corals,CNIDARIA,CNIDARIA
+montipora hoffmeisteri,montipora hoffmeisteri,166019596,287713,VU,reef_building_corals,CNIDARIA,CNIDARIA
+pavona duerdeni,pavona duerdeni,166020214,207315,EN,reef_building_corals,CNIDARIA,CNIDARIA
+squalus formosus,squalus formosus,169229869,712383,EN,sharks_and_rays,FISH,FISH: sharks & rays
+scoliodon macrorhynchos,scoliodon macrorhynchos,169233911,1021742,NT,sharks_and_rays,FISH,FISH: sharks & rays
+platyrhina hyugaensis,platyrhina hyugaensis,169234849,712386,VU,sharks_and_rays,FISH,FISH: sharks & rays
+platyrhina tangi,platyrhina tangi,169234948,712387,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus chinensis,dipturus chinensis,169237207,1419311,VU,sharks_and_rays,FISH,FISH: sharks & rays
+lamiopsis tephrodes,lamiopsis tephrodes,169766323,712379,EN,sharks_and_rays,FISH,FISH: sharks & rays
+urotrygon cimar,urotrygon cimar,169992506,283116,NT,sharks_and_rays,FISH,FISH: sharks & rays
+scomberomorus concolor,scomberomorus concolor,170082489,273812,NT,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+thunnus maccoyii,thunnus maccoyii,170082633,219720,EN,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+rastrelliger brachysoma,rastrelliger brachysoma,170085723,273807,VU,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+rastrelliger faughni,rastrelliger faughni,170086625,273808,VU,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+thunnus orientalis,thunnus orientalis,170087840,273823,NT,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+scomberomorus sinensis,scomberomorus sinensis,170088828,273822,NT,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+scomberomorus niphonius,scomberomorus niphonius,170090130,273817,NT,tunas_and_billfishes,FISH,FISH: tunas & billfishes
+carcharhinus amblyrhynchos,carcharhinus amblyrhynchos,173433550,217337,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus amboinensis,carcharhinus amboinensis,173434051,217340,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus macloti,carcharhinus macloti,173434501,217335,NT,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus sorrah,carcharhinus sorrah,173434793,217339,NT,sharks_and_rays,FISH,FISH: sharks & rays
+loxodon macrorhinus,loxodon macrorhinus,173435173,217355,NT,sharks_and_rays,FISH,FISH: sharks & rays
+negaprion acutidens,negaprion acutidens,173435545,217356,EN,sharks_and_rays,FISH,FISH: sharks & rays
+rhizoprionodon oligolinx,rhizoprionodon oligolinx,173435874,217359,NT,sharks_and_rays,FISH,FISH: sharks & rays
+triaenodon obesus,triaenodon obesus,173436715,214557,VU,sharks_and_rays,FISH,FISH: sharks & rays
+nebrius ferrugineus,nebrius ferrugineus,173437098,220030,VU,sharks_and_rays,FISH,FISH: sharks & rays
+chaenogaleus macrostoma,chaenogaleus macrostoma,173437577,280095,VU,sharks_and_rays,FISH,FISH: sharks & rays
+takifugu ocellatus,takifugu ocellatus,174789028,278421,NT,pufferfishes,FISH,FISH
+megalops atlanticus,megalops atlanticus,174796143,126430,VU,tarpons_and_ladyfishes,FISH,FISH
+maculabatis gerrardi,maculabatis gerrardi,175219648,1042867,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pateobatis bleekeri,pateobatis bleekeri,175220678,1043413,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pateobatis uarnacoides,pateobatis uarnacoides,175221157,1043412,EN,sharks_and_rays,FISH,FISH: sharks & rays
+rhinoptera jayakari,rhinoptera jayakari,175221403,271496,EN,sharks_and_rays,FISH,FISH: sharks & rays
+proscyllium magnificum,proscyllium magnificum,176485653,282369,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemitriakis indroyonoi,hemitriakis indroyonoi,176486027,712377,EN,sharks_and_rays,FISH,FISH: sharks & rays
+orectolobus leptolineatus,orectolobus leptolineatus,176486163,712374,NT,sharks_and_rays,FISH,FISH: sharks & rays
+okamejei cairae,okamejei cairae,176486211,712398,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhinobatos ranongensis,rhinobatos ranongensis,176486247,1494072,VU,sharks_and_rays,FISH,FISH: sharks & rays
+narcine baliensis,narcine baliensis,176486260,1385174,NT,sharks_and_rays,FISH,FISH: sharks & rays
+platyrhina psomadakisi,platyrhina psomadakisi,176486288,1022437,NT,sharks_and_rays,FISH,FISH: sharks & rays
+anguilla japonica,anguilla japonica,176493270,271705,EN,not comprehensively assessed,FISH,FISH
+anguilla bicolor,anguilla bicolor,176494582,217455,NT,not comprehensively assessed,FISH,FISH
+anguilla mossambica,anguilla mossambica,176495218,217458,NT,not comprehensively assessed,FISH,FISH
+anguilla luzonensis,anguilla luzonensis,176497159,474896,VU,not comprehensively assessed,FISH,FISH
+anguilla bengalensis,anguilla bengalensis,176497430,217456,NT,not comprehensively assessed,FISH,FISH
+narcine atzi,narcine atzi,178201355,275385,VU,sharks_and_rays,FISH,FISH: sharks & rays
+narcine prodorsalis,narcine prodorsalis,178201678,275397,EN,sharks_and_rays,FISH,FISH: sharks & rays
+narcine timlei,narcine timlei,178201830,275399,VU,sharks_and_rays,FISH,FISH: sharks & rays
+eubalaena glacialis,eubalaena glacialis,178589687,159023,CR,mammals,MAMMALS,MAMMALS
+millepora tenera,millepora tenera,179617703,210729,EN,reef_building_corals,CNIDARIA,CNIDARIA
+millepora nitida,millepora nitida,179618448,287424,CR,reef_building_corals,CNIDARIA,CNIDARIA
+millepora complanata,millepora complanata,179618755,287421,CR,reef_building_corals,CNIDARIA,CNIDARIA
+millepora exaesa,millepora exaesa,179619219,210728,EN,reef_building_corals,CNIDARIA,CNIDARIA
+millepora squarrosa,millepora squarrosa,179619810,287425,CR,reef_building_corals,CNIDARIA,CNIDARIA
+millepora latifolia,millepora latifolia,179620663,287423,VU,reef_building_corals,CNIDARIA,CNIDARIA
+millepora braziliensis,millepora braziliensis,179621403,287420,CR,reef_building_corals,CNIDARIA,CNIDARIA
+millepora striata,millepora striata,179621708,735835,VU,reef_building_corals,CNIDARIA,CNIDARIA
+millepora intricata,millepora intricata,179622080,210727,EN,reef_building_corals,CNIDARIA,CNIDARIA
+millepora dichotoma,millepora dichotoma,179622579,210733,EN,reef_building_corals,CNIDARIA,CNIDARIA
+millepora platyphylla,millepora platyphylla,179623155,210730,EN,reef_building_corals,CNIDARIA,CNIDARIA
+millepora foveolata,millepora foveolata,179624354,287422,EN,reef_building_corals,CNIDARIA,CNIDARIA
+gymnura sereti,gymnura sereti,180503121,1456340,EN,sharks_and_rays,FISH,FISH: sharks & rays
+hypanus berthalutzae,hypanus berthalutzae,181246271,1493649,VU,sharks_and_rays,FISH,FISH: sharks & rays
+raja brachyura,raja brachyura,183779320,367297,NT,sharks_and_rays,FISH,FISH: sharks & rays
+raja clavata,raja clavata,183779744,105883,NT,sharks_and_rays,FISH,FISH: sharks & rays
+raja microocellata,raja microocellata,183780223,105885,NT,sharks_and_rays,FISH,FISH: sharks & rays
+raja undulata,raja undulata,183780918,105891,NT,sharks_and_rays,FISH,FISH: sharks & rays
+rostroraja alba,rostroraja alba,183781512,105896,EN,sharks_and_rays,FISH,FISH: sharks & rays
+zanobatus maculatus,zanobatus maculatus,183784887,1385041,NT,sharks_and_rays,FISH,FISH: sharks & rays
+raja parva,raja parva,185495230,1006797,NT,sharks_and_rays,FISH,FISH: sharks & rays
+plectropomus areolatus,plectropomus areolatus,192479585,218263,VU,groupers,FISH,FISH
+cetorhinus maximus,cetorhinus maximus,194720078,105837,EN,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos buthi,pseudobatos buthi,196522247,1374498,VU,sharks_and_rays,FISH,FISH: sharks & rays
+squalus boretzi,squalus boretzi,197258666,1494182,NT,sharks_and_rays,FISH,FISH: sharks & rays
+pycnopodia helianthoides,pycnopodia helianthoides,197818455,240764,CR,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+pseudolilliconus boschorum,pseudolilliconus boschorum,198269696,574728,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+hemiscyllium freycineti,hemiscyllium freycineti,198884880,281035,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemiscyllium galei,hemiscyllium galei,198885260,398233,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hemiscyllium halmahera,hemiscyllium halmahera,198885632,739293,NT,sharks_and_rays,FISH,FISH: sharks & rays
+hemiscyllium henryi,hemiscyllium henryi,198885960,398234,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hemiscyllium michaeli,hemiscyllium michaeli,198886371,474888,VU,sharks_and_rays,FISH,FISH: sharks & rays
+hemiscyllium strahani,hemiscyllium strahani,198886746,281038,VU,sharks_and_rays,FISH,FISH: sharks & rays
+cirrhilabrus naokoae,cirrhilabrus naokoae,200001327,398568,VU,wrasses_and_parrotfishes,FISH,FISH
+bathyraja brachyurops,bathyraja brachyurops,200320565,271509,NT,sharks_and_rays,FISH,FISH: sharks & rays
+bathyraja macloviana,bathyraja macloviana,200321617,271519,NT,sharks_and_rays,FISH,FISH: sharks & rays
+myliobatis freminvillei,myliobatis freminvillei,201183089,399783,VU,sharks_and_rays,FISH,FISH: sharks & rays
+aetobatus narinari,aetobatus narinari,201613657,217426,EN,sharks_and_rays,FISH,FISH: sharks & rays
+narke japonica,narke japonica,201629674,278822,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus mento,mustelus mento,203720849,271390,CR,sharks_and_rays,FISH,FISH: sharks & rays
+sphyrna tiburo,sphyrna tiburo,205765567,158517,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus falciformis,carcharhinus falciformis,205782570,105789,VU,sharks_and_rays,FISH,FISH: sharks & rays
+centroscymnus coelolepis,centroscymnus coelolepis,206647387,105907,NT,sharks_and_rays,FISH,FISH: sharks & rays
+glaucostegus obtusus,glaucostegus obtusus,207283191,1022265,CR,sharks_and_rays,FISH,FISH: sharks & rays
+glaucostegus thouin,glaucostegus thouin,207731709,712954,CR,sharks_and_rays,FISH,FISH: sharks & rays
+balaenoptera ricei,balaenoptera ricei,208496244,1576133,CR,mammals,MAMMALS,MAMMALS
+scoliodon laticaudus,scoliodon laticaudus,210944208,217364,NT,sharks_and_rays,FISH,FISH: sharks & rays
+squalus shiraii,squalus shiraii,211715722,1447975,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mustelus andamanensis,mustelus andamanensis,211716832,1536470,VU,sharks_and_rays,FISH,FISH: sharks & rays
+carcharodon carcharias,carcharodon carcharias,212629880,105838,VU,sharks_and_rays,FISH,FISH: sharks & rays
+alopias vulpinus,alopias vulpinus,212641186,105836,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mobula alfredi,mobula alfredi,214395983,1042871,VU,sharks_and_rays,FISH,FISH: sharks & rays
+mobula birostris,mobula birostris,214397182,1026118,EN,sharks_and_rays,FISH,FISH: sharks & rays
+mobula hypostoma,mobula hypostoma,214399766,158530,EN,sharks_and_rays,FISH,FISH: sharks & rays
+mobula kuhlii,mobula kuhlii,214405747,217436,EN,sharks_and_rays,FISH,FISH: sharks & rays
+mobula munkiana,mobula munkiana,214407880,271482,VU,sharks_and_rays,FISH,FISH: sharks & rays
+rhynchobatus mononoke,rhynchobatus mononoke,214417808,1523828,CR,sharks_and_rays,FISH,FISH: sharks & rays
+phocoena sinus,phocoena sinus,214541137,343897,CR,mammals,MAMMALS,MAMMALS
+diplobatis picta,diplobatis picta,215496848,399668,VU,sharks_and_rays,FISH,FISH: sharks & rays
+glaucostegus granulatus,glaucostegus granulatus,215829219,280873,CR,sharks_and_rays,FISH,FISH: sharks & rays
+brachygenys jessiae,brachygenys jessiae,217447046,1577331,VU,not comprehensively assessed,FISH,FISH
+xenichthys agassizii,xenichthys agassizii,217447911,283175,VU,not comprehensively assessed,FISH,FISH
+paralabrax albomaculatus,paralabrax albomaculatus,217448475,282051,EN,not comprehensively assessed,FISH,FISH
+azurina eupalama,azurina eupalama,217449660,279851,CR,not comprehensively assessed,FISH,FISH
+acropora intermedia,acropora intermedia,218756129,207035,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acipenser sinensis,acipenser sinensis,219152605,271699,CR,sturgeons,FISH,FISH
+enhydra lutris,enhydra lutris,219377647,242598,EN,mammals,MAMMALS,MAMMALS
+pocillopora acuta,pocillopora acuta,219768281,759099,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora eurystoma,acropora eurystoma,219836698,207108,EN,reef_building_corals,CNIDARIA,CNIDARIA
+acropora muricata,acropora muricata,219836713,207007,EN,reef_building_corals,CNIDARIA,CNIDARIA
+haliotis rubiginosa,haliotis rubiginosa,220107536,445352,CR,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+carcharhinus hemiodon,carcharhinus hemiodon,221513674,271322,CR,sharks_and_rays,FISH,FISH: sharks & rays
+acipenser mikadoi,acipenser mikadoi,227578157,271696,CR,sturgeons,FISH,FISH
+acipenser nudiventris,acipenser nudiventris,227579266,126277,CR,sturgeons,FISH,FISH
+sousa plumbea,sousa plumbea,230253271,383586,EN,mammals,MAMMALS,MAMMALS
+carcharias taurus,carcharias taurus,232113997,105843,CR,sharks_and_rays,FISH,FISH: sharks & rays
+monachus monachus,monachus monachus,238637039,137081,VU,mammals,MAMMALS,MAMMALS
+pseudochaenichthys georgianus,pseudochaenichthys georgianus,241133169,234667,EN,not comprehensively assessed,FISH,FISH
+chaenocephalus aceratus,chaenocephalus aceratus,241133181,234725,VU,not comprehensively assessed,FISH,FISH
+boleophthalmus pectinirostris,boleophthalmus pectinirostris,241148840,279926,VU,not comprehensively assessed,FISH,FISH
+malacoctenus brunoi,malacoctenus brunoi,241151159,712818,CR,blennies,FISH,FISH
+malacoctenus lianae,malacoctenus lianae,241151179,1493758,EN,blennies,FISH,FISH
+acipenser sturio,acipenser sturio,242530547,126279,CR,sturgeons,FISH,FISH
+hippocampus debelius,hippocampus debelius,242659051,398432,NT,not comprehensively assessed,FISH,FISH
+pennatula aculeata,pennatula aculeata,244807135,128515,NT,not comprehensively assessed,CNIDARIA,CNIDARIA
+pennatula phosphorea,pennatula phosphorea,244873443,128517,NT,not comprehensively assessed,CNIDARIA,CNIDARIA
+paragorgia arborea,paragorgia arborea,244936896,125418,NT,not comprehensively assessed,CNIDARIA,CNIDARIA
+primnoa resedaeformis,primnoa resedaeformis,244936911,125411,NT,not comprehensively assessed,CNIDARIA,CNIDARIA
+paragorgia johnsoni,paragorgia johnsoni,244936926,125419,NT,not comprehensively assessed,CNIDARIA,CNIDARIA
+enallopsammia profunda,enallopsammia profunda,244936956,157965,NT,not comprehensively assessed,CNIDARIA,CNIDARIA
+hemitrygon fluviorum,hemitrygon fluviorum,248153151,1042847,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pristis pristis,pristis pristis,249880242,105849,CR,sharks_and_rays,FISH,FISH: sharks & rays
+pristis pectinata,pristis pectinata,249881355,105848,CR,sharks_and_rays,FISH,FISH: sharks & rays
+conus cloveri,conus cloveri,250218760,224297,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus curassaviensis,conus curassaviensis,250219066,430334,EN,cone_snails,MOLLUSCA,MOLLUSCA
+conus cuvieri,conus cuvieri,250219321,426469,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus echinophilus,conus echinophilus,250220131,224286,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus hieroglyphus,conus hieroglyphus,250221120,428151,EN,cone_snails,MOLLUSCA,MOLLUSCA
+conus immelmani,conus immelmani,250221255,428156,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus julii,conus julii,250221517,215548,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus kirkandersi,conus kirkandersi,250221822,429719,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus unifasciatus,conus unifasciatus,250223568,224304,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus aemulus,conus aemulus,250987374,224480,EN,cone_snails,MOLLUSCA,MOLLUSCA
+conasprella baccata,conasprella baccata,251011630,836464,VU,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+conus aurantius,conus aurantius,251019576,426366,NT,cone_snails,MOLLUSCA,MOLLUSCA
+conus brianhayesi,conus brianhayesi,251051545,426419,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conus papuensis,conus papuensis,251058382,428231,VU,cone_snails,MOLLUSCA,MOLLUSCA
+conasprella stocki,conasprella stocki,251070519,835420,NT,not comprehensively assessed,MOLLUSCA,MOLLUSCA
+conus empressae,conus empressae,251079681,426486,EN,cone_snails,MOLLUSCA,MOLLUSCA
+conus madagascariensis,conus madagascariensis,251087254,215571,EN,cone_snails,MOLLUSCA,MOLLUSCA
+rhynchobatus laevis,rhynchobatus laevis,253117341,278218,CR,sharks_and_rays,FISH,FISH: sharks & rays
+branchiostegus albus,branchiostegus albus,253390478,276732,NT,not comprehensively assessed,FISH,FISH
+branchiostegus argentatus,branchiostegus argentatus,253390488,367208,NT,not comprehensively assessed,FISH,FISH
+branchiostegus auratus,branchiostegus auratus,253390518,276734,NT,not comprehensively assessed,FISH,FISH
+millepora alcicornis,millepora alcicornis,254316326,210726,EN,reef_building_corals,CNIDARIA,CNIDARIA
+mycetophyllia lamarckiana,mycetophyllia lamarckiana,254316966,290427,NT,reef_building_corals,CNIDARIA,CNIDARIA
+pseudopleuronectes americanus,pseudopleuronectes americanus,254462745,158885,VU,not comprehensively assessed,FISH,FISH
+halichoeres rubrovirens,halichoeres rubrovirens,254541900,712770,VU,wrasses_and_parrotfishes,FISH,FISH
+rhinobatos lionotus,rhinobatos lionotus,254715330,271601,CR,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus granulosus,centrophorus granulosus,254964078,105899,EN,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus squamosus,centrophorus squamosus,254975849,105901,EN,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus uyato,centrophorus uyato,254988584,105902,EN,sharks_and_rays,FISH,FISH: sharks & rays
+deania profundorum,deania profundorum,255043036,105905,NT,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus batis,dipturus batis,256580832,105869,CR,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus intermedius,dipturus intermedius,256581177,711846,CR,sharks_and_rays,FISH,FISH: sharks & rays
+petrus rupestris,petrus rupestris,263072015,218611,CR,seabreams_porgies_picarels,FISH,FISH
+chrysoblephus cristiceps,chrysoblephus cristiceps,263072020,218597,CR,seabreams_porgies_picarels,FISH,FISH
+polysteganus praeorbitalis,polysteganus praeorbitalis,263072025,218616,VU,seabreams_porgies_picarels,FISH,FISH
+lithognathus lithognathus,lithognathus lithognathus,263072030,218604,EN,seabreams_porgies_picarels,FISH,FISH
+chrysoblephus gibbiceps,chrysoblephus gibbiceps,263072035,218598,EN,seabreams_porgies_picarels,FISH,FISH
+rhabdosargus globiceps,rhabdosargus globiceps,263072045,218624,VU,seabreams_porgies_picarels,FISH,FISH
+sparodon durbanensis,sparodon durbanensis,263072050,218627,NT,seabreams_porgies_picarels,FISH,FISH
+chrysoblephus anglicus,chrysoblephus anglicus,263072055,218595,NT,seabreams_porgies_picarels,FISH,FISH
+lithognathus aureti,lithognathus aureti,263072065,218605,EN,seabreams_porgies_picarels,FISH,FISH
+cymatoceps nasutus,cymatoceps nasutus,263072070,218601,VU,seabreams_porgies_picarels,FISH,FISH
+acanthopagrus vagus,acanthopagrus vagus,263072085,313009,VU,seabreams_porgies_picarels,FISH,FISH
+polysteganus undulosus,polysteganus undulosus,263072090,218617,EN,seabreams_porgies_picarels,FISH,FISH
+phyllopteryx taeniolatus,phyllopteryx taeniolatus,263199517,282254,VU,not comprehensively assessed,FISH,FISH
+bolbometopon muricatum,bolbometopon muricatum,264483873,219074,VU,wrasses_and_parrotfishes,FISH,FISH
+cheilinus undulatus,cheilinus undulatus,264488576,218945,EN,wrasses_and_parrotfishes,FISH,FISH
+scymnodon macracanthus,scymnodon macracanthus,267136939,299100,VU,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus atromarginatus,centrophorus atromarginatus,267274043,271616,CR,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus isodon,centrophorus isodon,267274929,271618,EN,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus longipinnis,centrophorus longipinnis,267275997,1385219,EN,sharks_and_rays,FISH,FISH: sharks & rays
+centrophorus moluccensis,centrophorus moluccensis,267277845,215598,VU,sharks_and_rays,FISH,FISH: sharks & rays
+deania quadrispinosa,deania quadrispinosa,267298077,217367,VU,sharks_and_rays,FISH,FISH: sharks & rays
+notorynchus cepedianus,notorynchus cepedianus,268790096,217628,VU,sharks_and_rays,FISH,FISH: sharks & rays
+madracis decactis,madracis decactis,269645634,287107,CR,reef_building_corals,CNIDARIA,CNIDARIA
+seriatopora dendritica,seriatopora dendritica,269720727,288066,VU,reef_building_corals,CNIDARIA,CNIDARIA
+neomonachus schauinslandi,neomonachus schauinslandi,272355581,1663107,VU,mammals,MAMMALS,MAMMALS
+odobenus rosmarus,odobenus rosmarus,272356023,137077,VU,mammals,MAMMALS,MAMMALS
+holothuria nobilis,holothuria nobilis,274961922,1672772,EN,not comprehensively assessed,ECHINODERMATA,ECHINODERMATA
+pterapogon kauderni,pterapogon kauderni,274966962,282494,EN,not comprehensively assessed,FISH,FISH
+mobula mobular,mobula mobular,279075986,105858,CR,sharks_and_rays,FISH,FISH: sharks & rays
+mobula tarapacana,mobula tarapacana,279077133,105859,CR,sharks_and_rays,FISH,FISH: sharks & rays
+mobula thurstoni,mobula thurstoni,279078290,217430,CR,sharks_and_rays,FISH,FISH: sharks & rays
+erignathus barbatus,erignathus barbatus,279175908,137079,NT,mammals,MAMMALS,MAMMALS
+cystophora cristata,cystophora cristata,279892432,137078,EN,mammals,MAMMALS,MAMMALS
+pagophilus groenlandicus,pagophilus groenlandicus,280391816,159019,NT,mammals,MAMMALS,MAMMALS
+hemitrygon bennetti,hemitrygon bennettii,104115348,1042846,VU,sharks_and_rays,FISH,FISH: sharks & rays
+zearaja brevicaudata,dipturus brevicaudatus,144161921,1448888,VU,sharks_and_rays,FISH,FISH: sharks & rays
+zearaja chilensis,dipturus chilensis,199743048,271542,EN,sharks_and_rays,FISH,FISH: sharks & rays
+mycteroperca marginata,epinephelus marginatus,100467602,127036,VU,groupers,FISH,FISH
+balanophyllia europaea,balanophyllia (balanophyllia) europaea,165713140,135180,VU,reef_building_corals,CNIDARIA,CNIDARIA
+mobula eregoodoo,mobula eregoodootenkee,214376402,217434,EN,sharks_and_rays,FISH,FISH: sharks & rays
+carcharhinus perezi,carcharhinus perezii,3093780,271324,EN,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus leptocaudus,dipturus leptocauda,2998902,271552,VU,sharks_and_rays,FISH,FISH: sharks & rays
+dipturus trachydermus,dipturus trachyderma,3119790,271562,EN,sharks_and_rays,FISH,FISH: sharks & rays
+chiloscyllium burmensis,chiloscyllium burmense,124515789,277828,VU,sharks_and_rays,FISH,FISH: sharks & rays
+chiloscyllium hasselti,chiloscyllium hasseltii,124506268,277830,EN,sharks_and_rays,FISH,FISH: sharks & rays
+cephaloscyllium sarawakensis,cephaloscyllium sarawakense,22516400,398246,CR,sharks_and_rays,FISH,FISH: sharks & rays
+hongeo koreana,hongeo koreanus,124493295,712397,CR,sharks_and_rays,FISH,FISH: sharks & rays
+cheimerius matsubarai,amamiichthys matsubarai,1285017,1524746,VU,seabreams_porgies_picarels,FISH,FISH
+amblyglyphidodon batunai,amblyglyphidodon batunaorum,1888295,1577313,VU,not comprehensively assessed,FISH,FISH
+paragaleus randalli,paragaleus longicaudatus,173437966,1577342,VU,sharks_and_rays,FISH,FISH: sharks & rays
+pseudobatos glaucostigmus,pseudobatos glaucostigma,124488932,1577351,VU,sharks_and_rays,FISH,FISH: sharks & rays
+montipora cryptus,montipora crypta,165841530,1617333,EN,reef_building_corals,CNIDARIA,CNIDARIA
