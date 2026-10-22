@@ -230,3 +230,107 @@ ggsave(here("figures/rcp45_2050/supplement_threshold_count_rcp45_102126.png"),
   barplot_count, width = 5, height = 7, dpi = 600, units = "in")
 
 ```
+
+## New, lost, and current species counts by196 territory and sovereign EEZ
+
+```{r}
+# Get names of sovereigns and territories from rnatural earth package
+library(rnaturalearth)
+ne_countries <- ne_countries(scale = "medium", returnclass = "sf") %>% 
+  #dplyr::select(iso_a3, sovereignt, name_long) %>% 
+  st_drop_geometry() %>% 
+  rename(ISO_TER1 = iso_a3,
+         SOVEREIGN1_NAME = sovereignt,
+         ISO_TER1_NAME = name_long)
+```
+
+```{r}
+eez_terr_sov <- left_join(eez_simple, ne_countries, by = c("ISO_TER1" = "ISO_TER1")) %>% 
+  dplyr::select(MRGID, GEONAME, SOVEREIGN1, TERRITORY1, ISO_TER1, ISO_SOV1, ISO_TER1_NAME, SOVEREIGN1_NAME) %>% 
+  #filter(MRGID %in% eez_200nm_list) %>% 
+  mutate(ISO_TER1 = ifelse(is.na(ISO_TER1), ISO_SOV1, ISO_TER1),
+        ISO_TER1_NAME = ifelse(is.na(ISO_TER1_NAME), SOVEREIGN1, ISO_TER1_NAME)) %>% 
+  group_by(ISO_TER1, ISO_TER1_NAME, ISO_SOV1, SOVEREIGN1) %>%
+  summarize(regions = n()) %>% 
+  ungroup()
+```
+
+```{r}
+# Find those territories that don't have unique names but have unique ISO_TER1 codes
+eez_ter_name_duplicate <- eez_terr_sov %>% 
+  filter(ISO_TER1_NAME %in% ISO_TER1_NAME[duplicated(ISO_TER1_NAME)]) %>% 
+  arrange(ISO_TER1_NAME) %>% 
+  # Filter for those where the territory code does not equal the sovereign code (so gets rid of FRA and US countries) %>% 
+  filter(ISO_TER1 != ISO_SOV1)
+
+name_change <- eez_ter_name_duplicate$ISO_TER1
+
+# Replace names
+eez_name_change <- eez_ter_name_duplicate %>% 
+  mutate(ISO_TER1_NAME = case_when(ISO_TER1 == "CCK" ~ "Cocos (Keeling) Islands",
+                                   ISO_TER1 == "CXR" ~ "Christmas Island",
+                                   ISO_TER1 == "GLP" ~ "Guadeloupe",
+                                   ISO_TER1 == "GUF" ~ "French Guiana",
+                                   ISO_TER1 == "MTQ" ~ "Martinique",
+                                   ISO_TER1 == "REU" ~ "Réunion",
+                                   ISO_TER1 == "BES" ~ "Bonaire, Sint Eustatius and Saba",
+                                   ISO_TER1 == "TKL" ~ "Tokelau",
+                                   ISO_TER1 == "SJM" ~ "Svalbard and Jan Mayen",
+                                   ISO_TER1 == "UMI" ~ "US Minor Outlying Islands",
+                                   TRUE ~ as.character(ISO_TER1_NAME)))
+
+# Add back to dataset
+eez_terr_sov_clean <- eez_terr_sov %>% 
+  filter(!ISO_TER1 %in% name_change) %>% 
+  bind_rows(eez_name_change)
+```
+
+```{r}
+# Get counts of entry into new, exit from historical etc. by territory and sovereign EEZ - but only count if the species is entirely new or loss from territory andsovereign EEZ
+eez_spp_change_sov_counts <- eez_spp_pxls_long_1pxl  %>% 
+  group_by(ISO_TER1, ISO_SOV1, scenario, spp_change) %>% 
+  summarize(spp_change_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+# Select RCP4.5 2050 and join with eez_terr_sov_clean to include all the EEZs
+eez_spp_change_rcp45_2050 <- eez_spp_change_sov_counts %>% 
+  filter(scenario == "RCP45_2050") %>% 
+  right_join(eez_terr_sov_clean, by = c("ISO_TER1", "ISO_SOV1")) %>% 
+  replace_na(list(spp_change_count = 0))
+```
+
+```{r}
+eez_sov_c_f <- eez_spp_change_sov_counts  %>% 
+    filter(scenario == "RCP45_2050") %>%
+  mutate(spp_change = str_replace_all(spp_change, " ", "_")) %>% 
+  pivot_wider(names_from = spp_change, values_from = spp_change_count) %>%
+  # join in all EEZs
+  right_join(eez_terr_sov_clean, by = c("ISO_TER1", "ISO_SOV1")) %>%
+  mutate(continued_presence = replace_na(continued_presence, 0),
+         exit_from_historical = replace_na(exit_from_historical, 0),
+         entry_into_new = replace_na(entry_into_new, 0),
+         no_presence = replace_na(no_presence, 0)) %>%
+  mutate(current_spp = continued_presence + exit_from_historical,
+         future_spp = continued_presence + entry_into_new) 
+```
+
+```{r}
+eez_sov_c_f_clean <- eez_sov_c_f %>% 
+    dplyr::select(ISO_TER1_NAME, SOVEREIGN1, ISO_TER1, ISO_SOV1, entry_into_new, exit_from_historical, current_spp, future_spp) %>% 
+    arrange(desc(entry_into_new)) %>%
+    rename(territory = ISO_TER1_NAME,
+           sovereign = SOVEREIGN1,
+           terr_iso_code = ISO_TER1,
+           sov_iso_code = ISO_SOV1,
+           new_species = entry_into_new,
+           lost_species = exit_from_historical,
+           current_species = current_spp,
+           future_species = future_spp)
+```
+
+
+```{r}
+write_csv(eez_sov_c_f_clean, here("data/iucn_eez_spp_change_table_rcp45_2050_102126.csv"))
+```

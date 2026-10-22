@@ -1,0 +1,197 @@
+territory,sovereign,terr_iso_code,sov_iso_code,new_species,lost_species,current_species,future_species
+Dem. Rep. Korea,North Korea,PRK,PRK,47,3,218,262
+Russian Federation,Russia,RUS,RUS,28,5,210,233
+Canada,Canada,CAN,CAN,16,2,165,179
+Republic of Korea,South Korea,KOR,KOR,11,9,415,417
+Guernsey,United Kingdom,GGY,GBR,9,9,103,103
+Monaco,Monaco,MCO,MCO,8,7,59,60
+Singapore,Singapore,SGP,SGP,8,42,317,283
+Ukraine,Ukraine,UKR,UKR,8,2,63,69
+Denmark,Denmark,DNK,DNK,6,3,78,81
+Norfolk Island,Australia,NFK,AUS,6,8,300,298
+Svalbard and Jan Mayen,Norway,SJM,NOR,6,0,26,32
+Argentina,Argentina,ARG,ARG,5,1,119,123
+Bulgaria,Bulgaria,BGR,BGR,5,1,59,63
+Christmas Island,Australia,CXR,AUS,5,14,397,388
+France,France,FRA,FRA,5,6,228,227
+Isle of Man,United Kingdom,IMN,GBR,5,3,81,83
+Ireland,Ireland,IRL,IRL,5,3,115,117
+Jersey,United Kingdom,JEY,GBR,5,4,98,99
+Romania,Romania,ROU,ROU,5,2,62,65
+Saint Pierre and Miquelon,France,SPM,FRA,5,1,61,65
+Slovenia,Slovenia,SVN,SVN,5,6,79,78
+China,China,CHN,CHN,4,9,548,543
+United Kingdom,United Kingdom,GBR,GBR,4,3,128,129
+Croatia,Croatia,HRV,HRV,4,5,102,101
+Lebanon,Lebanon,LBN,LBN,4,8,78,74
+Lithuania,Lithuania,LTU,LTU,4,1,14,17
+New Caledonia,France,NCL,FRA,4,6,406,404
+Norway,Norway,NOR,NOR,4,1,81,84
+Nauru,Nauru,NRU,NRU,4,32,213,185
+Poland,Poland,POL,POL,4,0,13,17
+Sweden,Sweden,SWE,SWE,4,1,64,67
+Vanuatu,Vanuatu,VUT,VUT,4,9,333,328
+French Southern and Antarctic Lands,France,ATF,FRA,3,5,306,304
+Belgium,Belgium,BEL,BEL,3,3,96,96
+Bermuda,United Kingdom,BMU,GBR,3,9,113,107
+Brunei Darussalam,Brunei,BRN,BRN,3,19,446,430
+Cuba,Cuba,CUB,CUB,3,15,186,174
+Germany,Germany,DEU,DEU,3,1,90,92
+Faeroe Islands,Denmark,FRO,DNK,3,5,81,79
+Georgia,Georgia,GEO,GEO,3,0,47,50
+Greece,Greece,GRC,GRC,3,3,103,103
+Iceland,Iceland,ISL,ISL,3,2,72,73
+Japan,Japan,JPN,JPN,3,4,528,527
+Cambodia,Cambodia,KHM,KHM,3,36,398,365
+Sri Lanka,Sri Lanka,LKA,LKA,3,18,344,329
+Malta,Malta,MLT,MLT,3,6,94,91
+Northern Mariana Islands,United States,MNP,USA,3,9,274,268
+New Zealand,New Zealand,NZL,NZL,3,0,312,315
+Palau,Palau,PLW,PLW,3,17,386,372
+Portugal,Portugal,PRT,PRT,3,0,166,169
+Réunion,France,REU,FRA,3,6,256,253
+Saint Helena,United Kingdom,SHN,GBR,3,0,54,57
+Turks and Caicos Islands,United Kingdom,TCA,GBR,3,12,165,156
+Tonga,Tonga,TON,TON,3,4,272,271
+Turkey,Turkey,TUR,TUR,3,0,103,106
+Vietnam,Vietnam,VNM,VNM,3,10,514,507
+Bahrain,Bahrain,BHR,BHR,2,7,190,185
+Barbados,Barbados,BRB,BRB,2,9,149,142
+Cocos (Keeling) Islands,Australia,CCK,AUS,2,11,326,317
+Spain,Spain,ESP,ESP,2,3,189,188
+Finland,Finland,FIN,FIN,2,4,18,16
+Fiji,Fiji,FJI,FJI,2,5,304,301
+Federated States of Micronesia,Micronesia,FSM,FSM,2,9,364,357
+Guam,United States,GUM,USA,2,6,260,256
+Iraq,Iraq,IRQ,IRQ,2,2,143,143
+Italy,Italy,ITA,ITA,2,1,107,108
+Netherlands,Netherlands,NLD,NLD,2,3,101,100
+Pakistan,Pakistan,PAK,PAK,2,4,233,231
+Pitcairn Islands,United Kingdom,PCN,GBR,2,2,114,114
+Seychelles,Seychelles,SYC,SYC,2,13,288,277
+British Virgin Islands,United Kingdom,VGB,GBR,2,9,156,149
+South Africa,South Africa,ZAF,ZAF,2,4,309,307
+Albania,Albania,ALB,ALB,1,4,95,92
+United Arab Emirates,United Arab Emirates,ARE,ARE,1,8,228,221
+Australia,Australia,AUS,AUS,1,0,519,520
+Bahamas,Bahamas,BHS,BHS,1,8,193,186
+Chile,Chile,CHL,CHL,1,2,113,112
+Cook Islands,New Zealand,COK,NZL,1,9,218,210
+Republic of Cabo Verde,Cape Verde,CPV,CPV,1,9,150,142
+Costa Rica,Costa Rica,CRI,CRI,1,7,261,255
+Cyprus,Cyprus,CYP,CYP,1,3,75,73
+Djibouti,Djibouti,DJI,DJI,1,10,258,249
+Dominican Republic,Dominican Republic,DOM,DOM,1,11,172,162
+Algeria,Algeria,DZA,DZA,1,3,105,103
+Ecuador,Ecuador,ECU,ECU,1,2,164,163
+Egypt,Egypt,EGY,EGY,1,5,285,281
+Guinea-Bissau,Guinea-Bissau,GNB,GNB,1,3,147,145
+Greenland,Denmark,GRL,DNK,1,1,50,50
+Guatemala,Guatemala,GTM,GTM,1,13,234,222
+Haiti,Haiti,HTI,HTI,1,19,171,153
+Israel,Israel,ISR,ISR,1,4,83,80
+Jamaica,Jamaica,JAM,JAM,1,13,170,158
+Jordan,Jordan,JOR,JOR,1,10,178,169
+Kuwait,Kuwait,KWT,KWT,1,1,151,151
+Libya,Libya,LBY,LBY,1,4,99,96
+Latvia,Latvia,LVA,LVA,1,3,20,18
+Saint-Martin,France,MAF,FRA,1,16,154,139
+Morocco,Morocco,MAR,MAR,1,1,169,169
+Maldives,Maldives,MDV,MDV,1,18,317,300
+Marshall Islands,Marshall Islands,MHL,MHL,1,12,264,253
+Montenegro,Montenegro,MNE,MNE,1,6,93,88
+Mauritius,Republic of Mauritius,MUS,MUS,1,10,290,281
+Niue,New Zealand,NIU,NZL,1,5,248,244
+Panama,Panama,PAN,PAN,1,7,268,262
+Philippines,Philippines,PHL,PHL,1,11,543,533
+Puerto Rico,United States,PRI,USA,1,12,164,153
+French Polynesia,France,PYF,FRA,1,4,175,172
+Qatar,Qatar,QAT,QAT,1,10,208,199
+Saudi Arabia,Saudi Arabia,SAU,SAU,1,11,294,284
+Sudan,Sudan,SDN,SDN,1,10,236,227
+Somalia,Federal Republic of Somalia,SOM,SOM,1,2,317,316
+Sint Maarten,Netherlands,SXM,NLD,1,13,150,138
+Thailand,Thailand,THA,THA,1,15,443,429
+Timor-Leste,East Timor,TLS,TLS,1,21,429,409
+Trinidad and Tobago,Trinidad and Tobago,TTO,TTO,1,3,162,160
+Tunisia,Tunisia,TUN,TUN,1,5,95,91
+Tuvalu,Tuvalu,TUV,TUV,1,5,257,253
+Uruguay,Uruguay,URY,URY,1,1,141,141
+Saint Vincent and the Grenadines,Saint Vincent and the Grenadines,VCT,VCT,1,16,154,139
+United States Virgin Islands,United States,VIR,USA,1,14,159,146
+Aruba,Netherlands,ABW,NLD,0,15,164,149
+Angola,Angola,AGO,AGO,0,5,145,140
+Anguilla,United Kingdom,AIA,GBR,0,8,157,149
+American Samoa,United States,ASM,USA,0,8,249,241
+Antigua and Barbuda,Antigua and Barbuda,ATG,ATG,0,9,158,149
+Benin,Benin,BEN,BEN,0,6,120,114
+"Bonaire, Sint Eustatius and Saba",Netherlands,BES,NLD,0,14,163,149
+Bangladesh,Bangladesh,BGD,BGD,0,4,326,322
+Saint-Barthélemy,France,BLM,FRA,0,13,156,143
+Belize,Belize,BLZ,BLZ,0,14,169,155
+Brazil,Brazil,BRA,BRA,0,1,195,194
+Côte d'Ivoire,Ivory Coast,CIV,CIV,0,4,126,122
+Cameroon,Cameroon,CMR,CMR,0,8,115,107
+Democratic Republic of the Congo,Democratic Republic of the Congo,COD,COD,0,4,125,121
+Republic of the Congo,Republic of the Congo,COG,COG,0,6,126,120
+Colombia,Colombia,COL,COL,0,4,294,290
+Comoros,Comores,COM,COM,0,11,271,260
+Curaçao,Netherlands,CUW,NLD,0,14,158,144
+Cayman Islands,United Kingdom,CYM,GBR,0,15,164,149
+Dominica,Dominica,DMA,DMA,0,10,152,142
+Eritrea,Eritrea,ERI,ERI,0,9,250,241
+Estonia,Estonia,EST,EST,0,2,18,16
+Gabon,Gabon,GAB,GAB,0,4,125,121
+Ghana,Ghana,GHA,GHA,0,4,125,121
+Guinea,Guinea,GIN,GIN,0,9,146,137
+Guadeloupe,France,GLP,FRA,0,8,156,148
+The Gambia,Gambia,GMB,GMB,0,5,150,145
+Equatorial Guinea,Equatorial Guinea,GNQ,GNQ,0,2,120,118
+Grenada,Grenada,GRD,GRD,0,13,160,147
+French Guiana,France,GUF,FRA,0,8,159,151
+Guyana,Guyana,GUY,GUY,0,3,158,155
+Heard I. and McDonald Islands,Australia,HMD,AUS,0,0,9,9
+Honduras,Honduras,HND,HND,0,19,244,225
+Indonesia,Indonesia,IDN,IDN,0,6,545,539
+India,India,IND,IND,0,6,459,453
+Iran,Iran,IRN,IRN,0,6,232,226
+Kenya,Kenya,KEN,KEN,0,7,270,263
+Kiribati,Kiribati,KIR,KIR,0,10,304,294
+Saint Kitts and Nevis,Saint Kitts and Nevis,KNA,KNA,0,12,155,143
+Liberia,Liberia,LBR,LBR,0,6,130,124
+Saint Lucia,Saint Lucia,LCA,LCA,0,12,151,139
+Madagascar,Madagascar,MDG,MDG,0,7,312,305
+Mexico,Mexico,MEX,MEX,0,4,324,320
+Myanmar,Myanmar,MMR,MMR,0,12,419,407
+Mozambique,Mozambique,MOZ,MOZ,0,6,334,328
+Mauritania,Mauritania,MRT,MRT,0,1,163,162
+Montserrat,United Kingdom,MSR,GBR,0,14,154,140
+Martinique,France,MTQ,FRA,0,8,152,144
+Malaysia,Malaysia,MYS,MYS,0,11,481,470
+Namibia,Namibia,NAM,NAM,0,2,145,143
+Nigeria,Nigeria,NGA,NGA,0,6,119,113
+Nicaragua,Nicaragua,NIC,NIC,0,7,267,260
+Oman,Oman,OMN,OMN,0,3,277,274
+Peru,Peru,PER,PER,0,3,157,154
+Papua New Guinea,Papua New Guinea,PNG,PNG,0,9,418,409
+Palestine,Palestine,PSE,PSE,0,6,79,73
+Senegal,Senegal,SEN,SEN,0,1,154,153
+Solomon Islands,Solomon Islands,SLB,SLB,0,12,384,372
+Sierra Leone,Sierra Leone,SLE,SLE,0,7,137,130
+El Salvador,El Salvador,SLV,SLV,0,11,136,125
+São Tomé and Principe,Sao Tome and Principe,STP,STP,0,4,117,113
+Suriname,Suriname,SUR,SUR,0,3,161,158
+Syria,Syria,SYR,SYR,0,5,81,76
+Togo,Togo,TGO,TGO,0,7,123,116
+Tokelau,New Zealand,TKL,NZL,0,7,245,238
+Tanzania,Tanzania,TZA,TZA,0,7,280,273
+US Minor Outlying Islands,United States,UMI,USA,0,5,245,240
+United States,United States,USA,USA,0,3,350,347
+Venezuela,Venezuela,VEN,VEN,0,2,176,174
+Wallis and Futuna Islands,France,WLF,FRA,0,6,252,246
+Samoa,Samoa,WSM,WSM,0,5,249,244
+Yemen,Yemen,YEM,YEM,0,6,299,293
+Azerbaijan,Azerbaijan,AZE,AZE,0,0,0,0
+Bosnia and Herzegovina,Bosnia and Herzegovina,BIH,BIH,0,0,0,0
+Kazakhstan,Kazakhstan,KAZ,KAZ,0,0,0,0
+Turkmenistan,Turkmenistan,TKM,TKM,0,0,0,0
